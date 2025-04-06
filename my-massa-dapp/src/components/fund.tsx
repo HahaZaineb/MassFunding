@@ -462,4 +462,3 @@ function ProjectCard({ project, onDonate, onViewUpdates, onViewVoting, isExpande
     </motion.div>
   )
 }
-
