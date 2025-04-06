@@ -1,170 +1,135 @@
-import { Args, SmartContract } from "@massalabs/massa-web3";
-import { useEffect, useState } from "react";
-import { MassaLogo, Button, Input, ConnectMassaWallet, useAccountStore } from "@massalabs/react-ui-kit";
-import "./App.css";
-import "@massalabs/react-ui-kit/src/global.css";
+"use client"
 
-
-const sc_addr = "AS1252EyiMEbjFfahZgB4rSLSSkuNiSsQQWbfZ6daQ8oG1Z94EKH1";
-
+import { useState, useEffect } from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import RequestFunding from "./components/request-funding"
+import Fund from "./components/fund"
+import { Button } from "./components/ui/button"
+import { ArrowLeft, ArrowRight } from "lucide-react"
+import "@massalabs/react-ui-kit/src/global.css"
+import { LoadingSpinner } from "./components/ui/loading-spinner"
+import { ToastProvider } from "./components/ui/toast-provider"
 
 function App() {
-  const {connectedAccount} = useAccountStore();  
+  const [showRequestForm, setShowRequestForm] = useState(false)
+  const [showFundForm, setShowFundForm] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
-  const [token, setToken] = useState("AS12N76WPYB3QNYKGhV2jZuQs1djdhNJLQgnm7m52pHWecvvj1fCQ");
-  const [amount, setAmount] = useState("");
-  const [lockPeriod, setLockPeriod] = useState("");
-  const [releaseInterval, setReleaseInterval] = useState("");
-  const [releasePercentage, setReleasePercentage] = useState("");
-  const [vestingInfo, setVestingInfo] = useState<number | null>(null);
-  const [totalVested, setTotalVested] = useState(0);
-  const [lockedAmount, setLockedAmount] = useState(0);
-  const [releaseSchedule, setReleaseSchedule] = useState<any[]>([]);
-  const [deferredCallId, setDeferredCallId] = useState<string | null>(null);
-
+  // Add dark mode class to document
   useEffect(() => {
-    getVestingInfo();
-    getTotalVested();
-    getLockedAmount();
-    getReleaseSchedule();
-  }, []);
+    document.documentElement.classList.add("dark")
 
-  // Create Vesting Schedule
-  async function createVestingSchedule() {
-    console.log("Create Vesting Schedule clicked");
-    try{
-       
-      const contract = new SmartContract(connectedAccount as any, sc_addr);
-      const beneficiaryAddress = "AU1264Bah4q6pYLrGBh27V1b9VXL2XmnQCwMhY74HW4dxahpqxkrN";
-      const args = new Args()
-        .addString(beneficiaryAddress)
-        .addString(token)
-        .addU64(BigInt(amount))                 
-        .addU64(BigInt(releaseInterval))        
-        .addU64(BigInt(releasePercentage))      
-        .addU64(BigInt(lockPeriod)); 
-    
-      const response = await contract.call("createVestingSchedule", args, {
-        maxGas: BigInt(2100000),
-        coins: BigInt(0),
-      });
+    // Simulate initial loading
+    const timer = setTimeout(() => {
+      setIsLoading(false)
+    }, 1000)
 
-      console.log("Transaction response:", response);
-      setDeferredCallId(response.toString());
-      getVestingInfo(); } catch(error){
-        console.error("Error creating vesting schedule:", error);
-      }
+    return () => {
+      document.documentElement.classList.remove("dark")
+      clearTimeout(timer)
     }
-  
+  }, [])
 
-    async function getVestingInfo() {
-      const contract = new SmartContract(connectedAccount as any, sc_addr);
-      try {
-          const result = await contract.read(
-              "getVestingSchedule", 
-              new Args(), 
-              { maxGas: BigInt(2100000),
-                coins: BigInt(0), } 
-          );
-  
-          const decodedResult = result.value; 
-          console.log("Vesting Info:", decodedResult);
-      } catch (error) {
-          console.error("Error fetching vesting info:", error);
-      }
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-white flex items-center justify-center">
+        <div className="text-center">
+          <LoadingSpinner size="lg" />
+          <h2 className="mt-4 text-xl font-bold">Loading MassFunding</h2>
+          <p className="text-slate-400 mt-2">Connecting to Massa blockchain...</p>
+        </div>
+      </div>
+    )
   }
-  
-  getVestingInfo();
-  // Fetch Total Vested Tokens
-  async function getTotalVested() {
-    const contract = new SmartContract(connectedAccount as any, sc_addr);
-      try {
-        const result = await contract.read(
-          "getTotalVested", 
-          new Args(), 
-          { maxGas: BigInt(5100000),
-            coins: BigInt(0), } 
-      );
-
-      const decodedResult = result.value; 
-      
-      console.log("Total Vested", decodedResult);
-      } catch (error) {
-        console.error("Error fetching total vested:", error);
-      }
-    }
-
-getTotalVested();
-
-  
-  async function getLockedAmount() {
-    
-      try {
-        const contract = new SmartContract(connectedAccount as any, sc_addr);
-
-        const data = await contract.read(
-          "getLockedAmount",      
-          new Args(),             
-          { maxGas: BigInt(2100000), coins: BigInt(0) }
-        );
-        const decodedResult = data.value;
-        console.log("Locked Amount:", decodedResult);
-      } catch (error) {
-        console.error("Error fetching locked amount:", error);
-      }    
-  }
-
-  async function getReleaseSchedule() {
-    
-      try {
-        const contract = new SmartContract(connectedAccount as any, sc_addr);
-  
-        const data = await contract.read("getReleaseSchedule", new Args(), { maxGas: BigInt(2100000), coins: BigInt(0) });
-        const decodedResult = data.value;
-        console.log("Release Schedule:", decodedResult);
-      } 
-      
-        /*const resultStr = data.toString();
-        console.log("Raw release schedule data:", resultStr);
-        const schedule = JSON.parse(resultStr);
-        setReleaseSchedule(schedule);*/
-      catch (error) {
-        console.error("Error fetching release schedule:", error);
-      }
-    }
-  
-  getReleaseSchedule();
 
   return (
-    <div>
-      <MassaLogo className="logo" size={100} />
-      <ConnectMassaWallet />
-      <h2>Vesting Schedule</h2>
+    <ToastProvider>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-white">
+        <header className="container mx-auto py-6">
+          <h1 className="text-3xl font-bold text-center">MassFunding</h1>
+          <p className="text-center text-slate-300 mt-2">Crowdfunding on Massa with deferred calls and vesting</p>
+        </header>
 
-      <Input placeholder="Token Address" value={token} onChange={(e) => setToken(e.target.value)} />
-      <Input placeholder="Amount" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
-      <Input placeholder="Lock Period (seconds)" type="number" value={lockPeriod} onChange={(e) => setLockPeriod(e.target.value)} />
-      <Input placeholder="Release Interval (seconds)" type="number" value={releaseInterval} onChange={(e) => setReleaseInterval(e.target.value)} />
-      <Input placeholder="Release Percentage (%)" type="number" value={releasePercentage} onChange={(e) => setReleasePercentage(e.target.value)} />
+        <main className="container mx-auto mt-8 px-4 md:px-0">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative min-h-[70vh]">
+            {/* Request Funding Section */}
+            <AnimatePresence>
+              {!showFundForm && (
+                <motion.div
+                  className="bg-slate-800 rounded-xl p-6 shadow-lg border border-slate-700 relative overflow-hidden"
+                  initial={{ x: showRequestForm ? 400 : 0, opacity: showRequestForm ? 0.5 : 1 }}
+                  animate={{ x: showRequestForm ? 400 : 0, opacity: 1 }}
+                  exit={{ x: -400, opacity: 0 }}
+                  transition={{ type: "spring", stiffness: 100, damping: 20 }}
+                >
+                  {!showRequestForm ? (
+                    <div className="flex flex-col items-center justify-center h-full space-y-6 py-12">
+                      <div className="w-24 h-24 bg-blue-500 rounded-full flex items-center justify-center">
+                        <ArrowRight size={40} />
+                      </div>
+                      <h2 className="text-2xl font-bold">Request Funding</h2>
+                      <p className="text-center text-slate-300 max-w-md">
+                        Are you an enterprise or association looking for funding? Request funds and specify your vesting
+                        schedule.
+                      </p>
+                      <Button
+                        size="lg"
+                        className="mt-4 bg-blue-600 hover:bg-blue-700"
+                        onClick={() => setShowRequestForm(true)}
+                      >
+                        Request Funding
+                      </Button>
+                    </div>
+                  ) : (
+                    <RequestFunding onBack={() => setShowRequestForm(false)} />
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-      <Button onClick={createVestingSchedule}>Create Vesting Schedule</Button>
-    
-     
+            {/* Fund Section */}
+            <AnimatePresence>
+              {!showRequestForm && (
+                <motion.div
+                  className="bg-slate-800 rounded-xl p-6 shadow-lg border border-slate-700 relative overflow-hidden"
+                  initial={{ x: showFundForm ? 400 : 0, opacity: showFundForm ? 0.5 : 1 }}
+                  animate={{ x: showFundForm ? 400 : 0, opacity: 1 }}
+                  exit={{ x: 400, opacity: 0 }}
+                  transition={{ type: "spring", stiffness: 100, damping: 20 }}
+                >
+                  {!showFundForm ? (
+                    <div className="flex flex-col items-center justify-center h-full space-y-6 py-12">
+                      <div className="w-24 h-24 bg-green-500 rounded-full flex items-center justify-center">
+                        <ArrowLeft size={40} />
+                      </div>
+                      <h2 className="text-2xl font-bold">Fund Projects</h2>
+                      <p className="text-center text-slate-300 max-w-md">
+                        Browse projects and donate MAS tokens. Receive an NFT as proof of your contribution.
+                      </p>
+                      <Button
+                        size="lg"
+                        className="mt-4 bg-green-600 hover:bg-green-700"
+                        onClick={() => setShowFundForm(true)}
+                      >
+                        Fund Projects
+                      </Button>
+                    </div>
+                  ) : (
+                    <Fund onBack={() => setShowFundForm(false)} />
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </main>
 
-      <h3>Vesting Info:</h3>
-      <pre>{vestingInfo || "No vesting schedule found."}</pre>
-
-      <h3>Total Vested Amount:</h3>
-      <p>{totalVested} tokens</p>
-
-      <h3>Locked Amount:</h3>
-      <p>{lockedAmount} tokens</p>
-      
-
-      <h3>Release Schedule:</h3>
-      <pre>{JSON.stringify(releaseSchedule, null, 2)}</pre>
-    </div>
-  );
+        <footer className="container mx-auto py-6 mt-12 text-center text-slate-400 text-sm">
+          <p>MassFunding - Powered by Massa Blockchain</p>
+        </footer>
+      </div>
+    </ToastProvider>
+  )
 }
 
-export default App;
+export default App
+
