@@ -1,17 +1,14 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
-import { Button } from "../components/ui/button"
-import { Input } from "../components/ui/input"
-import { Label } from "../components/ui/label"
+import { Button } from "./ui/button"
+import { Input } from "./ui/input"
+import { Label } from "./ui/label"
 import { ArrowLeft, Info } from "lucide-react"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/card"
-import { Progress } from "../components/ui/progress"
-import { ConnectWallet } from "./connect-wallet"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../components/ui/tooltip"
-import { useToast } from "../components/ui/use-toast"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card"
+import { Progress } from "./ui/progress"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip"
 
 interface DonationFormProps {
   project: {
@@ -24,51 +21,67 @@ interface DonationFormProps {
     lockPeriod: string
     releaseInterval: string
     releasePercentage: number
+    category: string
   }
-  onSubmit: (amount: string) => void
+  onSubmit: (amount: string, nftId: string) => void
   onBack: () => void
 }
 
 export function DonationForm({ project, onSubmit, onBack }: DonationFormProps) {
-  const { toast } = useToast()
   const [amount, setAmount] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [isConnected, setIsConnected] = useState(false)
 
   const percentFunded = (project.amountRaised / project.amountNeeded) * 100
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (amount && Number.parseFloat(amount) > 0) {
-      toast({
-        title: "Processing donation...",
-        description: `Donating ${amount} MAS to ${project.name}`,
-      })
-      onSubmit(amount)
-    } else {
-      toast({
-        title: "Invalid amount",
-        description: "Please enter a valid donation amount",
-        variant: "destructive",
-      })
+
+    if (!isConnected) {
+      alert("Please connect your wallet first")
+      return
+    }
+
+    if (!amount || Number.parseFloat(amount) <= 0) {
+      alert("Please enter a valid donation amount")
+      return
+    }
+
+    setIsSubmitting(true)
+
+    try {
+      console.log("Starting donation process...")
+      console.log("Project:", project)
+      console.log("Amount:", amount)
+
+      // Simulate donation process
+      await new Promise((resolve) => setTimeout(resolve, 1500))
+
+      // Generate a mock NFT ID
+      const mockNftId = `MF-${Date.now().toString(36)}`
+
+      // Call onSubmit with the amount and NFT ID
+      onSubmit(amount, mockNftId)
+    } catch (error) {
+      console.error("Failed to donate:", error)
+      alert("Failed to process donation. Please try again.")
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
   const handleConnect = () => {
     setIsConnected(true)
-    toast({
-      title: "Wallet connected",
-      description: "Your wallet has been connected successfully",
-    })
   }
 
   return (
-    <div className="space-y-6">
-      <Button variant="ghost" size="sm" onClick={onBack} className="flex items-center text-sm">
+    <div className="space-y-6 text-white">
+      <Button variant="ghost" size="sm" onClick={onBack} className="flex items-center text-sm text-white">
         <ArrowLeft className="h-4 w-4 mr-1" />
         Back to projects
       </Button>
 
-      <Card className="bg-slate-700 border-slate-600">
+      <Card className="bg-slate-700 border-slate-600 text-white">
         <CardHeader>
           <CardTitle>Donate to {project.name}</CardTitle>
           <CardDescription className="text-slate-300">{project.description}</CardDescription>
@@ -106,11 +119,13 @@ export function DonationForm({ project, onSubmit, onBack }: DonationFormProps) {
           <form onSubmit={handleSubmit} className="space-y-4 pt-2">
             <div>
               <div className="flex items-center mb-2">
-                <Label htmlFor="amount">Donation Amount (MAS)</Label>
+                <Label htmlFor="amount" className="text-white">
+                  Donation Amount (MAS)
+                </Label>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-5 w-5 ml-2">
+                      <Button variant="ghost" size="icon" className="h-5 w-5 ml-2 text-white">
                         <Info className="h-4 w-4" />
                       </Button>
                     </TooltipTrigger>
@@ -127,7 +142,7 @@ export function DonationForm({ project, onSubmit, onBack }: DonationFormProps) {
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 required
-                className="bg-slate-600 border-slate-500"
+                className="bg-slate-600 border-slate-500 text-white"
               />
               <p className="text-xs text-slate-400 mt-1">
                 Your voting power will be equivalent to your donation amount.
@@ -136,27 +151,29 @@ export function DonationForm({ project, onSubmit, onBack }: DonationFormProps) {
 
             <div className="pt-2">
               {!isConnected ? (
-                <ConnectWallet onConnect={handleConnect} />
+                <Button
+                  variant="outline"
+                  className="w-full bg-slate-700 border-slate-600 hover:bg-slate-600"
+                  onClick={handleConnect}
+                >
+                  Connect Wallet
+                </Button>
               ) : (
                 <Button
                   type="submit"
-                  className="w-full bg-green-600 hover:bg-green-700"
-                  disabled={!amount || Number.parseFloat(amount) <= 0}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white mt-4"
+                  disabled={isSubmitting || !amount || Number.parseFloat(amount) <= 0}
                 >
-                  Donate {amount} MAS
+                  {isSubmitting ? "Processing..." : `Donate ${amount || "0"} MAS`}
                 </Button>
               )}
             </div>
           </form>
         </CardContent>
         <CardFooter className="text-xs text-slate-400">
-          <p>
-            By donating, you agree to the vesting schedule. You can vote to cancel the funding if the project doesn't
-            meet expectations.
-          </p>
+          <p>By donating, you agree to the vesting schedule. You will receive an NFT as proof of your contribution.</p>
         </CardFooter>
       </Card>
     </div>
   )
 }
-

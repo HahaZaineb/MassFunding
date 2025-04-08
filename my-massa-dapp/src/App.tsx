@@ -1,13 +1,55 @@
 
+import { Toaster } from "./components/ui/sonner"
+
+import type React from "react"
+
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import RequestFunding from "./components/request-funding"
 import Fund from "./components/fund"
 import { Button } from "./components/ui/button"
 import { ArrowLeft, ArrowRight } from "lucide-react"
-import "@massalabs/react-ui-kit/src/global.css"
-import { LoadingSpinner } from "./components/ui/loading-spinner"
-import { Toaster } from "./components/ui/toaster"
+// Remove any imports that might be causing issues
+// import "@massalabs/react-ui-kit/src/global.css"
+
+// Add a simple error boundary component
+function ErrorBoundary({ children }: { children: React.ReactNode }) {
+  const [hasError, setHasError] = useState(false)
+  const [error, setError] = useState<Error | null>(null)
+
+  useEffect(() => {
+    const errorHandler = (error: ErrorEvent) => {
+      console.error("Caught error:", error)
+      setHasError(true)
+      setError(error.error)
+    }
+
+    window.addEventListener("error", errorHandler)
+    return () => window.removeEventListener("error", errorHandler)
+  }, [])
+
+  if (hasError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-white flex items-center justify-center">
+        <div className="text-center p-8 bg-red-900/50 rounded-lg max-w-2xl">
+          <h2 className="text-2xl font-bold mb-4">Something went wrong</h2>
+          <p className="mb-4">An error occurred while rendering the application:</p>
+          <pre className="bg-black/30 p-4 rounded overflow-auto text-left text-sm">
+            {error?.message || "Unknown error"}
+          </pre>
+          <button
+            className="mt-4 px-4 py-2 bg-red-600 rounded hover:bg-red-700"
+            onClick={() => window.location.reload()}
+          >
+            Reload Page
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return <>{children}</>
+}
 
 function App() {
   const [showRequestForm, setShowRequestForm] = useState(false)
@@ -33,7 +75,7 @@ function App() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-white flex items-center justify-center">
         <div className="text-center">
-          <LoadingSpinner size="lg" />
+          <div className="animate-spin h-12 w-12 border-4 border-t-transparent border-white rounded-full mx-auto mb-4"></div>
           <h2 className="mt-4 text-xl font-bold">Loading MassFunding</h2>
           <p className="text-slate-400 mt-2">Connecting to Massa blockchain...</p>
         </div>
@@ -55,8 +97,8 @@ function App() {
             {!showFundForm && (
               <motion.div
                 className="bg-slate-800 rounded-xl p-6 shadow-lg border border-slate-700 relative overflow-hidden"
-                initial={{ x: showRequestForm ? -400 : 0, opacity: showRequestForm ? 0.5 : 1 }}
-                animate={{ x: showRequestForm ? -400 : 0, opacity: 1 }}
+                initial={{ x: showRequestForm ? 400 : 0, opacity: showRequestForm ? 0.5 : 1 }}
+                animate={{ x: showRequestForm ? 400 : 0, opacity: 1 }}
                 exit={{ x: -400, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 100, damping: 20 }}
               >
@@ -129,4 +171,11 @@ function App() {
   )
 }
 
-export default App
+// Wrap the App component with the error boundary
+export default function AppWithErrorBoundary() {
+  return (
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
+  )
+}

@@ -1,38 +1,50 @@
 "use client"
 
-import { ConnectMassaWallet, useAccountStore } from "@massalabs/react-ui-kit"
-import { useEffect, useState } from "react"
+import { useState } from "react"
+import { Button } from "./ui/button"
+import { Wallet } from "lucide-react"
 
 interface ConnectWalletProps {
-  onConnect?: (address: any) => void
+  onConnect?: () => void
 }
 
 export function ConnectWallet({ onConnect }: ConnectWalletProps) {
-  const { connectedAccount } = useAccountStore()
-  const [hasConnected, setHasConnected] = useState(false)
+  const [isConnecting, setIsConnecting] = useState(false)
+  const [isConnected, setIsConnected] = useState(false)
+  const [walletAddress, setWalletAddress] = useState("")
 
-  useEffect(() => {
-    if (connectedAccount && !hasConnected) {
-      console.log("Wallet connected:", connectedAccount)
-      setHasConnected(true)
-      // Pass the connectedAccount directly without type conversion
-      if (onConnect) {
-        onConnect(connectedAccount)
-      }
-    } else if (!connectedAccount && hasConnected) {
-      console.log("Wallet disconnected")
-      setHasConnected(false)
-    }
-  }, [connectedAccount, onConnect, hasConnected])
+  const handleConnect = async () => {
+    setIsConnecting(true)
+
+    // Simulate wallet connection
+    setTimeout(() => {
+      const mockAddress =
+        "AU12" + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+      setWalletAddress(mockAddress)
+      setIsConnected(true)
+      setIsConnecting(false)
+      if (onConnect) onConnect()
+    }, 1500)
+  }
+
+  if (isConnected) {
+    return (
+      <Button variant="outline" className="w-full bg-slate-700 border-slate-600 text-slate-200" disabled>
+        <Wallet className="h-4 w-4 mr-2" />
+        Connected: {walletAddress.substring(0, 6)}...{walletAddress.substring(walletAddress.length - 4)}
+      </Button>
+    )
+  }
 
   return (
-    <div className="w-full">
-      <ConnectMassaWallet />
-      {connectedAccount && (
-        <div className="mt-2 text-xs text-center text-green-500">
-          Connected: {connectedAccount.toString().substring(0, 8)}...
-        </div>
-      )}
-    </div>
-  )!
+    <Button
+      variant="outline"
+      className="w-full bg-slate-700 border-slate-600 hover:bg-slate-600"
+      onClick={handleConnect}
+      disabled={isConnecting}
+    >
+      <Wallet className="h-4 w-4 mr-2" />
+      {isConnecting ? "Connecting..." : "Connect Massa Wallet"}
+    </Button>
+  )
 }
