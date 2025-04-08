@@ -1,43 +1,77 @@
 "use client"
-import { X } from "lucide-react"
+
+import * as React from "react"
 import { cn } from "../../lib/utils"
 
-interface ToastProps {
-  title: string
-  description: string
+export interface ToastProps {
+  title?: React.ReactNode
+  description?: React.ReactNode
+  action?: React.ReactNode
   variant?: "default" | "destructive"
-  onClose?: () => void
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
-export function Toast({ title, description, variant = "default", onClose }: ToastProps) {
-  return (
+export type ToastActionElement = React.ReactElement
+
+export const ToastProvider = ({ children }: { children: React.ReactNode }) => {
+  return <>{children}</>
+}
+
+export const ToastViewport = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => (
     <div
+      ref={ref}
       className={cn(
-        "fixed bottom-4 right-4 z-50 max-w-md rounded-lg shadow-lg p-4 border animate-in slide-in-from-bottom-5",
-        variant === "destructive" ? "bg-red-600 border-red-700 text-white" : "bg-slate-800 border-slate-700 text-white",
+        "fixed top-0 z-[100] flex max-h-screen w-full flex-col-reverse p-4 sm:bottom-0 sm:right-0 sm:top-auto sm:flex-col md:max-w-[420px]",
+        className,
       )}
-    >
-      <div className="flex justify-between items-start">
-        <div>
-          <h3 className="font-medium">{title}</h3>
-          <p className={cn("text-sm", variant === "destructive" ? "text-white/90" : "text-slate-300")}>{description}</p>
-        </div>
-        {onClose && (
-          <button onClick={onClose} className="ml-4 text-white/70 hover:text-white">
-            <X className="h-4 w-4" />
-          </button>
-        )}
-      </div>
-    </div>
-  )
-}
+      {...props}
+    />
+  ),
+)
+ToastViewport.displayName = "ToastViewport"
 
-export function ToastContainer({ toasts }: { toasts: any[] }) {
-  return (
-    <div className="fixed bottom-0 right-0 z-50 p-4 space-y-2">
-      {toasts.map((toast, index) => (
-        <Toast key={index} {...toast} />
-      ))}
-    </div>
-  )
-}
+export const Toast = React.forwardRef<HTMLDivElement, ToastProps & React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, variant = "default", ...props }, ref) => {
+    return (
+      <div
+        ref={ref}
+        className={cn(
+          "group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-md border p-6 pr-8 shadow-lg transition-all",
+          variant === "destructive"
+            ? "border-red-600 bg-red-600 text-white"
+            : "border-slate-700 bg-slate-800 text-white",
+          className,
+        )}
+        {...props}
+      />
+    )
+  },
+)
+Toast.displayName = "Toast"
+
+export const ToastTitle = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLHeadingElement>>(
+  ({ className, ...props }, ref) => <div ref={ref} className={cn("text-sm font-semibold", className)} {...props} />,
+)
+ToastTitle.displayName = "ToastTitle"
+
+export const ToastDescription = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => <div ref={ref} className={cn("text-sm opacity-90", className)} {...props} />,
+)
+ToastDescription.displayName = "ToastDescription"
+
+export const ToastClose = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement>>(
+  ({ className, ...props }, ref) => (
+    <button
+      ref={ref}
+      className={cn(
+        "absolute right-2 top-2 rounded-md p-1 text-foreground/50 opacity-0 transition-opacity hover:text-foreground focus:opacity-100 focus:outline-none group-hover:opacity-100",
+        className,
+      )}
+      toast-close=""
+      {...props}
+    />
+  ),
+)
+ToastClose.displayName = "ToastClose"
