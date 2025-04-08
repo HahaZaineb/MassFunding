@@ -1,4 +1,3 @@
-"use client"
 
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
@@ -8,6 +7,7 @@ import { Button } from "./components/ui/button"
 import { ArrowLeft, ArrowRight } from "lucide-react"
 import "@massalabs/react-ui-kit/src/global.css"
 import { LoadingSpinner } from "./components/ui/loading-spinner"
+import { Toaster } from "./components/ui/toaster"
 
 function App() {
   const [showRequestForm, setShowRequestForm] = useState(false)
@@ -55,8 +55,8 @@ function App() {
             {!showFundForm && (
               <motion.div
                 className="bg-slate-800 rounded-xl p-6 shadow-lg border border-slate-700 relative overflow-hidden"
-                initial={{ x: showRequestForm ? 400 : 0, opacity: showRequestForm ? 0.5 : 1 }}
-                animate={{ x: showRequestForm ? 400 : 0, opacity: 1 }}
+                initial={{ x: showRequestForm ? -400 : 0, opacity: showRequestForm ? 0.5 : 1 }}
+                animate={{ x: showRequestForm ? -400 : 0, opacity: 1 }}
                 exit={{ x: -400, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 100, damping: 20 }}
               >
@@ -124,9 +124,9 @@ function App() {
       <footer className="container mx-auto py-6 mt-12 text-center text-slate-400 text-sm">
         <p>MassFunding - Powered by Massa Blockchain</p>
       </footer>
+      <Toaster />
     </div>
   )
 }
 
 export default App
-

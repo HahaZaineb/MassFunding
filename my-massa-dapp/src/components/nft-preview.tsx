@@ -6,6 +6,7 @@ import { ArrowLeft, Download, ExternalLink } from "lucide-react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card"
 import { Badge } from "./ui/badge"
 import confetti from "canvas-confetti"
+import { motion } from "framer-motion"
 
 interface NFTPreviewProps {
   projectId: string
@@ -31,9 +32,13 @@ export function NFTPreview({ projectId, amount, nftId, onBack, project }: NFTPre
     // Trigger confetti animation when NFT is generated
     const triggerConfetti = () => {
       confetti({
-        particleCount: 100,
-        spread: 70,
+        particleCount: 150,
+        spread: 90,
         origin: { y: 0.6 },
+        colors: ["#10b981", "#3b82f6", "#ffffff"],
+        startVelocity: 30,
+        gravity: 0.8,
+        scalar: 1.2,
       })
     }
 
@@ -134,54 +139,60 @@ export function NFTPreview({ projectId, amount, nftId, onBack, project }: NFTPre
         <p className="text-slate-300">Your NFT has been generated as proof of your contribution</p>
       </div>
 
-      <Card className="max-w-md mx-auto bg-gradient-to-br from-slate-800 to-slate-900 border-slate-600 overflow-hidden">
-        <div className="relative pt-4">
-          <div className="absolute top-4 right-4">
-            <Badge variant="outline" className="bg-slate-700 border-slate-500">
-              #{generatedNftId}
-            </Badge>
-          </div>
-          <div className="h-48 mx-auto flex items-center justify-center">
-            <div className="w-32 h-32 rounded-full bg-gradient-to-br from-green-500 to-blue-600 flex items-center justify-center">
-              <span className="text-4xl font-bold text-white">{amount}</span>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5, type: "spring", stiffness: 100 }}
+      >
+        <Card className="max-w-md mx-auto bg-gradient-to-br from-slate-800 to-slate-900 border-slate-600 overflow-hidden">
+          <div className="relative pt-4">
+            <div className="absolute top-4 right-4">
+              <Badge variant="outline" className="bg-slate-700 border-slate-500">
+                #{generatedNftId}
+              </Badge>
+            </div>
+            <div className="h-48 mx-auto flex items-center justify-center">
+              <div className="w-32 h-32 rounded-full bg-gradient-to-br from-green-500 to-blue-600 flex items-center justify-center">
+                <span className="text-4xl font-bold text-white">{amount}</span>
+              </div>
             </div>
           </div>
-        </div>
-        <CardHeader>
-          <CardTitle className="text-center text-white">{project.name} Contributor</CardTitle>
-          <CardDescription className="text-center text-slate-300">{project.category} Project</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="bg-slate-800 p-4 rounded-md space-y-2 text-sm text-white">
-            <div className="flex justify-between">
-              <span>Donation Amount:</span>
-              <span>{amount} MAS</span>
+          <CardHeader>
+            <CardTitle className="text-center text-white">{project.name} Contributor</CardTitle>
+            <CardDescription className="text-center text-slate-300">{project.category} Project</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="bg-slate-800 p-4 rounded-md space-y-2 text-sm text-white">
+              <div className="flex justify-between">
+                <span>Donation Amount:</span>
+                <span>{amount} MAS</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Project ID:</span>
+                <span>{projectId}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Date:</span>
+                <span>{new Date().toLocaleDateString()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Voting Power:</span>
+                <span>{amount} MAS</span>
+              </div>
             </div>
-            <div className="flex justify-between">
-              <span>Project ID:</span>
-              <span>{projectId}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Date:</span>
-              <span>{new Date().toLocaleDateString()}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Voting Power:</span>
-              <span>{amount} MAS</span>
-            </div>
-          </div>
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button variant="outline" size="sm" className="text-xs text-white" onClick={downloadNFT}>
-            <Download className="h-3 w-3 mr-1" />
-            Download
-          </Button>
-          <Button variant="outline" size="sm" className="text-xs text-white" onClick={viewOnExplorer}>
-            <ExternalLink className="h-3 w-3 mr-1" />
-            View on Explorer
-          </Button>
-        </CardFooter>
-      </Card>
+          </CardContent>
+          <CardFooter className="flex justify-between">
+            <Button variant="outline" size="sm" className="text-xs text-white" onClick={downloadNFT}>
+              <Download className="h-3 w-3 mr-1" />
+              Download
+            </Button>
+            <Button variant="outline" size="sm" className="text-xs text-white" onClick={viewOnExplorer}>
+              <ExternalLink className="h-3 w-3 mr-1" />
+              View on Explorer
+            </Button>
+          </CardFooter>
+        </Card>
+      </motion.div>
 
       <div className="text-center mt-6 text-sm text-slate-400">
         <p>This NFT represents your contribution and voting rights.</p>

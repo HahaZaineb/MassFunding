@@ -4,6 +4,8 @@ import type { NFTMetadata } from "./types"
 // Smart contract addresses - replace with your actual addresses
 const NFT_CONTRACT_ADDRESS =
   import.meta.env.VITE_NFT_CONTRACT_ADDRESS || "AS12gqgHdGxAft1hBwqxHy7UqRpzrCuiotTJsf5qgJehjHXDJynBw"
+const VOTING_CONTRACT_ADDRESS =
+  import.meta.env.VITE_VOTING_CONTRACT_ADDRESS || "AS12gqgHdGxAft1hBwqxHy7UqRpzrCuiotTJsf5qgJehjHXDJynBw"
 
 class MassaService {
   // Create a vesting schedule
@@ -49,6 +51,19 @@ class MassaService {
       if (!NFT_CONTRACT_ADDRESS || NFT_CONTRACT_ADDRESS.startsWith("AS12gqgHdGxAft")) {
         console.log("Using mock NFT ID (no valid contract address)")
         const mockNftId = `MF-${Date.now().toString(36)}`
+
+        // Set voting power for the user
+        try {
+          await this.setVotingPower(
+            connectedAccount,
+            connectedAccount.toString(),
+            metadata.projectId,
+            metadata.donationAmount,
+          )
+        } catch (err) {
+          console.error("Error setting voting power:", err)
+        }
+
         return mockNftId
       }
 
@@ -80,7 +95,7 @@ class MassaService {
         for (const event of events) {
           if (event.data.includes("NFT minted:")) {
             const parts = event.data.split(" ")
-            nftId = parts[2] // Extract the NFT ID
+            nftId = parts[2] // Extract
             break
           }
         }
@@ -89,6 +104,18 @@ class MassaService {
           // Fallback if we can't extract from events
           nftId = `MF-${Date.now().toString(36)}`
           console.log("Using fallback NFT ID:", nftId)
+        }
+
+        // Set voting power for the user
+        try {
+          await this.setVotingPower(
+            connectedAccount,
+            connectedAccount.toString(),
+            metadata.projectId,
+            metadata.donationAmount,
+          )
+        } catch (err) {
+          console.error("Error setting voting power:", err)
         }
 
         return nftId
@@ -101,7 +128,71 @@ class MassaService {
       // For development/testing, return a mock NFT ID even if there's an error
       const mockNftId = `MF-${Date.now().toString(36)}`
       console.log("Using mock NFT ID due to error:", mockNftId)
+
+      // Try to set voting power anyway
+      try {
+        await this.setVotingPower(
+          connectedAccount,
+          connectedAccount.toString(),
+          metadata.projectId,
+          metadata.donationAmount,
+        )
+      } catch (err) {
+        console.error("Error setting voting power:", err)
+      }
+
       return mockNftId
+    }
+  }
+
+  // Set voting power for a user
+  async setVotingPower(
+    connectedAccount: any,
+    voterAddress: string,
+    projectId: string,
+    votingPower: number,
+  ): Promise<boolean> {
+    if (!connectedAccount) {
+      throw new Error("No connected account")
+    }
+
+    try {
+      console.log(`Setting voting power for ${voterAddress} on project ${projectId}: ${votingPower}`)
+
+      const contract = new SmartContract(connectedAccount, VOTING_CONTRACT_ADDRESS)
+
+      const args = new Args()
+        .addString(voterAddress)
+        .addString(projectId)
+        .addU64(BigInt(Math.floor(votingPower)))
+
+      console.log("Calling contract.call with args:", args)
+      const response = await contract.call("setVotingPower", args, {
+        coins: Mas.fromString("0.01"), // Small fee
+      })
+
+      console.log("Set voting power response:", response)
+
+      const status = await response.waitSpeculativeExecution()
+      console.log("Set voting power status:", status)
+
+      if (status === OperationStatus.SpeculativeSuccess) {
+        console.log("Set voting power successful")
+        return true
+      } else {
+        console.error("Set voting power failed with status:", status)
+        return false
+      }
+    } catch (error) {
+      console.error("Failed to set voting power:", error)
+
+      // For development/testing, simulate success
+      if (process.env.NODE_ENV !== "production") {
+        console.log("Simulating successful voting power setting in development mode")
+        return true
+      }
+
+      return false
     }
   }
 
@@ -115,7 +206,13 @@ class MassaService {
     category: string,
   ): Promise<{ operationId: string; nftId: string }> {
     console.log("donateToProject called with:", {
-      connectedAccount: connectedAccount ? "connected" : "not connected",
+      connectedAccount: connectedAccount
+        ? typeof connectedAccount === "string"
+          ? connectedAccount
+          : connectedAccount && connectedAccount.address
+            ? connectedAccount.address
+            : "Wallet"
+        : "not connected",
       projectId,
       projectName,
       beneficiary,
