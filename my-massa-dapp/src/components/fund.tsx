@@ -10,7 +10,6 @@ import { Progress } from "./ui/progress"
 import { Badge } from "./ui/badge"
 import { DonationForm } from "./donation-form"
 import { NFTPreview } from "./nft-preview"
-import { Voting } from "./voting"
 import { ProjectUpdates } from "./project-updates"
 import { LoadingSpinner } from "./ui/loading-spinner"
 import { Skeleton } from "./ui/skeleton"
@@ -71,7 +70,7 @@ export default function Fund({ onBack }: FundProps) {
   const [donationAmount, setDonationAmount] = useState("")
   const [nftId, setNftId] = useState("")
   const [isLoading, setIsLoading] = useState(true)
-  const [currentView, setCurrentView] = useState<"projects" | "donation" | "nft" | "updates" | "voting">("projects")
+  const [currentView, setCurrentView] = useState<"projects" | "donation" | "nft" | "updates">("projects")
   const [expandedProjectId, setExpandedProjectId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -104,7 +103,7 @@ export default function Fund({ onBack }: FundProps) {
     setCurrentView("donation")
   }
 
-  const handleDonationSubmit = (amount: string, generatedNftId: string) => {
+  const handleDonationSubmit = (amount: string, generatedNftId = "") => {
     console.log("handleDonationSubmit called with:", amount, generatedNftId)
     setDonationAmount(amount)
     setNftId(generatedNftId)
@@ -135,12 +134,6 @@ export default function Fund({ onBack }: FundProps) {
     console.log("handleViewUpdates called with projectId:", projectId)
     setSelectedProject(projectId)
     setCurrentView("updates")
-  }
-
-  const handleViewVoting = (projectId: string) => {
-    console.log("handleViewVoting called with projectId:", projectId)
-    setSelectedProject(projectId)
-    setCurrentView("voting")
   }
 
   const toggleProjectExpansion = (projectId: string) => {
@@ -204,7 +197,7 @@ export default function Fund({ onBack }: FundProps) {
           >
             <DonationForm
               project={projects.find((p) => p.id === selectedProject) || projects[0]}
-              onSubmit={handleDonationSubmit}
+              onSubmit={(amount) => handleDonationSubmit(amount, "")}
               onBack={handleBackToProjects}
             />
           </motion.div>
@@ -236,34 +229,6 @@ export default function Fund({ onBack }: FundProps) {
           </motion.div>
         )}
 
-        {currentView === "voting" && selectedProject && (
-          <motion.div
-            key="voting-view"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-          >
-            <div className="space-y-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleBackToProjects}
-                className="flex items-center text-sm text-white"
-              >
-                <ArrowLeft className="h-4 w-4 mr-1" />
-                Back to projects
-              </Button>
-              <Voting
-                projectId={selectedProject}
-                title={`Vote on ${projects.find((p) => p.id === selectedProject)?.name || "Project"}`}
-                description="Cast your vote to influence the future of this project"
-                deadline={new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()}
-              />
-            </div>
-          </motion.div>
-        )}
-
         {currentView === "projects" && (
           <motion.div
             key="projects-view"
@@ -286,7 +251,6 @@ export default function Fund({ onBack }: FundProps) {
                     project={project}
                     onDonate={() => handleDonate(project.id)}
                     onViewUpdates={() => handleViewUpdates(project.id)}
-                    onViewVoting={() => handleViewVoting(project.id)}
                     isExpanded={expandedProjectId === project.id}
                     onToggleExpand={() => toggleProjectExpansion(project.id)}
                   />
@@ -301,7 +265,6 @@ export default function Fund({ onBack }: FundProps) {
                       project={project}
                       onDonate={() => handleDonate(project.id)}
                       onViewUpdates={() => handleViewUpdates(project.id)}
-                      onViewVoting={() => handleViewVoting(project.id)}
                       isExpanded={expandedProjectId === project.id}
                       onToggleExpand={() => toggleProjectExpansion(project.id)}
                     />
@@ -316,7 +279,6 @@ export default function Fund({ onBack }: FundProps) {
                       project={project}
                       onDonate={() => handleDonate(project.id)}
                       onViewUpdates={() => handleViewUpdates(project.id)}
-                      onViewVoting={() => handleViewVoting(project.id)}
                       isExpanded={expandedProjectId === project.id}
                       onToggleExpand={() => toggleProjectExpansion(project.id)}
                     />
@@ -331,7 +293,6 @@ export default function Fund({ onBack }: FundProps) {
                       project={project}
                       onDonate={() => handleDonate(project.id)}
                       onViewUpdates={() => handleViewUpdates(project.id)}
-                      onViewVoting={() => handleViewVoting(project.id)}
                       isExpanded={expandedProjectId === project.id}
                       onToggleExpand={() => toggleProjectExpansion(project.id)}
                     />
@@ -349,12 +310,11 @@ interface ProjectCardProps {
   project: ProjectData
   onDonate: () => void
   onViewUpdates: () => void
-  onViewVoting: () => void
   isExpanded: boolean
   onToggleExpand: () => void
 }
 
-function ProjectCard({ project, onDonate, onViewUpdates, onViewVoting, isExpanded, onToggleExpand }: ProjectCardProps) {
+function ProjectCard({ project, onDonate, onViewUpdates, isExpanded, onToggleExpand }: ProjectCardProps) {
   const percentFunded = (project.amountRaised / project.amountNeeded) * 100
 
   return (
@@ -430,9 +390,6 @@ function ProjectCard({ project, onDonate, onViewUpdates, onViewVoting, isExpande
                 <div className="grid grid-cols-2 gap-2">
                   <Button variant="outline" size="sm" onClick={onViewUpdates} className="text-white">
                     View Updates
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={onViewVoting} className="text-white">
-                    Vote on Project
                   </Button>
                 </div>
               </motion.div>
