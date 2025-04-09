@@ -1,7 +1,7 @@
-
+"use client"
 
 import { createContext, useContext, useState, type ReactNode } from "react"
-import { ToastContainer } from "./toast"
+import { Toast } from "./toast"
 
 type ToastVariant = "default" | "destructive"
 
@@ -47,12 +47,22 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ toast, dismissToast }}>
       {children}
-      <ToastContainer
-        toasts={toasts.map((toast) => ({
-          ...toast,
-          onClose: () => dismissToast(toast.id),
-        }))}
-      />
+      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
+        {toasts.map((toast) => (
+          <Toast key={toast.id} variant={toast.variant} className="animate-in slide-in-from-right-full">
+            <div className="flex flex-col gap-1">
+              <div className="text-sm font-semibold">{toast.title}</div>
+              <div className="text-sm opacity-90">{toast.description}</div>
+            </div>
+            <button
+              onClick={() => dismissToast(toast.id)}
+              className="absolute right-2 top-2 rounded-md p-1 text-foreground/50 opacity-70 transition-opacity hover:opacity-100"
+            >
+              ✕
+            </button>
+          </Toast>
+        ))}
+      </div>
     </ToastContext.Provider>
   )
 }
