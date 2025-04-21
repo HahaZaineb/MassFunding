@@ -25,9 +25,9 @@ export default function Home() {
             {!showFundForm && (
               <motion.div
                 className="bg-slate-800 rounded-xl p-6 shadow-lg border border-slate-700 relative overflow-hidden"
-                initial={{ x: showRequestForm ? -500 : 0 }}
-                animate={{ x: showRequestForm ? -500 : 0 }}
-                exit={{ x: -500 }}
+                initial={{ x: showRequestForm ? 400 : 0 }}
+                animate={{ x: showRequestForm ? 400 : 0 }}
+                exit={{ x: -400 }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
               >
                 {!showRequestForm ? (
@@ -60,9 +60,9 @@ export default function Home() {
             {!showRequestForm && (
               <motion.div
                 className="bg-slate-800 rounded-xl p-6 shadow-lg border border-slate-700 relative overflow-hidden"
-                initial={{ x: showFundForm ? 500 : 0 }}
-                animate={{ x: showFundForm ? 500 : 0 }}
-                exit={{ x: 500 }}
+                initial={{ x: showFundForm ? 400 : 0 }}
+                animate={{ x: showFundForm ? 400 : 0 }}
+                exit={{ x: 400 }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
               >
                 {!showFundForm ? (
