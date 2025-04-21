@@ -1,8 +1,8 @@
 import type React from "react"
 import "./globals.css"
 import type { Metadata } from "next"
-import { ThemeProvider } from "@/components/theme-provider"
-import { Toaster } from "@/components/ui/toaster"
+import { ThemeProvider } from "../components/theme-provider"
+import { Toaster } from "../components/ui/toaster"
 
 export const metadata: Metadata = {
   title: "MassFunding - Crowdfunding on Massa Blockchain",

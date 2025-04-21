@@ -7,7 +7,7 @@ import Fund from "./components/fund"
 import { Button } from "./components/ui/button"
 import { ArrowLeft, ArrowRight } from "lucide-react"
 import "@massalabs/react-ui-kit/src/global.css"
-import { LoadingSpinner } from "./components/ui/loading-spinner"
+import { LoadingSpinner } from "./src/components/ui/loading-spinner"
 
 function App() {
   const [showRequestForm, setShowRequestForm] = useState(false)
@@ -55,8 +55,8 @@ function App() {
             {!showFundForm && (
               <motion.div
                 className="bg-slate-800 rounded-xl p-6 shadow-lg border border-slate-700 relative overflow-hidden"
-                initial={{ x: showRequestForm ? -400 : 0, opacity: showRequestForm ? 0.5 : 1 }}
-                animate={{ x: showRequestForm ? -400 : 0, opacity: 1 }}
+                initial={{ x: showRequestForm ? 400 : 0, opacity: showRequestForm ? 0.5 : 1 }}
+                animate={{ x: showRequestForm ? 400 : 0, opacity: 1 }}
                 exit={{ x: -400, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 100, damping: 20 }}
               >

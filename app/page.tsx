@@ -2,9 +2,9 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import RequestFunding from "@/components/request-funding"
-import Fund from "@/components/fund"
-import { Button } from "@/components/ui/button"
+import RequestFunding from "../components/request-funding"
+import Fund from "../components/fund"
+import { Button } from "../components/ui/button"
 import { ArrowLeft, ArrowRight } from "lucide-react"
 
 export default function Home() {
