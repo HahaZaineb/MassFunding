@@ -1,5 +1,5 @@
 {
-  "name": "massfunding",
+  "name": "my-massa-dapp",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -10,7 +10,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@massalabs/react-ui-kit": "^0.1.0",
     "@radix-ui/react-label": "^2.0.2",
     "@radix-ui/react-progress": "^1.0.3",
     "@radix-ui/react-select": "^2.0.0",

@@ -1,19 +1,25 @@
 {
-    "compilerOptions": {
-        "esModuleInterop": true,
-        "module": "es2022",
-        "preserveConstEnums": true,
-        "moduleResolution": "Node",
-        "strict": true,
-        "sourceMap": true,
-        "target": "es2022",
-        "types": ["node"]
-    },
-    "include": ["./src/**/*.ts"], // Update the include path to match the actual location of your TypeScript files
-    "exclude": ["node_modules"],
-    "experimentalDecorators": true,
-    "ts-node": {
-        "esm": true,
-        "experimentalSpecifierResolution": "node"
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noFallthroughCasesInSwitch": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
     }
+  },
+  "include": ["src"],
+  "references": [{ "path": "./tsconfig.node.json" }]
 }

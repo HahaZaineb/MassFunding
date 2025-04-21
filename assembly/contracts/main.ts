@@ -6,7 +6,7 @@ import {
   deferredCallRegister,
   findCheapestSlot,
 } from "@massalabs/massa-as-sdk"
-import { Args, Serializable, Result, bytesToString } from "@massalabs/as-types"
+import { Args, type Serializable, Result, bytesToString } from "@massalabs/as-types"
 import { cancelCall, NEXT_CALL_ID_KEY, registerCall, TASK_COUNT_KEY } from "../internals"
 import { MRC20Wrapper } from "@massalabs/sc-standards/assembly/contracts/MRC20/wrapper"
 import { u256 } from "as-bignum/assembly"
@@ -280,8 +280,7 @@ export function releaseVestedTokens(binArgs: StaticArray<u8>): void {
 export function getNextCallId(_: StaticArray<u8>): StaticArray<u8> {
   assert(Storage.has(NEXT_CALL_ID_KEY), "No deferred call planned")
   generateEvent("Next deferred call ID retrieved")
-  return stringToBytes(Storage.get(NEXT_CALL_ID_KEY))
-
+  return Storage.get(NEXT_CALL_ID_KEY)
 }
 
 export function stop(_: StaticArray<u8>): void {
@@ -370,4 +369,3 @@ function stringToBytes(s: string): StaticArray<u8> {
   }
   return bytes
 }
-
