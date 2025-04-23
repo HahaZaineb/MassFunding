@@ -1,4 +1,4 @@
-import type React from "react"
+import React from "react"
 import "./globals.css"
 import type { Metadata } from "next"
 import { ThemeProvider } from "../components/theme-provider"

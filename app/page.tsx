@@ -1,4 +1,5 @@
 import { useState } from "react"
+import React from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import RequestFunding from "../components/request-funding"
 import Fund from "../components/fund"
