@@ -1,7 +1,5 @@
-"use client"
-
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "./ui/button"
 import { Input } from "./ui/input"
 import { Label } from "./ui/label"
@@ -9,6 +7,12 @@ import { ArrowLeft, Info } from "lucide-react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card"
 import { Progress } from "./ui/progress"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip"
+import {
+  ConnectMassaWallet,
+  useAccountStore,
+} from '@massalabs/react-ui-kit';
+
+
 
 interface DonationFormProps {
   project: {
@@ -30,16 +34,26 @@ interface DonationFormProps {
 export function DonationForm({ project, onSubmit, onBack }: DonationFormProps) {
   const [amount, setAmount] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isConnected, setIsConnected] = useState(false)
-
+  //const [isConnected, setIsConnected] = useState(false)
+  const { connectedAccount } = useAccountStore();  
   const percentFunded = (project.amountRaised / project.amountNeeded) * 100
+  const [isWalletConnected, setIsWalletConnected] = useState(!!connectedAccount)
+
+  useEffect(() => {
+    setIsWalletConnected(!!connectedAccount)
+    if (connectedAccount) {
+      console.log("Wallet connected:")
+    } else {
+      console.log("Wallet not connected")
+    }
+  }, [connectedAccount])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!isConnected) {
-      alert("Please connect your wallet first")
-      return
+    if (!connectedAccount) {
+      console.error('No connected account');
+      return;
     }
 
     if (!amount || Number.parseFloat(amount) <= 0) {
@@ -70,9 +84,9 @@ export function DonationForm({ project, onSubmit, onBack }: DonationFormProps) {
     }
   }
 
-  const handleConnect = () => {
+  /*const handleConnect = () => {
     setIsConnected(true)
-  }
+  }*/
 
   return (
     <div className="space-y-6 text-white">
@@ -149,16 +163,10 @@ export function DonationForm({ project, onSubmit, onBack }: DonationFormProps) {
               </p>
             </div>
 
-            <div className="pt-2">
-              {!isConnected ? (
-                <Button
-                  variant="outline"
-                  className="w-full bg-slate-700 border-slate-600 hover:bg-slate-600"
-                  onClick={handleConnect}
-                >
-                  Connect Wallet
-                </Button>
-              ) : (
+            
+            
+            <div className="theme-light">
+                <ConnectMassaWallet />
                 <Button
                   type="submit"
                   className="w-full bg-green-600 hover:bg-green-700 text-white mt-4"
@@ -166,8 +174,8 @@ export function DonationForm({ project, onSubmit, onBack }: DonationFormProps) {
                 >
                   {isSubmitting ? "Processing..." : `Donate ${amount || "0"} MAS`}
                 </Button>
-              )}
-            </div>
+              
+              </div>
           </form>
         </CardContent>
         <CardFooter className="text-xs text-slate-400">

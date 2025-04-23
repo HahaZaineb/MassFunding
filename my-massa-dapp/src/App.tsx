@@ -9,8 +9,7 @@ import RequestFunding from "./components/request-funding"
 import Fund from "./components/fund"
 import { Button } from "./components/ui/button"
 import { ArrowLeft, ArrowRight } from "lucide-react"
-// Remove any imports that might be causing issues
-// import "@massalabs/react-ui-kit/src/global.css"
+import "@massalabs/react-ui-kit/src/global.css"
 
 // Add a simple error boundary component
 function ErrorBoundary({ children }: { children: React.ReactNode }) {
