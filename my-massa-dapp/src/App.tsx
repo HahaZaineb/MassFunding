@@ -1,59 +1,19 @@
-
-import { Toaster } from "./components/ui/sonner"
-
-import type React from "react"
-
 import { useState, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import RequestFunding from "./components/request-funding"
-import Fund from "./components/fund"
-import { Button } from "./components/ui/button"
-import { ArrowLeft, ArrowRight } from "lucide-react"
-import "@massalabs/react-ui-kit/src/global.css"
-
-// Add a simple error boundary component
-function ErrorBoundary({ children }: { children: React.ReactNode }) {
-  const [hasError, setHasError] = useState(false)
-  const [error, setError] = useState<Error | null>(null)
-
-  useEffect(() => {
-    const errorHandler = (error: ErrorEvent) => {
-      console.error("Caught error:", error)
-      setHasError(true)
-      setError(error.error)
-    }
-
-    window.addEventListener("error", errorHandler)
-    return () => window.removeEventListener("error", errorHandler)
-  }, [])
-
-  if (hasError) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-white flex items-center justify-center">
-        <div className="text-center p-8 bg-red-900/50 rounded-lg max-w-2xl">
-          <h2 className="text-2xl font-bold mb-4">Something went wrong</h2>
-          <p className="mb-4">An error occurred while rendering the application:</p>
-          <pre className="bg-black/30 p-4 rounded overflow-auto text-left text-sm">
-            {error?.message || "Unknown error"}
-          </pre>
-          <button
-            className="mt-4 px-4 py-2 bg-red-600 rounded hover:bg-red-700"
-            onClick={() => window.location.reload()}
-          >
-            Reload Page
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  return <>{children}</>
-}
+import { ThemeProvider } from "@/components/theme-provider"
+import Fund from "@/components/fund"
+import { Navbar } from "@/components/layout/navbar"
+import { Footer } from "@/components/layout/footer"
+import { LandingPage } from "@/components/landing-page"
+import { RequestFunding } from "@/components/request-funding"
+import { ProjectProvider } from "@/context/project-context"
+import { NavigationProvider } from "@/hooks/use-navigate"
+import MassaLogo from "@/components/layout/MassaLogo"
 
 function App() {
-  const [showRequestForm, setShowRequestForm] = useState(false)
-  const [showFundForm, setShowFundForm] = useState(false)
+  const [currentPage, setCurrentPage] = useState<"home" | "request" | "fund" | "about" | "projects">("home")
   const [isLoading, setIsLoading] = useState(true)
+  const [hoverLeft, setHoverLeft] = useState(false)
+  const [hoverRight, setHoverRight] = useState(false)
 
   // Add dark mode class to document
   useEffect(() => {
@@ -70,111 +30,122 @@ function App() {
     }
   }, [])
 
+  const handleNavigate = (page: "home" | "request" | "fund" | "about" | "projects") => {
+    setCurrentPage(page)
+  }
+
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-white flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-[#18181b]">
         <div className="text-center">
-          <div className="animate-spin h-12 w-12 border-4 border-t-transparent border-white rounded-full mx-auto mb-4"></div>
-          <h2 className="mt-4 text-xl font-bold">Loading MassFunding</h2>
-          <p className="text-slate-400 mt-2">Connecting to Massa blockchain...</p>
+          <div className="flex justify-center mb-6">
+            <MassaLogo size={64} />
+          </div>
+          <h2 className="mt-4 text-2xl font-bold text-[#ef3e24]">Loading MassFunding</h2>
+          <p className="text-slate-500 dark:text-slate-300 mt-2">Connecting to Massa blockchain...</p>
         </div>
       </div>
     )
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-white">
-      <header className="container mx-auto py-6">
-        <h1 className="text-3xl font-bold text-center">MassFunding</h1>
-        <p className="text-center text-slate-300 mt-2">Crowdfunding on Massa with deferred calls and vesting</p>
-      </header>
-
-      <main className="container mx-auto mt-8 px-4 md:px-0">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative min-h-[70vh]">
-          {/* Request Funding Section */}
-          <AnimatePresence>
-            {!showFundForm && (
-              <motion.div
-                className="bg-slate-800 rounded-xl p-6 shadow-lg border border-slate-700 relative overflow-hidden"
-                initial={{ x: showRequestForm ? 400 : 0, opacity: showRequestForm ? 0.5 : 1 }}
-                animate={{ x: showRequestForm ? 400 : 0, opacity: 1 }}
-                exit={{ x: -400, opacity: 0 }}
-                transition={{ type: "spring", stiffness: 100, damping: 20 }}
-              >
-                {!showRequestForm ? (
-                  <div className="flex flex-col items-center justify-center h-full space-y-6 py-12">
-                    <div className="w-24 h-24 bg-blue-500 rounded-full flex items-center justify-center">
-                      <ArrowRight size={40} />
-                    </div>
-                    <h2 className="text-2xl font-bold">Request Funding</h2>
-                    <p className="text-center text-slate-300 max-w-md">
-                      Are you an enterprise or association looking for funding? Request funds and specify your vesting
-                      schedule.
-                    </p>
-                    <Button
-                      size="lg"
-                      className="mt-4 bg-blue-600 hover:bg-blue-700"
-                      onClick={() => setShowRequestForm(true)}
-                    >
-                      Request Funding
-                    </Button>
-                  </div>
-                ) : (
-                  <RequestFunding onBack={() => setShowRequestForm(false)} />
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Fund Section */}
-          <AnimatePresence>
-            {!showRequestForm && (
-              <motion.div
-                className="bg-slate-800 rounded-xl p-6 shadow-lg border border-slate-700 relative overflow-hidden"
-                initial={{ x: showFundForm ? 400 : 0, opacity: showFundForm ? 0.5 : 1 }}
-                animate={{ x: showFundForm ? 400 : 0, opacity: 1 }}
-                exit={{ x: 400, opacity: 0 }}
-                transition={{ type: "spring", stiffness: 100, damping: 20 }}
-              >
-                {!showFundForm ? (
-                  <div className="flex flex-col items-center justify-center h-full space-y-6 py-12">
-                    <div className="w-24 h-24 bg-green-500 rounded-full flex items-center justify-center">
-                      <ArrowLeft size={40} />
-                    </div>
-                    <h2 className="text-2xl font-bold">Fund Projects</h2>
-                    <p className="text-center text-slate-300 max-w-md">
-                      Browse projects and donate MAS tokens. Receive an NFT as proof of your contribution.
-                    </p>
-                    <Button
-                      size="lg"
-                      className="mt-4 bg-green-600 hover:bg-green-700"
-                      onClick={() => setShowFundForm(true)}
-                    >
-                      Fund Projects
-                    </Button>
-                  </div>
-                ) : (
-                  <Fund onBack={() => setShowFundForm(false)} />
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
+  // Split-screen homepage
+  if (currentPage === "home") {
+    return (
+      <div className="min-h-screen flex flex-col md:flex-row">
+        {/* Request Funding Section */}
+        <div
+          className={`relative split-section ${'w-full md:w-1/2 h-1/2 md:h-screen'} bg-[#181f36] transition-all duration-500 cursor-pointer flex items-center justify-center`}
+          onMouseEnter={() => setHoverLeft(true)}
+          onMouseLeave={() => setHoverLeft(false)}
+          onClick={() => setCurrentPage("request")}
+          style={{
+            flex: hoverLeft && !hoverRight ? '0 0 55%' : hoverRight && !hoverLeft ? '0 0 45%' : '1',
+          }}
+        >
+          <div className={`split-text text-center text-5xl md:text-6xl font-extrabold transition-colors duration-300 ${hoverLeft ? 'text-[#00ff9d]' : 'text-white'}`}>
+            Request<br />Funding
+          </div>
+          <div className={`absolute bottom-10 text-center w-full transition-opacity duration-500 ${hoverLeft ? 'opacity-100' : 'opacity-0'}`}>
+            <p className="text-[#00ff9d] text-lg mb-4">Start your project journey here</p>
+            <div className="border-b border-[#00ff9d]/30 w-24 mx-auto"></div>
+          </div>
         </div>
-      </main>
+        {/* Fund Project Section */}
+        <div
+          className={`relative split-section ${'w-full md:w-1/2 h-1/2 md:h-screen'} bg-[#1a2340] transition-all duration-500 cursor-pointer flex items-center justify-center`}
+          onMouseEnter={() => setHoverRight(true)}
+          onMouseLeave={() => setHoverRight(false)}
+          onClick={() => setCurrentPage("fund")}
+          style={{
+            flex: hoverRight && !hoverLeft ? '0 0 55%' : hoverLeft && !hoverRight ? '0 0 45%' : '1',
+          }}
+        >
+          <div className={`split-text text-center text-5xl md:text-6xl font-extrabold transition-colors duration-300 ${hoverRight ? 'text-[#00ff9d]' : 'text-white'}`}>
+            Fund<br />Project
+          </div>
+          <div className={`absolute bottom-10 text-center w-full transition-opacity duration-500 ${hoverRight ? 'opacity-100' : 'opacity-0'}`}>
+            <p className="text-[#00ff9d] text-lg mb-4">Support innovative projects</p>
+            <div className="border-b border-[#00ff9d]/30 w-24 mx-auto"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-      <footer className="container mx-auto py-6 mt-12 text-center text-slate-400 text-sm">
-        <p>MassFunding - Powered by Massa Blockchain</p>
-      </footer>
-      <Toaster />
-    </div>
-  )
-}
+  const renderPage = () => {
+    switch (currentPage) {
+      case "request":
+        return <RequestFunding onBack={() => setCurrentPage("home")} />
+      case "fund":
+        return <Fund onBack={() => setCurrentPage("home")} />
+      case "projects":
+        return <Fund onBack={() => setCurrentPage("home")} />
+      case "about":
+        return (
+          <div className="container mx-auto py-12 px-4">
+            <h1 className="text-3xl font-bold mb-6 text-[#00ff9d]">About MassFunding</h1>
+            <div className="bg-[#1a1a2e] p-8 rounded-lg border border-[#00ff9d]/20">
+              <p className="text-lg text-slate-300 mb-6">
+                MassFunding is a decentralized crowdfunding platform built on the Massa blockchain.
+                It leverages Massa's unique features like deferred calls and vesting schedules to create
+                a transparent and accountable funding ecosystem.
+              </p>
+              <h2 className="text-2xl font-bold mb-4 text-white">Key Features</h2>
+              <ul className="list-disc list-inside text-slate-300 space-y-2">
+                <li>Transparent vesting schedules for project funding</li>
+                <li>NFT-based contribution receipts</li>
+                <li>Milestone-based fund release</li>
+                <li>Built on Massa's secure and efficient blockchain</li>
+                <li>Community governance through NFT voting</li>
+              </ul>
+            </div>
+          </div>
+        )
+      default:
+        return <LandingPage />
+    }
+  }
 
-// Wrap the App component with the error boundary
-export default function AppWithErrorBoundary() {
   return (
-    <ErrorBoundary>
-      <App />
-    </ErrorBoundary>
+    <ThemeProvider>
+      <ProjectProvider>
+        <NavigationProvider onNavigate={handleNavigate}>
+          <div className="min-h-screen bg-gradient-to-br from-[#1a1a2e] to-[#16213e] text-white flex flex-col">
+            <Navbar 
+              onNavigate={handleNavigate} 
+              currentPage={currentPage}
+            />
+            
+            <main className="flex-grow">
+              {renderPage()}
+            </main>
+
+            <Footer />
+          </div>
+        </NavigationProvider>
+      </ProjectProvider>
+    </ThemeProvider>
   )
 }
+
+export default App

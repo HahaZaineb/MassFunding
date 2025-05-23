@@ -1,81 +1,57 @@
-import type React from "react"
 import { useState, useEffect } from "react"
 import { Button } from "./ui/button"
 import { Input } from "./ui/input"
-import { Label } from "./ui/label"
-import { ArrowLeft, Info } from "lucide-react"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card"
-import { Progress } from "./ui/progress"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip"
-import {
-  ConnectMassaWallet,
-  useAccountStore,
-} from '@massalabs/react-ui-kit';
-
-
+import { ArrowLeft } from "lucide-react"
+import { useAccountStore, ConnectMassaWallet } from "@massalabs/react-ui-kit"
+import type { ProjectData } from "./types"
+import { NFTPreview } from "./nft-preview"
 
 interface DonationFormProps {
-  project: {
-    id: string
-    name: string
-    description: string
-    amountNeeded: number
-    amountRaised: number
-    beneficiary: string
-    lockPeriod: string
-    releaseInterval: string
-    releasePercentage: number
-    category: string
-  }
-  onSubmit: (amount: string, nftId: string) => void
+  project: ProjectData
   onBack: () => void
+  onSubmit: (amount: string, nftId: string) => void
 }
 
-export function DonationForm({ project, onSubmit, onBack }: DonationFormProps) {
+export function DonationForm({ project, onBack, onSubmit }: DonationFormProps) {
+  const { connectedAccount } = useAccountStore()
   const [amount, setAmount] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
-  //const [isConnected, setIsConnected] = useState(false)
-  const { connectedAccount } = useAccountStore();  
-  const percentFunded = (project.amountRaised / project.amountNeeded) * 100
   const [isWalletConnected, setIsWalletConnected] = useState(!!connectedAccount)
+  const [showNFT, setShowNFT] = useState(false)
+  const [nftId, setNftId] = useState("")
 
   useEffect(() => {
     setIsWalletConnected(!!connectedAccount)
-    if (connectedAccount) {
-      console.log("Wallet connected:")
-    } else {
-      console.log("Wallet not connected")
-    }
   }, [connectedAccount])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    if (!connectedAccount) {
-      console.error('No connected account');
-      return;
+    
+    if (!amount || Number.parseFloat(amount) <= 0) {
+      return
     }
 
-    if (!amount || Number.parseFloat(amount) <= 0) {
-      alert("Please enter a valid donation amount")
+    if (!connectedAccount) {
+      alert("Please connect your wallet first")
       return
     }
 
     setIsSubmitting(true)
 
     try {
-      console.log("Starting donation process...")
-      console.log("Project:", project)
-      console.log("Amount:", amount)
-
-      // Simulate donation process
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-
-      // Generate a mock NFT ID
+      // Mock successful donation for development purposes
+      // In production, this would call the actual blockchain
       const mockNftId = `MF-${Date.now().toString(36)}`
-
-      // Call onSubmit with the amount and NFT ID
+      
+      // Simulate blockchain delay
+      await new Promise(resolve => setTimeout(resolve, 1500))
+      
+      // Update project data locally
       onSubmit(amount, mockNftId)
+      
+      // Show NFT preview
+      setNftId(mockNftId)
+      setShowNFT(true)
     } catch (error) {
       console.error("Failed to donate:", error)
       alert("Failed to process donation. Please try again.")
@@ -84,88 +60,72 @@ export function DonationForm({ project, onSubmit, onBack }: DonationFormProps) {
     }
   }
 
-  /*const handleConnect = () => {
-    setIsConnected(true)
-  }*/
+  if (showNFT) {
+    return (
+      <NFTPreview 
+        projectId={project.id}
+        amount={amount}
+        nftId={nftId}
+        onBack={onBack}
+        project={project}
+      />
+    )
+  }
+
+  const percentFunded = Math.min(Math.round((project.amountRaised / project.goalAmount) * 100), 100)
 
   return (
-    <div className="space-y-6 text-white">
-      <Button variant="ghost" size="sm" onClick={onBack} className="flex items-center text-sm text-white">
+    <div className="max-w-lg mx-auto">
+      <Button 
+        variant="ghost" 
+        size="sm" 
+        onClick={onBack} 
+        className="flex items-center text-sm text-white mb-6"
+      >
         <ArrowLeft className="h-4 w-4 mr-1" />
         Back to projects
       </Button>
 
-      <Card className="bg-slate-700 border-slate-600 text-white">
-        <CardHeader>
-          <CardTitle>Donate to {project.name}</CardTitle>
-          <CardDescription className="text-slate-300">{project.description}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <div className="flex justify-between mb-1">
-              <span className="text-sm font-medium">
-                {project.amountRaised} / {project.amountNeeded} MAS
-              </span>
-              <span className="text-sm font-medium">{percentFunded.toFixed(0)}%</span>
-            </div>
-            <Progress value={percentFunded} className="h-2" />
-          </div>
-
-          <div className="bg-slate-800 p-4 rounded-md space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span>Beneficiary:</span>
-              <span className="font-mono text-xs truncate max-w-[200px]">{project.beneficiary}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Lock Period:</span>
-              <span>{project.lockPeriod}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Release Interval:</span>
-              <span>{project.releaseInterval}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Release Percentage:</span>
-              <span>{project.releasePercentage}%</span>
-            </div>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+      <div className="bg-slate-900 rounded-lg overflow-hidden p-6">
+        <h2 className="text-2xl font-bold text-white mb-1">Donate to {project.name}</h2>
+        <p className="text-slate-400 mb-6">Support this project by making a donation</p>
+        
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-6">
             <div>
-              <div className="flex items-center mb-2">
-                <Label htmlFor="amount" className="text-white">
-                  Donation Amount (MAS)
-                </Label>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-5 w-5 ml-2 text-white">
-                        <Info className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Amount of MAS tokens to donate</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Donation Amount (MAS)
+              </label>
               <Input
-                id="amount"
                 type="number"
-                placeholder="100"
+                placeholder="Enter amount"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
+                className="bg-slate-800 border-slate-700 text-white focus:ring-blue-500 focus:border-blue-500"
+                min="0.1"
+                step="0.1"
                 required
-                className="bg-slate-600 border-slate-500 text-white"
               />
-              <p className="text-xs text-slate-400 mt-1">
-                Your voting power will be equivalent to your donation amount.
-              </p>
             </div>
 
-            
-            
-            <div className="theme-light">
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Project Progress
+              </label>
+              <div className="flex justify-between text-sm text-slate-400 mb-1">
+                <span>Current: {project.amountRaised} MAS</span>
+                <span>Goal: {project.goalAmount} MAS</span>
+              </div>
+              <div className="w-full bg-slate-800 rounded-full h-2">
+                <div 
+                  className="bg-green-500 h-2 rounded-full" 
+                  style={{ width: `${percentFunded}%` }}
+                ></div>
+              </div>
+            </div>
+
+          
+             <div className="theme-light">
                 <ConnectMassaWallet />
                 <Button
                   type="submit"
@@ -176,12 +136,11 @@ export function DonationForm({ project, onSubmit, onBack }: DonationFormProps) {
                 </Button>
               
               </div>
-          </form>
-        </CardContent>
-        <CardFooter className="text-xs text-slate-400">
-          <p>By donating, you agree to the vesting schedule. You will receive an NFT as proof of your contribution.</p>
-        </CardFooter>
-      </Card>
+          </div>
+        </form>
+      </div>
     </div>
   )
 }
+
+
