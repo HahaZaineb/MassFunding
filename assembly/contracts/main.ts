@@ -28,7 +28,6 @@ const OWNER_KEY = stringToBytes('owner');
 const LAST_EXECUTION_STATUS_KEY = stringToBytes('lastExecutionStatus');
 
 
-//export { processTask } from '../internals';
 
 class vestingSchedule implements Serializable {
   constructor(

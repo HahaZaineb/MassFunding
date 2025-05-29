@@ -4,13 +4,19 @@ import { motion } from "framer-motion"
 import { Button } from "./ui/button"
 import { ArrowRight, Shield, Clock, Coins, HelpCircle, Rocket, Users, Zap } from "lucide-react"
 import { useProjects } from "../context/project-context"
-import { ProjectCard } from "./project-card"
 import { useNavigate } from "../hooks/use-navigate"
 
 export function LandingPage() {
   const { projects } = useProjects()
   const featuredProjects = projects.slice(0, 3)
   const { navigate } = useNavigate()
+
+  // Define category images
+  const categoryImages = {
+    Environment: "https://images.unsplash.com/photo-1470115636492-6d2b56f9146d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1740&q=80",
+    Education: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1722&q=80",
+    Healthcare: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1740&q=80"
+  };
 
   const faqs = [
     {
@@ -34,75 +40,37 @@ export function LandingPage() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-[#1a1a2e] to-[#16213e] py-20">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-center">
-            <div className="md:w-1/2 mb-10 md:mb-0">
-              <motion.h1 
-                className="text-4xl md:text-5xl font-bold text-white mb-6"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-              >
-                Decentralized Crowdfunding on Massa
-              </motion.h1>
-              <motion.p 
-                className="text-xl text-slate-300 mb-8"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-              >
-                Fund innovative projects with transparent vesting schedules and receive NFTs as proof of contribution. Built on Massa's powerful blockchain technology.
-              </motion.p>
-              <motion.div 
-                className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-              >
-                <Button 
-                  size="lg" 
-                  className="bg-[#00ff9d] hover:bg-[#00cc7d] text-black font-bold w-full sm:w-auto"
-                  onClick={() => navigate("projects")}
-                >
-                  Explore Projects
-                </Button>
-                <Button 
-                  size="lg" 
-                  variant="outline" 
-                  className="border-[#00ff9d] text-[#00ff9d] hover:bg-[#00ff9d]/10 w-full sm:w-auto"
-                  onClick={() => navigate("request")}
-                >
-                  Request Funding
-                </Button>
-              </motion.div>
-            </div>
-            <div className="md:w-1/2">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5 }}
-                className="relative"
-              >
-                <div className="absolute inset-0 bg-[#00ff9d]/20 rounded-full blur-3xl"></div>
-                <div className="relative bg-[#1a1a2e] p-8 rounded-2xl border border-[#00ff9d]/20">
-                  <Rocket className="w-16 h-16 text-[#00ff9d] mb-4" />
-                  <h3 className="text-2xl font-bold text-white mb-2">Powered by Massa</h3>
-                  <p className="text-slate-300">Leveraging Massa's unique features for secure and efficient crowdfunding</p>
-                </div>
-              </motion.div>
-            </div>
-          </div>
+      <section className="py-16 px-4">
+        <div className="container mx-auto">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="text-center mb-16"
+          >
+            <h1 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-[#00ff9d] to-[#00ff9d] bg-clip-text text-transparent">
+              Fund the Future of Massa
+            </h1>
+            <p className="text-lg text-slate-300 max-w-2xl mx-auto mb-8">
+              Support innovative projects building on the Massa blockchain and help shape the future of decentralized applications.
+            </p>
+            <Button 
+              onClick={() => navigate('fund')} 
+              className="bg-[#00ff9d] hover:bg-[#00ff9d]/90 text-[#0f1629] font-medium px-8 py-6 text-lg"
+            >
+              Explore Projects <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </motion.div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="py-16 bg-[#16213e]">
+      <section className="py-16 bg-[#1a1a2e]">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-white text-center mb-12">How It Works</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <motion.div 
-              className="bg-[#1a1a2e] p-6 rounded-lg border border-[#00ff9d]/20"
+              className="bg-[#0f1629] p-6 rounded-lg border border-[#00ff9d]/20"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
@@ -118,7 +86,7 @@ export function LandingPage() {
             </motion.div>
             
             <motion.div 
-              className="bg-[#1a1a2e] p-6 rounded-lg border border-[#00ff9d]/20"
+              className="bg-[#0f1629] p-6 rounded-lg border border-[#00ff9d]/20"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
@@ -134,7 +102,7 @@ export function LandingPage() {
             </motion.div>
             
             <motion.div 
-              className="bg-[#1a1a2e] p-6 rounded-lg border border-[#00ff9d]/20"
+              className="bg-[#0f1629] p-6 rounded-lg border border-[#00ff9d]/20"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
@@ -152,6 +120,81 @@ export function LandingPage() {
         </div>
       </section>
 
+      {/* Featured Projects Section */}
+      <section className="py-16 bg-[#0f1629]">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl font-bold text-white text-center mb-4">Featured Projects</h2>
+          <p className="text-slate-300 text-center max-w-2xl mx-auto mb-12">
+            Discover innovative projects building on the Massa blockchain and help bring them to life.
+          </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {featuredProjects.map((project) => (
+              <motion.div
+                key={project.id}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                viewport={{ once: true }}
+                className="overflow-hidden rounded-lg border border-[#00ff9d]/20 bg-[#1a1a2e] shadow-lg hover:shadow-[0_0_15px_rgba(0,255,157,0.3)] transition-all duration-300"
+              >
+                {/* Project Image */}
+                <div className="relative h-48 overflow-hidden">
+                  <img
+                    src={categoryImages[project.category] || "https://images.unsplash.com/photo-1484291470158-b8f8d608850d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1740&q=80"}
+                    alt={project.name}
+                    className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#1a1a2e] to-transparent opacity-70"></div>
+                  <div className="absolute top-3 right-3 bg-[#00ff9d] text-[#0f1629] font-semibold text-xs px-2 py-1 rounded">
+                    {project.category}
+                  </div>
+                </div>
+                
+                {/* Project Info */}
+                <div className="p-6">
+                  <h3 className="text-xl font-bold text-[#00ff9d] mb-2">{project.name}</h3>
+                  <p className="text-slate-300 text-sm mb-4">
+                    {project.description.substring(0, 100)}...
+                  </p>
+                  
+                  {/* Progress Bar */}
+                  <div className="mb-4">
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="text-white">{project.amountRaised} / {project.amountNeeded} MAS</span>
+                      <span className="text-[#00ff9d]">{((project.amountRaised / project.amountNeeded) * 100).toFixed(0)}%</span>
+                    </div>
+                    <div className="w-full h-2 bg-[#0f1629] rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-[#00ff9d]" 
+                        style={{ width: `${Math.min((project.amountRaised / project.amountNeeded) * 100, 100)}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    onClick={() => navigate('fund')} 
+                    className="w-full bg-[#00ff9d] hover:bg-[#00ff9d]/90 text-[#0f1629] font-medium"
+                  >
+                    Fund This Project
+                  </Button>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+          
+          <div className="text-center mt-10">
+            <Button 
+              onClick={() => navigate('fund')} 
+              variant="outline" 
+              className="border-[#00ff9d] text-[#00ff9d] hover:bg-[#00ff9d]/10"
+            >
+              View All Projects <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </section>
+
       {/* FAQ Section */}
       <section className="py-16 bg-[#1a1a2e]">
         <div className="container mx-auto px-4">
@@ -160,7 +203,7 @@ export function LandingPage() {
             {faqs.map((faq, index) => (
               <motion.div
                 key={index}
-                className="bg-[#16213e] p-6 rounded-lg border border-[#00ff9d]/20"
+                className="bg-[#0f1629] p-6 rounded-lg border border-[#00ff9d]/20"
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
@@ -182,7 +225,7 @@ export function LandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 bg-gradient-to-br from-[#16213e] to-[#1a1a2e]">
+      <section className="py-16 bg-gradient-to-br from-[#0f1629] to-[#1a1a2e]">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold text-white mb-6">Ready to Launch Your Project?</h2>
           <p className="text-xl text-slate-300 mb-8 max-w-2xl mx-auto">
@@ -190,7 +233,7 @@ export function LandingPage() {
           </p>
           <Button 
             size="lg" 
-            className="bg-[#00ff9d] hover:bg-[#00cc7d] text-black font-bold"
+            className="bg-[#00ff9d] hover:bg-[#00ff9d]/90 text-black font-bold"
             onClick={() => navigate("request")}
           >
             Request Funding Now

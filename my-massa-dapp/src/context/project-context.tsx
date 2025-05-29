@@ -59,6 +59,44 @@ const initialProjects: ProjectData[] = [
     image: "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1740&q=80",
     updates: [],
     milestones: []
+  },
+  {
+    id: "project-4",
+    name: "Healthcare Access Program",
+    description: "Providing medical services to remote areas through mobile clinics and telemedicine solutions.",
+    amountRaised: 5800,
+    goalAmount: 12000,
+    amountNeeded: 12000,
+    beneficiary: "AU12YgH8o2eiLW33c9jzZaXgY8BVXyj19MqqUMRfVeTiUoB5FCqP",
+    lockPeriod: "30",
+    releaseInterval: "30",
+    releasePercentage: 20,
+    supporters: 37,
+    category: "Healthcare",
+    deadline: "2024-01-15",
+    creator: "AU12YgH8o2eiLW33c9jzZaXgY8BVXyj19MqqUMRfVeTiUoB5FCqP",
+    image: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1740&q=80",
+    updates: [],
+    milestones: []
+  },
+  {
+    id: "project-5",
+    name: "Clean Water Project",
+    description: "Drilling wells and implementing water purification systems in arid regions to provide clean drinking water.",
+    amountRaised: 6500,
+    goalAmount: 7000,
+    amountNeeded: 7000,
+    beneficiary: "AU12YgH8o2eiLW33c9jzZaXgY8BVXyj19MqqUMRfVeTiUoB5FCqP",
+    lockPeriod: "30",
+    releaseInterval: "15",
+    releasePercentage: 10,
+    supporters: 50,
+    category: "Environment",
+    deadline: "2023-10-30",
+    creator: "AU12YgH8o2eiLW33c9jzZaXgY8BVXyj19MqqUMRfVeTiUoB5FCqP",
+    image: "https://images.unsplash.com/photo-1541675154750-0444c7d51e8e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1740&q=80",
+    updates: [],
+    milestones: []
   }
 ]
 
@@ -139,5 +177,6 @@ export function useProjects() {
   }
   return context
 }
+
 
 

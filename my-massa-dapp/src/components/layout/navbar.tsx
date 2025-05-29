@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "../ui/button"
 import { Menu, X } from "lucide-react"
 import MassaLogo from "./MassaLogo"
@@ -11,9 +11,14 @@ interface NavbarProps {
   onNavigate: (page: NavigationPage) => void
 }
 
+function shortenAddress(addr: string) {
+  return addr.slice(0, 6) + "..." + addr.slice(-4);
+}
+
 export function Navbar({ currentPage, onNavigate }: NavbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const { connectedAccount } = useAccountStore()
+  const [showWalletModal, setShowWalletModal] = useState(false)
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen)
@@ -52,10 +57,27 @@ export function Navbar({ currentPage, onNavigate }: NavbarProps) {
           </li>
         </ul>
       </div>
-      <div className="flex items-center gap-2">
-        <div className="theme-dark">
-          <ConnectMassaWallet />
-        </div>
+      <div>
+        <button
+          className={`px-4 py-2 rounded font-bold shadow flex items-center transition-colors duration-200 ${connectedAccount ? 'bg-[#00ff9d] text-[#181f36]' : 'bg-[#23243a] text-white border border-[#00ff9d]'}`}
+          onClick={() => setShowWalletModal(true)}
+        >
+          <span className={`inline-block w-2 h-2 rounded-full mr-2 ${connectedAccount ? 'bg-green-500' : 'bg-red-500'}`}></span>
+          {connectedAccount ? shortenAddress(connectedAccount.toString()) : 'Connect Wallet'}
+        </button>
+        {showWalletModal && (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+            <div className="bg-[#181f36] rounded-lg p-6 shadow-lg relative min-w-[350px] border border-[#00ff9d]">
+              <button
+                className="absolute top-2 right-2 text-xl text-[#00ff9d] hover:text-white"
+                onClick={() => setShowWalletModal(false)}
+              >
+                ×
+              </button>
+              <ConnectMassaWallet />
+            </div>
+          </div>
+        )}
       </div>
     </nav>
   )

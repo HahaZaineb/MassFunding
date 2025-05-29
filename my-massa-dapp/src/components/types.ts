@@ -1,29 +1,60 @@
-// Project data types
+export interface VestingSchedule {
+  beneficiary: string
+  token: string
+  totalAmount: number
+  amountClaimed: number
+  lockPeriod: number
+  releaseInterval: number
+  releasePercentage: number
+  nextReleasePeriod: number
+}
+
 export interface ProjectData {
   id: string
   name: string
   description: string
-  category: string
-  // Financial properties
-  goalAmount: number
+  amountNeeded: number
   amountRaised: number
-  amountNeeded?: number
-  // Time properties
-  deadline: string
-  // Participant properties
+  beneficiary: string
+  lockPeriod: string // In days
+  releaseInterval: string // In days
+  releasePercentage: number
   supporters: number
-  creator: string // Changed from optional to required
-  beneficiary?: string
-  // Display properties
-  image?: string
+  category: string
   updates?: ProjectUpdate[]
   milestones?: ProjectMilestone[]
-  // Vesting properties
-  lockPeriod?: string
-  releaseInterval?: string
-  releasePercentage?: number
-  walletAddress?: string
   owner?: string
+  creator?: string
+  deadline?: string
+  goalAmount: number
+  image?: string
+}
+
+export interface NFTMetadata {
+  projectId: string
+  projectName: string
+  donationAmount: number
+  donationDate: string
+  donorAddress: string
+  category: string
+  transactionId?: string
+}
+
+export interface WalletInfo {
+  address: string
+  isConnected: boolean
+  publicKey?: string
+}
+
+export interface ProjectFormData {
+  projectName: string
+  description: string
+  amountNeeded: string
+  walletAddress: string
+  lockPeriod: string
+  releaseInterval: string
+  releasePercentage: number
+  category?: string
 }
 
 export interface ProjectUpdate {
@@ -43,33 +74,13 @@ export interface ProjectMilestone {
   progress: number
 }
 
-export interface NFTMetadata {
+export interface DonationTransaction {
+  id: string
   projectId: string
-  projectName: string
-  donationAmount: number
-  donationDate: string
   donorAddress: string
-  category: string
-}
-
-export interface ProjectFormData {
-  projectName: string
-  description: string
-  amountNeeded: string
-  walletAddress: string
-  lockPeriod: string
-  releaseInterval: string
-  releasePercentage: number
-  category?: string
-}
-
-export interface VestingSchedule {
-  beneficiary: string
-  token: string
-  totalAmount: number
-  amountClaimed: number
-  lockPeriod: number
-  releaseInterval: number
-  releasePercentage: number
-  nextReleasePeriod: number
+  amount: number
+  transactionId: string
+  vestingScheduleId?: string
+  nftId?: string
+  timestamp: string
 }

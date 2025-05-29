@@ -127,3 +127,32 @@ body {
 .border-border {
   border-color: hsl(var(--border));
 }
+
+/* Wallet dropdown/modal background override */
+/* Target the specific dropdown ID and nested list elements */
+#options, #options ul, #options li {
+  background: #181f36 !important;
+  color: #fff !important;
+}
+
+/* Optionally, style wallet options buttons inside the dropdown */
+#options button {
+    background: transparent !important;
+    color: #fff !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+}
+
+#options button:hover {
+    background: #23243a !important;
+}
+
+/* General modal content override if needed */
+.wallet-modal-content, .wallet-modal {
+    background: #181f36 !important;
+    border: 1px solid #00ff9d !important;
+    border-radius: 12px !important;
+    color: #fff !important;
+}
+

@@ -1,7 +1,5 @@
-"use client"
 
 import type React from "react"
-import type { ProjectUpdate } from "../types"
 
 import { useState } from "react"
 import { Button } from "./ui/button"
@@ -12,7 +10,7 @@ import { useToast } from "./ui/use-toast"
 
 interface ProjectUpdateFormProps {
   projectId: string
-  onSubmit: (update: Omit<ProjectUpdate, "id">) => void
+  onSubmit: (update: { title: string; content: string; date: string }) => void
   onCancel: () => void
 }
 
@@ -32,6 +30,15 @@ export function ProjectUpdateForm({ projectId, onSubmit, onCancel }: ProjectUpda
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    if (!formData.title.trim() || !formData.content.trim()) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in all fields",
+        variant: "destructive",
+      })
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
@@ -40,7 +47,6 @@ export function ProjectUpdateForm({ projectId, onSubmit, onCancel }: ProjectUpda
         title: formData.title,
         content: formData.content,
         date: new Date().toISOString().split("T")[0], // Format as YYYY-MM-DD
-        author: "Project Owner", // In a real app, this would be the connected wallet address
       }
 
       // Submit the update
@@ -50,12 +56,6 @@ export function ProjectUpdateForm({ projectId, onSubmit, onCancel }: ProjectUpda
         title: "Update posted!",
         description: "Your project update has been posted successfully.",
         variant: "default",
-      })
-      
-      // Reset form
-      setFormData({
-        title: "",
-        content: "",
       })
     } catch (error) {
       console.error("Failed to post update:", error)
@@ -71,7 +71,7 @@ export function ProjectUpdateForm({ projectId, onSubmit, onCancel }: ProjectUpda
 
   return (
     <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
-      <h3 className="text-xl font-bold text-white mb-4">Post Project Update</h3>
+      <h3 className="text-xl font-semibold mb-4">Post Project Update</h3>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <Label htmlFor="title" className="text-white">
@@ -80,7 +80,7 @@ export function ProjectUpdateForm({ projectId, onSubmit, onCancel }: ProjectUpda
           <Input
             id="title"
             name="title"
-            placeholder="e.g., Development Milestone Reached"
+            placeholder="e.g., Prototype Completed"
             value={formData.title}
             onChange={handleChange}
             required

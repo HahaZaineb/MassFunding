@@ -14,16 +14,20 @@ export interface ProjectData {
   name: string
   description: string
   amountNeeded: number
+  goalAmount: number
   amountRaised: number
   beneficiary: string
-  lockPeriod: string
-  releaseInterval: string
+  lockPeriod: string // In days
+  releaseInterval: string // In days
   releasePercentage: number
   supporters: number
   category: string
   updates?: ProjectUpdate[]
   milestones?: ProjectMilestone[]
   owner?: string
+  creator?: string
+  deadline?: string
+  image?: string
 }
 
 export interface NFTMetadata {
@@ -33,6 +37,7 @@ export interface NFTMetadata {
   donationDate: string
   donorAddress: string
   category: string
+  transactionId?: string
 }
 
 export interface WalletInfo {
@@ -67,4 +72,15 @@ export interface ProjectMilestone {
   deadline: string
   completed: boolean
   progress: number
+}
+
+export interface DonationTransaction {
+  id: string
+  projectId: string
+  donorAddress: string
+  amount: number
+  transactionId: string
+  vestingScheduleId?: string
+  nftId?: string
+  timestamp: string
 }

@@ -7,7 +7,7 @@ import { LandingPage } from "@/components/landing-page"
 import { RequestFunding } from "@/components/request-funding"
 import { ProjectProvider } from "@/context/project-context"
 import { NavigationProvider } from "@/hooks/use-navigate"
-import MassaLogo from "@/components/layout/MassaLogo"
+
 
 function App() {
   const [currentPage, setCurrentPage] = useState<"home" | "request" | "fund" | "about" | "projects">("home")
@@ -36,13 +36,10 @@ function App() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-[#18181b]">
+      <div className="min-h-screen flex items-center justify-center bg-[#181f36] text-white">
         <div className="text-center">
-          <div className="flex justify-center mb-6">
-            <MassaLogo size={64} />
-          </div>
-          <h2 className="mt-4 text-2xl font-bold text-[#ef3e24]">Loading MassFunding</h2>
-          <p className="text-slate-500 dark:text-slate-300 mt-2">Connecting to Massa blockchain...</p>
+          <h2 className="mt-4 text-2xl font-bold text-[#00ff9d]">Loading Application</h2>
+          <p className="text-slate-300 mt-2">Initializing...</p>
         </div>
       </div>
     )
@@ -130,13 +127,13 @@ function App() {
     <ThemeProvider>
       <ProjectProvider>
         <NavigationProvider onNavigate={handleNavigate}>
-          <div className="min-h-screen bg-gradient-to-br from-[#1a1a2e] to-[#16213e] text-white flex flex-col">
+          <div className="min-h-screen bg-gradient-to-br from-massa-darker to-massa-dark text-white flex flex-col">
             <Navbar 
               onNavigate={handleNavigate} 
               currentPage={currentPage}
             />
             
-            <main className="flex-grow">
+            <main className="flex-grow container mx-auto px-4 py-8">
               {renderPage()}
             </main>
 

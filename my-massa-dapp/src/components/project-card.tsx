@@ -1,91 +1,135 @@
+"use client"
+
+import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "./ui/button"
-import { Card, CardContent } from "./ui/card"
-import { Badge } from "./ui/badge"
+import { ThumbsUp, Users, Clock, Coins, ChevronDown, ChevronUp } from "lucide-react"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card"
 import { Progress } from "./ui/progress"
-import { Users, Clock, Coins, ChevronDown, ChevronUp } from "lucide-react"
-import { useState } from "react"
-import type { ProjectData } from "./types"
+import { Badge } from "./ui/badge"
+import type { ProjectData } from "../types"
 
 interface ProjectCardProps {
   project: ProjectData
   onDonate: () => void
   onViewUpdates: () => void
-  isExpanded?: boolean
-  onToggleExpand?: () => void
+  isExpanded: boolean
+  onToggleExpand: () => void
+  showActions?: boolean
 }
 
-export function ProjectCard({ 
-  project, 
-  onDonate, 
-  onViewUpdates, 
-  isExpanded = false, 
-  onToggleExpand = () => {} 
+export function ProjectCard({
+  project,
+  onDonate,
+  onViewUpdates,
+  isExpanded,
+  onToggleExpand,
+  showActions = true,
 }: ProjectCardProps) {
-  const percentFunded = Math.min(Math.round((project.amountRaised / project.goalAmount) * 100), 100)
-  
+  const percentFunded = (project.amountRaised / project.amountNeeded) * 100
+
   return (
-    <Card className="bg-slate-800 border-slate-700 overflow-hidden">
-      <CardContent className="p-0">
-        {project.image && (
-          <div className="w-full h-48 overflow-hidden">
-            <img src={project.image} alt={project.name} className="w-full h-full object-cover" />
-          </div>
-        )}
-        <div className="p-6">
-          <div className="flex justify-between items-start mb-2">
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+      <Card className="bg-slate-700 border-slate-600 text-white h-full flex flex-col">
+        <CardHeader>
+          <div className="flex justify-between items-start">
             <div>
-              <h3 className="text-xl font-bold text-white">{project.name}</h3>
-              <Badge variant="outline" className="mt-1 bg-slate-700 text-white border-none">
-                {project.category}
-              </Badge>
+              <CardTitle>{project.name}</CardTitle>
+              <CardDescription className="text-slate-300 mt-1">
+                {isExpanded ? project.description : `${project.description.substring(0, 80)}...`}
+              </CardDescription>
+            </div>
+            <Badge variant="outline" className="bg-slate-600">
+              {project.category}
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4 flex-grow">
+          <div>
+            <div className="flex justify-between mb-1">
+              <span className="text-sm font-medium">
+                {project.amountRaised} / {project.amountNeeded} MAS
+              </span>
+              <span className="text-sm font-medium">{percentFunded.toFixed(0)}%</span>
+            </div>
+            <Progress value={percentFunded} className="h-2" />
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 text-sm">
+            <div className="flex flex-col items-center p-2 bg-slate-800 rounded-md">
+              <Users className="h-4 w-4 mb-1" />
+              <span>{project.supporters} Supporters</span>
+            </div>
+            <div className="flex flex-col items-center p-2 bg-slate-800 rounded-md">
+              <Clock className="h-4 w-4 mb-1" />
+              <span>Every {project.releaseInterval}</span>
+            </div>
+            <div className="flex flex-col items-center p-2 bg-slate-800 rounded-md">
+              <Coins className="h-4 w-4 mb-1" />
+              <span>{project.releasePercentage}% Release</span>
             </div>
           </div>
-          
-          <p className="text-slate-300 text-sm mt-4 line-clamp-3">
-            {project.description}
-          </p>
-          
-          <div className="mt-6">
-            <div className="flex justify-between text-sm text-slate-400 mb-1">
-              <span>{project.amountRaised} MAS raised</span>
-              <span>{percentFunded}%</span>
-            </div>
-            <Progress value={percentFunded} className="h-2 bg-slate-700" />
-            
-            <div className="grid grid-cols-3 gap-2 mt-4">
-              <div className="flex flex-col items-center bg-slate-700 rounded-md p-2">
-                <Coins className="h-4 w-4 text-slate-300 mb-1" />
-                <span className="text-xs text-slate-300">{project.goalAmount} MAS</span>
-              </div>
-              <div className="flex flex-col items-center bg-slate-700 rounded-md p-2">
-                <Users className="h-4 w-4 text-slate-300 mb-1" />
-                <span className="text-xs text-slate-300">{project.supporters} Backers</span>
-              </div>
-              <div className="flex flex-col items-center bg-slate-700 rounded-md p-2">
-                <Clock className="h-4 w-4 text-slate-300 mb-1" />
-                <span className="text-xs text-slate-300">{project.deadline}</span>
-              </div>
-            </div>
-          </div>
-          
-          <div className="mt-6 grid grid-cols-2 gap-2">
-            <Button 
-              variant="default" 
-              className="w-full bg-green-600 hover:bg-green-700"
-              onClick={onDonate}
-            >
-              Fund this project
+
+          <AnimatePresence>
+            {isExpanded && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+                className="mt-4 space-y-4"
+              >
+                <div className="bg-slate-800 p-4 rounded-md space-y-2">
+                  <div className="flex justify-between">
+                    <span>Beneficiary:</span>
+                    <span className="font-mono text-xs truncate max-w-[200px]">{project.beneficiary}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Lock Period:</span>
+                    <span>{project.lockPeriod}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Release Interval:</span>
+                    <span>{project.releaseInterval}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Release Percentage:</span>
+                    <span>{project.releasePercentage}%</span>
+                  </div>
+                </div>
+
+                {showActions && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button variant="outline" size="sm" onClick={onViewUpdates} className="text-white">
+                      View Updates
+                    </Button>
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </CardContent>
+        <CardFooter className="flex justify-between">
+          <Button variant="outline" size="sm" className="text-xs text-white" onClick={onToggleExpand}>
+            {isExpanded ? (
+              <>
+                <ChevronUp className="h-3 w-3 mr-1" />
+                Show Less
+              </>
+            ) : (
+              <>
+                <ChevronDown className="h-3 w-3 mr-1" />
+                Show More
+              </>
+            )}
+          </Button>
+          {showActions && (
+            <Button onClick={onDonate} className="bg-green-600 hover:bg-green-700 text-white" size="sm">
+              <ThumbsUp className="h-3 w-3 mr-1" />
+              Fund This Project
             </Button>
-            <Button 
-              variant="outline" 
-              className="w-full border-slate-600 text-white hover:bg-slate-700"
-              onClick={onViewUpdates}
-            >
-              Updates
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+          )}
+        </CardFooter>
+      </Card>
+    </motion.div>
   )
 }

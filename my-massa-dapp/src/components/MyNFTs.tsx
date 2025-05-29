@@ -23,10 +23,6 @@ export function MyNFTs() {
     ]);
   }, [connectedAccount]);
 
-  if (!connectedAccount) {
-    return <div className="text-center text-slate-400">Connect your wallet to view your NFTs.</div>;
-  }
-
   if (selectedNFT) {
     // Mock project data for preview
     const project: ProjectData = {
@@ -35,10 +31,15 @@ export function MyNFTs() {
       description: "Project description here",
       category: selectedNFT.category,
       goalAmount: 100,
-      amountRaised: 10,
+      amountRaised: selectedNFT.donationAmount,
       deadline: "2024-12-31",
       supporters: 1,
       creator: selectedNFT.donorAddress,
+      amountNeeded: 100,
+      beneficiary: "AU1264Bah4q6pYLrGBh27V1b9VXL2XmnQCwMhY74HW4dxahpqxkrN",
+      lockPeriod: "0",
+      releaseInterval: "0",
+      releasePercentage: 100,
     };
     return (
       <NFTPreview

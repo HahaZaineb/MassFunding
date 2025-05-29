@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --massa-green: #00ff9d;
+  --massa-cyan: #00fff0;
+  --massa-dark: #1a1a2e;
+  --massa-darker: #0f1629;
+}
+
+body {
+  background-color: var(--massa-darker);
+  color: white;
+}
+
+.bg-gradient-card {
+  background: linear-gradient(145deg, #1a1a2e, #0f1629);
+}
+
+.shadow-glow {
+  box-shadow: 0 0 15px rgba(0, 255, 157, 0.3);
+}
