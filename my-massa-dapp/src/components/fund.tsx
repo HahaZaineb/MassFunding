@@ -181,10 +181,11 @@ export default function Fund({ onBack }: FundProps) {
   }
 
   const processDonation = async (amount: string) => {
-    console.log("Process Donation clicked with amount:", amount)
+    console.log("--- Entering processDonation function ---");
+    console.log("Process Donation clicked with amount:", amount);
 
     if (!connectedAccount || !selectedProject) {
-      console.error("No connected account or selected project")
+      console.error("No connected account or selected project");
       toast({
         title: "Funding Failed",
         description: "Please connect your wallet and select a project.",
@@ -193,7 +194,8 @@ export default function Fund({ onBack }: FundProps) {
       return
     }
 
-    setIsProcessingTransaction(true)
+    setIsProcessingTransaction(true);
+    console.log("setIsProcessingTransaction(true)");
 
     const projectToFund = projects.find((p) => p.id === selectedProject)
     if (!projectToFund) {
@@ -208,6 +210,7 @@ export default function Fund({ onBack }: FundProps) {
     }
 
     try {
+      console.log("Attempting to create vesting schedule...");
       // Use the vesting service to create the vesting schedule
       const vestingParams = {
         beneficiary: projectToFund.beneficiary,
@@ -217,9 +220,11 @@ export default function Fund({ onBack }: FundProps) {
         releasePercentage: projectToFund.releasePercentage.toString(),
       }
 
+      console.log("Calling vestingService.createVestingSchedule with params:", vestingParams);
       const operationId = await vestingService.createVestingSchedule(connectedAccount, vestingParams)
+      console.log("vestingService.createVestingSchedule call completed. Operation ID:", operationId);
 
-      console.log("Vesting schedule created successfully with operation ID:", operationId)
+      console.log("Vesting schedule created successfully with operation ID:", operationId);
 
       toast({
         title: "Funding Successful! 🎉",
@@ -250,6 +255,7 @@ export default function Fund({ onBack }: FundProps) {
 
       // Show NFT preview
       setCurrentView("nft")
+      console.log("setCurrentView(nft)");
     } catch (error) {
       console.error("Error processing donation:", error)
       toast({
@@ -257,8 +263,11 @@ export default function Fund({ onBack }: FundProps) {
         description: `Error processing donation: ${error instanceof Error ? error.message : String(error)}`,
         variant: "destructive",
       })
+      console.error("processDonation failed:", error);
     } finally {
       setIsProcessingTransaction(false)
+      console.log("setIsProcessingTransaction(false)");
+      console.log("--- Exiting processDonation function ---");
     }
   }
 

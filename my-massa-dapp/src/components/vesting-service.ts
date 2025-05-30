@@ -1,6 +1,7 @@
-import { Args, Mas, OperationStatus, SmartContract } from "@massalabs/massa-web3"
+import { Args, Mas, OperationStatus, SmartContract, parseUnits } from "@massalabs/massa-web3"
 import { useEffect, useState } from 'react';
-const VESTING_CONTRACT_ADDRESS = "AS1DLxrPVcJ6xhSvoNe7s3pMbFStCtnLrMhhZeoWBFE8tzFjcFda"
+
+const VESTING_CONTRACT_ADDRESS = "AS141CwwCHqYGYkU7QcgQuLYTwV7k3zM7c4Xn8CMMLftCHBnyovE"
 
 export interface VestingScheduleParams {
   beneficiary: string
@@ -11,9 +12,6 @@ export interface VestingScheduleParams {
 }
 
 export class VestingService {
-  
- 
-
   async createVestingSchedule(connectedAccount: any, params: VestingScheduleParams): Promise<string> {
     console.log("Create Vesting Schedule clicked")
     console.log("Params:", params)
@@ -23,35 +21,58 @@ export class VestingService {
       throw new Error("No connected account")
     }
 
+    // Validate inputs
+    if (!params.amount || !params.lockPeriod || !params.releaseInterval || !params.releasePercentage) {
+      throw new Error("All fields must be filled")
+    }
+
+    const amountNum = parseFloat(params.amount)
+    const lockPeriodNum = parseInt(params.lockPeriod)
+    const releaseIntervalNum = parseInt(params.releaseInterval)
+    const releasePercentageNum = parseInt(params.releasePercentage)
+
+    if (
+      isNaN(amountNum) ||
+      isNaN(lockPeriodNum) ||
+      isNaN(releaseIntervalNum) ||
+      isNaN(releasePercentageNum)
+    ) {
+      throw new Error("Invalid input values")
+    }
+
+    if (amountNum <= 0) {
+      throw new Error("Amount must be greater than 0")
+    }
+    if (lockPeriodNum < 0) {
+      throw new Error("Lock period cannot be negative")
+    }
+    if (releaseIntervalNum <= 0) {
+      throw new Error("Release interval must be greater than 0")
+    }
+    if (releasePercentageNum <= 0 || releasePercentageNum > 100) {
+      throw new Error("Release percentage must be between 1 and 100")
+    }
+
     try {
-      
       const contract = new SmartContract(connectedAccount as any, VESTING_CONTRACT_ADDRESS)
-
-      // Convert amount to MAS (assuming the amount is in MAS units)
-      const amountInMAS = Mas.fromString(params.amount)
-
-      // Convert days to seconds (matching your test code logic)
-      const lockPeriodSeconds = BigInt(Number.parseInt(params.lockPeriod) * 24 * 60 * 60)
-      const releaseIntervalSeconds = BigInt(Number.parseInt(params.releaseInterval) * 24 * 60 * 60)
 
       const args = new Args()
         .addString(params.beneficiary)
-        .addString("MAS") // Placeholder for native MAS token
-        .addU64(amountInMAS) // Amount in nanoMAS
-        .addU64(lockPeriodSeconds) // Lock period in seconds
-        .addU64(releaseIntervalSeconds) // Release interval in seconds
-        .addU64(BigInt(params.releasePercentage)) // Release percentage
+        .addU64(parseUnits(params.amount, 6))
+        .addU64(BigInt(lockPeriodNum))
+        .addU64(BigInt(releaseIntervalNum))
+        .addU64(BigInt(releasePercentageNum))
 
       console.log("Calling createVestingSchedule with args:", {
         beneficiary: params.beneficiary,
-        amount: amountInMAS.toString(),
-        lockPeriod: lockPeriodSeconds.toString(),
-        releaseInterval: releaseIntervalSeconds.toString(),
-        releasePercentage: params.releasePercentage,
+        amount: parseUnits(params.amount, 6).toString(),
+        lockPeriod: lockPeriodNum,
+        releaseInterval: releaseIntervalNum,
+        releasePercentage: releasePercentageNum,
       })
 
       const response = await contract.call("createVestingSchedule", args, {
-        coins: amountInMAS, // Send MAS tokens with the transaction
+        coins: Mas.fromString(params.amount),
       })
 
       console.log("Transaction response:", response)
@@ -69,7 +90,6 @@ export class VestingService {
         console.error("Transaction failed")
         throw new Error(`Transaction failed with status: ${status}`)
       }
-      // setDeferredCallId(response.toString());
     } catch (error) {
       console.error("Error creating vesting schedule:", error)
       throw error

@@ -5,7 +5,8 @@ import {
   generateEvent,
   deferredCallRegister,
   findCheapestSlot,
-  } from '@massalabs/massa-as-sdk';
+  Coins,
+} from '@massalabs/massa-as-sdk';
 import {
   Args,
   Serializable,
@@ -19,20 +20,15 @@ import {
   registerCall,
   TASK_COUNT_KEY,
 } from '../internals';
-import { MRC20Wrapper } from '@massalabs/sc-standards/assembly/contracts/MRC20/wrapper';
-import { u256 } from 'as-bignum/assembly';
+export { processTask } from '../internals';
 
 const VESTING_INFO_KEY = stringToBytes('vestingInfo');
-
 const OWNER_KEY = stringToBytes('owner');
 const LAST_EXECUTION_STATUS_KEY = stringToBytes('lastExecutionStatus');
-
-
 
 class vestingSchedule implements Serializable {
   constructor(
     public beneficiary: Address = new Address(''),
-    public token: Address = new Address(''),
     public totalAmount: u64 = 0,
     public amountClaimed: u64 = 0,
     public lockPeriod: u64 = 0,
@@ -44,7 +40,6 @@ class vestingSchedule implements Serializable {
   serialize(): StaticArray<u8> {
     return new Args()
       .add(this.beneficiary)
-      .add(this.token)
       .add(this.totalAmount)
       .add(this.amountClaimed)
       .add(this.lockPeriod)
@@ -58,7 +53,6 @@ class vestingSchedule implements Serializable {
     const args = new Args(data, i32(offset));
 
     this.beneficiary = args.nextSerializable<Address>().expect('Failed to deserialize beneficiary.');
-    this.token = args.nextSerializable<Address>().expect('Failed to deserialize token.');
     this.totalAmount = args.nextU64().expect('Failed to deserialize totalAmount.');
     this.amountClaimed = args.nextU64().expect('Failed to deserialize amountClaimed.');
     this.lockPeriod = args.nextU64().expect('Failed to deserialize lockPeriod.');
@@ -76,7 +70,6 @@ export function constructor(binArgs: StaticArray<u8>): void {
   const args = new Args(binArgs);
   const period = args.nextU64().expect('Unable to decode period');
   
-  // Store the contract owner (deployer)
   Storage.set(OWNER_KEY, stringToBytes(Context.caller().toString()));
   
   Storage.set(TASK_COUNT_KEY, new Args().add(0 as u64).serialize());
@@ -85,69 +78,71 @@ export function constructor(binArgs: StaticArray<u8>): void {
   generateEvent("Contract initialized successfully");
 }
 
+// ... (previous imports and constants remain the same)
+
 export function createVestingSchedule(binArgs: StaticArray<u8>): void {
   const args = new Args(binArgs);
   const beneficiary = args.nextString().expect('Missing beneficiary address');
-  const token = args.nextString().expect('Missing token address');
   const totalAmount = args.nextU64().expect('Missing total amount');
   const lockPeriod = args.nextU64().expect('Missing lock period');
   const releaseInterval = args.nextU64().expect('Missing release interval');
   const releasePercentage = args.nextU64().expect('Missing release percentage');
- 
+
   assert(totalAmount > 0, "Total amount must be greater than 0");
   assert(releasePercentage > 0 && releasePercentage <= 100, "Release percentage must be between 1 and 100");
   assert(releaseInterval > 0, "Release interval must be greater than 0");
-  
-  const startPeriod = Context.currentPeriod() + lockPeriod;
-  const schedule = new vestingSchedule(
-    new Address(beneficiary),
-    new Address(token), 
-    totalAmount, 
-    0, 
-    lockPeriod, 
-    releaseInterval, 
-    releasePercentage, 
-    startPeriod
-  );
-  
-  const tokenContract = new MRC20Wrapper(schedule.token);
+
   const callerAddress = Context.caller();
   const calleeAddress = Context.callee();
 
-  // Check token allowance and transfer tokens to contract
-  const allowance = tokenContract.allowance(callerAddress, calleeAddress);
-  assert(allowance.toU64() >= totalAmount, 'Insufficient allowance');
-  
-  // Get balance before transfer
-  const contractBalanceBefore = tokenContract.balanceOf(calleeAddress);
-  generateEvent(`Contract token balance before: ${contractBalanceBefore.toU64()}`);
-  
-  // Transfer tokens from caller to contract
-  tokenContract.transferFrom(callerAddress, calleeAddress, u256.fromU64(totalAmount));
-  
-  // Verify transfer was successful
-  const contractBalanceAfter = tokenContract.balanceOf(calleeAddress);
-  generateEvent(`Contract token balance after: ${contractBalanceAfter.toU64()}`);
-  assert(
-    contractBalanceAfter.toU64() >= contractBalanceBefore.toU64() + totalAmount,
-    "Token transfer failed"
-  );
-  
-  generateEvent(`Locking ${totalAmount} tokens for vesting`);
+  // Check if enough MAS was sent with the call
+  const coinsSent = Context.transferredCoins();
+  assert(coinsSent >= totalAmount, 'Insufficient MAS sent');
+  generateEvent(`Coins sent with call: ${coinsSent}`);
 
-  // Register first deferred call - DIRECTLY to releaseVestedTokens
+  // Get balance before (for logging)
+  const contractBalanceBefore = Coins.balanceOf(calleeAddress.toString());
+  generateEvent(`Contract MAS balance before: ${contractBalanceBefore}`);
+
+  // Transfer MAS to beneficiary immediately (for vesting setup)
+  Coins.transferCoins(new Address(beneficiary), totalAmount);
+  generateEvent(`Transferred ${totalAmount} MAS to beneficiary: ${beneficiary}`);
+
+  // Get balance after transfer (for logging)
+  const contractBalanceAfter = Coins.balanceOf(calleeAddress.toString());
+  generateEvent(`Contract MAS balance after: ${contractBalanceAfter}`);
+
+  // Verify transfer reduced contract balance (optional, depending on logic)
+  assert(
+    contractBalanceAfter <= contractBalanceBefore - totalAmount,
+    "MAS transfer failed"
+  );
+
+  const startPeriod = Context.currentPeriod() + lockPeriod;
+
+  const schedule = new vestingSchedule(
+    new Address(beneficiary),
+    totalAmount,
+    0,
+    lockPeriod,
+    releaseInterval,
+    releasePercentage,
+    startPeriod
+  );
+
   const releaseArgs = new Args().add(beneficiary).serialize();
   const releaseSlot = findCheapestSlot(
-    startPeriod, 
-    startPeriod + 10, 
-    20_000_000 , 
-    releaseArgs.length);
+    startPeriod,
+    startPeriod + 10,
+    20_000_000,
+    releaseArgs.length
+  );
 
   const callId = deferredCallRegister(
     Context.callee().toString(),
-    'releaseVestedTokens', 
+    'releaseVestedTokens',
     releaseSlot,
-    20_000_000 ,
+    20_000_000,
     releaseArgs,
     0
   );
@@ -155,7 +150,7 @@ export function createVestingSchedule(binArgs: StaticArray<u8>): void {
 
   schedule.nextReleasePeriod = releaseSlot.period;
   Storage.set(VESTING_INFO_KEY, schedule.serialize());
-  
+
   generateEvent(`Vesting schedule created for ${beneficiary}`);
   generateEvent(`First release scheduled for period ${releaseSlot.period}`);
 }
@@ -163,8 +158,6 @@ export function createVestingSchedule(binArgs: StaticArray<u8>): void {
 export function releaseVestedTokens(binArgs: StaticArray<u8>): void {
   generateEvent('releaseVestedTokens function called');
   
-  
-   
   if (Storage.has(LAST_EXECUTION_STATUS_KEY)) {
     const lastStatus = Storage.get(LAST_EXECUTION_STATUS_KEY);
     if (bytesToString(lastStatus) === 'failed') {
@@ -176,7 +169,6 @@ export function releaseVestedTokens(binArgs: StaticArray<u8>): void {
   const args = new Args(binArgs);
   const providedBeneficiary = args.nextString().expect('Missing beneficiary address');
 
-  
   let storedData = Storage.get(VESTING_INFO_KEY);
   if (storedData.length == 0) {
     generateEvent('No vesting schedule found');
@@ -186,12 +178,10 @@ export function releaseVestedTokens(binArgs: StaticArray<u8>): void {
   let schedule = new vestingSchedule();
   schedule.deserialize(storedData);
 
-  
   if (!new Address(providedBeneficiary).equals(schedule.beneficiary)) {
     generateEvent('Beneficiary mismatch');
     return;
   }
-  
   
   const currentPeriod = Context.currentPeriod();
   generateEvent(`Current period: ${currentPeriod}, Next release period: ${schedule.nextReleasePeriod}`);
@@ -200,7 +190,6 @@ export function releaseVestedTokens(binArgs: StaticArray<u8>): void {
     return;
   }
 
-  
   generateEvent(`Total amount: ${schedule.totalAmount}, Already claimed: ${schedule.amountClaimed}`);
   let amountToRelease = (schedule.totalAmount * schedule.releasePercentage) / 100;
   let remainingAmount = schedule.totalAmount - schedule.amountClaimed;
@@ -210,53 +199,45 @@ export function releaseVestedTokens(binArgs: StaticArray<u8>): void {
     generateEvent(`Adjusted release amount to remaining: ${amountToRelease}`);
   }
   
+  const contractBalanceBefore = Coins.balanceOf(Context.callee().toString());
+  const beneficiaryBalanceBefore = Coins.balanceOf(schedule.beneficiary.toString());
+  generateEvent(`Contract MAS balance before: ${contractBalanceBefore}`);
+  generateEvent(`Beneficiary MAS balance before: ${beneficiaryBalanceBefore}`);
   
-  const tokenContract = new MRC20Wrapper(schedule.token);
-  
-  // Get balances before transfer
-  const contractBalanceBefore = tokenContract.balanceOf(Context.callee());
-  const beneficiaryBalanceBefore = tokenContract.balanceOf(schedule.beneficiary);
-  generateEvent(`Contract balance before: ${contractBalanceBefore.toU64()}`);
-  generateEvent(`Beneficiary balance before: ${beneficiaryBalanceBefore.toU64()}`);
-  
-  // Transfer tokens
-  tokenContract.transfer(schedule.beneficiary, u256.fromU64(amountToRelease));
+  // Transfer MAS to beneficiary
+  Coins.transferCoins(schedule.beneficiary, amountToRelease);
   
   // Verify transfer was successful
-  const contractBalanceAfter = tokenContract.balanceOf(Context.callee());
-  const beneficiaryBalanceAfter = tokenContract.balanceOf(schedule.beneficiary);
-  generateEvent(`Contract balance after: ${contractBalanceAfter.toU64()}`);
-  generateEvent(`Beneficiary balance after: ${beneficiaryBalanceAfter.toU64()}`);
+  const contractBalanceAfter = Coins.balanceOf(Context.callee().toString());
+  const beneficiaryBalanceAfter = Coins.balanceOf(schedule.beneficiary.toString());
+  generateEvent(`Contract MAS balance after: ${contractBalanceAfter}`);
+  generateEvent(`Beneficiary MAS balance after: ${beneficiaryBalanceAfter}`);
   
-  // Verify transfer success
   assert(
-    beneficiaryBalanceAfter.toU64() > beneficiaryBalanceBefore.toU64(),
-    "Token transfer failed"
+    beneficiaryBalanceAfter > beneficiaryBalanceBefore,
+    "MAS transfer failed"
   );
 
-  // Update vesting schedule
   schedule.amountClaimed += amountToRelease;
-  generateEvent(`Released ${amountToRelease} tokens to ${schedule.beneficiary.toString()}`);
+  generateEvent(`Released ${amountToRelease} MAS to ${schedule.beneficiary.toString()}`);
 
-  
   if (schedule.amountClaimed < schedule.totalAmount) {
     schedule.nextReleasePeriod = currentPeriod + schedule.releaseInterval;
     const releaseArgs = new Args().add(providedBeneficiary).serialize();
     const newReleaseSlot = findCheapestSlot(
       schedule.nextReleasePeriod,
       schedule.nextReleasePeriod + 10,
-      20_000_000 ,
+      20_000_000,
       releaseArgs.length
     );
     
-    // Store current state before registering next call
     Storage.set(VESTING_INFO_KEY, schedule.serialize());
     
     const newCallId = deferredCallRegister(
       Context.callee().toString(),
-      'releaseVestedTokens', 
+      'releaseVestedTokens',
       newReleaseSlot,
-      20_000_000 ,
+      20_000_000,
       releaseArgs,
       0
     );
@@ -266,9 +247,7 @@ export function releaseVestedTokens(binArgs: StaticArray<u8>): void {
     generateEvent("Vesting schedule completed");
   }
   
-  // Update final state
   Storage.set(VESTING_INFO_KEY, schedule.serialize());
-  
 }
 
 export function getNextCallId(_: StaticArray<u8>): StaticArray<u8> {
@@ -277,7 +256,6 @@ export function getNextCallId(_: StaticArray<u8>): StaticArray<u8> {
 }
 
 export function stop(_: StaticArray<u8>): void {
-  
   const ownerStr = Storage.get(OWNER_KEY);
   const owner = new Address(bytesToString(ownerStr));
   assert(Context.caller().equals(owner), "Unauthorized");
