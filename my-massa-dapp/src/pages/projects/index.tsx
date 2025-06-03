@@ -2,25 +2,22 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Button } from "./ui/button"
-import { Input } from "./ui/input"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { ArrowLeft, ThumbsUp, Users, Clock, Coins, ChevronDown, ChevronUp, Search } from "lucide-react"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card"
-import { Progress } from "./ui/progress"
-import { Badge } from "./ui/badge"
-import { DonationForm } from "./donation-form"
-import { NFTPreview } from "./nft-preview"
-import { ProjectUpdates } from "./project-updates"
-import { LoadingSpinner } from "./ui/loading-spinner"
-import { Skeleton } from "./ui/skeleton"
-import type { ProjectData } from "../types"
-import { useToast } from "./ui/use-toast"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Progress } from "@/components/ui/progress"
+import { Badge } from "@/components/ui/badge"
+import { DonationForm } from "@/components/donation-form"
+import { NFTPreview } from "@/components/nft-preview"
+import { ProjectUpdates } from "@/components/project-updates"
+import { LoadingSpinner } from "@/components/ui/loading-spinner"
+import { Skeleton } from "@/components/ui/skeleton"
+import type { ProjectData } from "@/components/types"
+import { useToast } from "@/components/ui/use-toast"
 import { useAccountStore } from "@massalabs/react-ui-kit"
-import { vestingService } from "./vesting-service"
-
-interface FundProps {
-  onBack: () => void
-}
+import { vestingService } from "@/components/vesting-service"
+import Loader from "@/components/Loader"
 
 // Mock data for projects with images
 const mockProjects = [
@@ -129,7 +126,7 @@ const categoryColors = {
   All: "bg-gradient-to-r from-green-400 via-emerald-500 to-teal-600 hover:from-green-500 hover:via-emerald-600 hover:to-teal-700 text-white",
 }
 
-export default function Fund({ onBack }: FundProps) {
+export default function Projects() {
   const { toast } = useToast()
   const [projects, setProjects] = useState<ProjectData[]>([])
   const [selectedProject, setSelectedProject] = useState<string | null>(null)
@@ -295,13 +292,7 @@ export default function Fund({ onBack }: FundProps) {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col space-y-6 py-8">
-        <LoadingSpinner size="lg" text="Loading projects..." />
-        <div className="space-y-4">
-          <Skeleton className="h-64 w-full" />
-          <Skeleton className="h-64 w-full" />
-        </div>
-      </div>
+      <Loader />
     )
   }
 
@@ -378,13 +369,6 @@ export default function Fund({ onBack }: FundProps) {
             transition={{ duration: 0.3 }}
             className="space-y-8 p-6"
           >
-            {/* Header with Back Button */}
-            <div className="flex items-center">
-              <Button variant="ghost" size="icon" onClick={onBack} className="mr-4 text-white hover:bg-slate-700">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </div>
-
             {/* Enhanced Centered Title */}
             <div className="text-center">
               <motion.h1

@@ -4,32 +4,26 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Button } from "./ui/button"
-import { Input } from "./ui/input"
-import { Textarea } from "./ui/textarea"
-import { Label } from "./ui/label"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
 import { ArrowLeft, Info, Plus, TrendingUp, Users, DollarSign, Calendar, Settings, Eye } from "lucide-react"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
-import { Slider } from "./ui/slider"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip"
-import { useToast } from "./ui/use-toast"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Slider } from "@/components/ui/slider"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { useToast } from "@/components/ui/use-toast"
 import { useProjects } from "../context/project-context"
-import { useNavigate } from "../hooks/use-navigate"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAccountStore } from "@massalabs/react-ui-kit"
-import type { ProjectData } from "./types"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "./ui/tabs"
-import { ProjectUpdates } from "./project-updates"
-import { MilestoneForm } from "./milestone-form"
+import type { ProjectData } from "@/components/types"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { ProjectUpdates } from "@/components/project-updates"
+import { MilestoneForm } from "@/components/milestone-form"
 
-interface RequestFundingProps {
-  onBack: () => void
-}
-
-export function RequestFunding({ onBack }: RequestFundingProps) {
+export default function RequestFunding() {
   const { toast } = useToast()
   const { addProject, projects, addProjectMilestone } = useProjects()
-  const { navigate } = useNavigate()
   const { connectedAccount } = useAccountStore()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isWalletConnected, setIsWalletConnected] = useState(!!connectedAccount)
@@ -197,8 +191,8 @@ export function RequestFunding({ onBack }: RequestFundingProps) {
   const totalSupporters = myProjects.reduce((sum, project) => sum + project.supporters, 0)
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+    <div className="mx-auto py-8 px-4 bg-[#0f1629]">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className='max-w-3xl mx-auto'>
         <TabsList className="mb-8 bg-[#1a2340] border border-[#00ff9d]/20">
           <TabsTrigger
             value="request"
@@ -217,15 +211,6 @@ export function RequestFunding({ onBack }: RequestFundingProps) {
         </TabsList>
 
         <TabsContent value="request">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate("home")}
-            className="flex items-center text-sm text-white mb-6"
-          >
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            Back to home
-          </Button>
 
           <div className="max-w-3xl mx-auto">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
@@ -468,7 +453,6 @@ export function RequestFunding({ onBack }: RequestFundingProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="space-y-8"
           >
             {/* Header */}
             <div className="text-center">

@@ -1,15 +1,15 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Button } from "./ui/button"
+import { Button } from "@/components/ui/button"
 import { ArrowRight, Shield, Clock, Coins, HelpCircle, Rocket, Users, Zap } from "lucide-react"
 import { useProjects } from "../context/project-context"
-import { useNavigate } from "../hooks/use-navigate"
+import { useNavigate } from "react-router-dom"
 
-export function LandingPage() {
+export default function LandingPage() {
+const navigate = useNavigate()
   const { projects } = useProjects()
   const featuredProjects = projects.slice(0, 3)
-  const { navigate } = useNavigate()
 
   // Define category images
   const categoryImages = {
@@ -40,7 +40,7 @@ export function LandingPage() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
-      <section className="py-16 px-4">
+      <section className="py-16 px-4 bg-[#0f1629]">
         <div className="container mx-auto">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -55,7 +55,7 @@ export function LandingPage() {
               Support innovative projects building on the Massa blockchain and help shape the future of decentralized applications.
             </p>
             <Button 
-              onClick={() => navigate('fund')} 
+              onClick={() => navigate('/projects')} 
               className="bg-[#00ff9d] hover:bg-[#00ff9d]/90 text-[#0f1629] font-medium px-8 py-6 text-lg"
             >
               Explore Projects <ArrowRight className="ml-2 h-5 w-5" />
@@ -173,7 +173,7 @@ export function LandingPage() {
                   </div>
                   
                   <Button 
-                    onClick={() => navigate('fund')} 
+                    onClick={() => navigate('/projects')} 
                     className="w-full bg-[#00ff9d] hover:bg-[#00ff9d]/90 text-[#0f1629] font-medium"
                   >
                     Fund This Project
@@ -185,7 +185,7 @@ export function LandingPage() {
           
           <div className="text-center mt-10">
             <Button 
-              onClick={() => navigate('fund')} 
+              onClick={() => navigate('/projects')} 
               variant="outline" 
               className="border-[#00ff9d] text-[#00ff9d] hover:bg-[#00ff9d]/10"
             >
@@ -234,7 +234,7 @@ export function LandingPage() {
           <Button 
             size="lg" 
             className="bg-[#00ff9d] hover:bg-[#00ff9d]/90 text-black font-bold"
-            onClick={() => navigate("request")}
+            onClick={() => navigate("/request-funding")}
           >
             Request Funding Now
           </Button>

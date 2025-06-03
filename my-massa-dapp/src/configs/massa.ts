@@ -1,4 +1,5 @@
 // Configuration for Massa blockchain
+
 export const MASSA_NODE_URL = "https://buildnet.massa.net/api/v2"
 
 // Smart contract addresses
@@ -11,4 +12,3 @@ export const defaultNetworkConfig = {
   nodeUrl: MASSA_NODE_URL,
   explorerUrl: "https://buildnet.massa.net/explorer",
 }
-

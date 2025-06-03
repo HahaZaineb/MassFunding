@@ -1,7 +1,7 @@
 export function Footer() {
   return (
     <footer className="bg-[#1a1a2e] border-t border-[#00ff9d]/20 py-8 mt-auto">
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
             <h3 className="text-[#00ff9d] font-bold text-lg mb-4">MassFunding</h3>
