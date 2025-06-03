@@ -11,13 +11,11 @@ import { Badge } from "@/components/ui/badge"
 import { DonationForm } from "@/components/donation-form"
 import { NFTPreview } from "@/components/nft-preview"
 import { ProjectUpdates } from "@/components/project-updates"
-import { LoadingSpinner } from "@/components/ui/loading-spinner"
-import { Skeleton } from "@/components/ui/skeleton"
-import type { ProjectData } from "@/components/types"
 import { useToast } from "@/components/ui/use-toast"
 import { useAccountStore } from "@massalabs/react-ui-kit"
-import { vestingService } from "@/components/vesting-service"
+import { vestingService } from "@/services/vesting-service"
 import Loader from "@/components/Loader"
+import { ProjectData } from "@/types"
 
 // Mock data for projects with images
 const mockProjects = [
@@ -374,7 +372,7 @@ export default function Projects() {
               <motion.h1
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="text-7xl font-black bg-gradient-to-r from-green-300 via-emerald-400 to-teal-500 bg-clip-text text-transparent mb-4 drop-shadow-2xl tracking-tight"
+                className="text-5xl font-black bg-gradient-to-r from-green-300 via-emerald-400 to-teal-500 bg-clip-text text-transparent mb-4 drop-shadow-2xl tracking-tight"
                 style={{
                   textShadow: "0 0 30px rgba(16, 185, 129, 0.5)",
                   filter: "drop-shadow(0 0 20px rgba(16, 185, 129, 0.3))",
@@ -388,7 +386,7 @@ export default function Projects() {
                 transition={{ delay: 0.2 }}
                 className="w-32 h-1 bg-gradient-to-r from-green-400 to-emerald-500 mx-auto mb-4 rounded-full"
               />
-              <p className="text-slate-300 text-xl font-medium">
+              <p className="text-slate-300 text-l font-medium">
                 Discover and support innovative projects that make a difference
               </p>
             </div>
@@ -401,7 +399,7 @@ export default function Projects() {
                   placeholder="Search for projects..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-12 h-14 text-lg bg-slate-800/60 border-2 border-emerald-500/50 text-white placeholder-slate-400 rounded-xl backdrop-blur-sm focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400/80 shadow-lg shadow-emerald-500/20"
+                  className="pl-12 h-12 text-lg bg-slate-800/60 border-2 border-emerald-500/50 text-white placeholder-slate-400 rounded-xl backdrop-blur-sm focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400/80 shadow-lg shadow-emerald-500/20"
                 />
               </div>
             </div>
@@ -418,7 +416,7 @@ export default function Projects() {
                     whileHover={{ scale: 1.05, y: -2 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setSelectedCategory(category)}
-                    className={`px-8 py-4 rounded-full font-bold transition-all duration-300 shadow-lg text-lg ${
+                    className={`px-6 py-3 rounded-full font-bold transition-all duration-300 shadow-lg text-md ${
                       isActive
                         ? categoryColors[category as keyof typeof categoryColors] + " shadow-xl"
                         : "bg-slate-700/80 hover:bg-slate-600/80 text-slate-300 hover:text-white backdrop-blur-sm"

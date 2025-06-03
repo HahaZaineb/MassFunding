@@ -1,5 +1,5 @@
+import { ProjectData } from "@/types"
 import { createContext, useContext, useState, useEffect, ReactNode } from "react"
-import type { ProjectData } from "../components/types"
 
 // Sample project data
 const initialProjects: ProjectData[] = [

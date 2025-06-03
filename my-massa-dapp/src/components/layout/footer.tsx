@@ -1,78 +1,120 @@
+import { Box, Typography, Link, Container, Divider, Stack } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+
 export function Footer() {
+  const navigate = useNavigate();
+
+  const handleNavigate = (path: string) => {
+    navigate(path);
+  };
+
+  const linkStyles = {
+    color: 'slategray',
+    fontSize: '0.875rem',
+    display: 'block',
+    cursor: 'pointer',
+    '&:hover': { color: '#00ff9d' },
+  };
+
+  const sections = [
+    {
+      title: 'Platform',
+      links: [
+        { label: 'Explore Projects', path: '/projects' },
+        { label: 'Request Funding', path: '/request-funding' },
+        { label: 'How It Works', path: '/about' },
+      ],
+      internal: true,
+    },
+    {
+      title: 'Resources',
+      links: [
+        { label: 'Massa Docs', path: 'https://docs.massa.net/' },
+        { label: 'GitHub', path: 'https://github.com/massalabs' },
+        { label: 'Discord', path: 'https://discord.gg/massa' },
+      ],
+      internal: false,
+    },
+    {
+      title: 'Legal',
+      links: [
+        { label: 'Terms of Service', path: '/terms' },
+        { label: 'Privacy Policy', path: '/privacy' },
+      ],
+      internal: true,
+    },
+  ];
+
   return (
-    <footer className="bg-[#1a1a2e] border-t border-[#00ff9d]/20 py-8 mt-auto">
-      <div className="container mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div>
-            <h3 className="text-[#00ff9d] font-bold text-lg mb-4">MassFunding</h3>
-            <p className="text-slate-300 text-sm">
+    <Box
+      component="footer"
+      sx={{
+        backgroundColor: '#1a1a2e',
+        borderTop: '1px solid rgba(0, 255, 157, 0.2)',
+        py: 8,
+        mt: 'auto',
+      }}
+    >
+      <Container maxWidth="lg">
+        <Stack
+          direction={{ xs: 'column', md: 'row' }}
+          spacing={{ xs: 4, md: 8 }}
+          justifyContent="space-between"
+          alignItems="flex-start"
+          flexWrap="wrap"
+        >
+          <Stack spacing={2} sx={{ flex: 1, minWidth: 240 }}>
+            <Typography
+              variant="h6"
+              sx={{ color: '#00ff9d', fontWeight: 'bold', cursor: 'pointer' }}
+              onClick={() => handleNavigate('/')}
+            >
+              MassFunding
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'slategray', maxWidth: 200 }}>
               A decentralized crowdfunding platform built on Massa blockchain with vesting schedules and deferred calls.
-            </p>
-          </div>
-          
-          <div>
-            <h4 className="text-white font-medium mb-4">Platform</h4>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <a href="/projects" className="text-slate-300 hover:text-[#00ff9d] transition">
-                  Explore Projects
-                </a>
-              </li>
-              <li>
-                <a href="/request" className="text-slate-300 hover:text-[#00ff9d] transition">
-                  Request Funding
-                </a>
-              </li>
-              <li>
-                <a href="/how-it-works" className="text-slate-300 hover:text-[#00ff9d] transition">
-                  How It Works
-                </a>
-              </li>
-            </ul>
-          </div>
-          
-          <div>
-            <h4 className="text-white font-medium mb-4">Resources</h4>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <a href="https://docs.massa.net/" target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-[#00ff9d] transition">
-                  Massa Docs
-                </a>
-              </li>
-              <li>
-                <a href="https://github.com/massalabs" target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-[#00ff9d] transition">
-                  GitHub
-                </a>
-              </li>
-              <li>
-                <a href="https://discord.gg/massa" target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-[#00ff9d] transition">
-                  Discord
-                </a>
-              </li>
-            </ul>
-          </div>
-          
-          <div>
-            <h4 className="text-white font-medium mb-4">Legal</h4>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <a href="/terms" className="text-slate-300 hover:text-[#00ff9d] transition">
-                  Terms of Service
-                </a>
-              </li>
-              <li>
-                <a href="/privacy" className="text-slate-300 hover:text-[#00ff9d] transition">
-                  Privacy Policy
-                </a>
-              </li>
-            </ul>
-          </div>
-        </div>
-        
-        <div className="border-t border-[#00ff9d]/20 mt-8 pt-6 text-center text-slate-400 text-sm">
-          <p>© {new Date().getFullYear()} MassFunding. Built on Massa blockchain.</p>
-        </div>
-      </div>
-    </footer>
-  )
+            </Typography>
+          </Stack>
+
+          <Stack direction="row" flexWrap="wrap" sx={{ gap: 6 }}>
+            {sections.map((section) => (
+              <Stack spacing={1} key={section.title} minWidth={140}>
+                <Typography variant="subtitle1" sx={{ color: 'white', fontWeight: 500 }}>
+                  {section.title}
+                </Typography>
+                {section.links.map((link) =>
+                  section.internal ? (
+                    <Typography
+                      key={link.path}
+                      onClick={() => handleNavigate(link.path)}
+                      sx={linkStyles}
+                    >
+                      {link.label}
+                    </Typography>
+                  ) : (
+                    <Link
+                      key={link.path}
+                      href={link.path}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      underline="hover"
+                      sx={linkStyles}
+                    >
+                      {link.label}
+                    </Link>
+                  )
+                )}
+              </Stack>
+            ))}
+          </Stack>
+        </Stack>
+
+        <Divider sx={{ borderColor: 'rgba(0, 255, 157, 0.2)', mt: 6, mb: 3 }} />
+
+        <Typography variant="body2" align="center" sx={{ color: 'slategray' }}>
+          © {new Date().getFullYear()} MassFunding. Built on Massa blockchain.
+        </Typography>
+      </Container>
+    </Box>
+  );
 }

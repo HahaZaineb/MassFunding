@@ -16,10 +16,10 @@ import { useToast } from "@/components/ui/use-toast"
 import { useProjects } from "../context/project-context"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAccountStore } from "@massalabs/react-ui-kit"
-import type { ProjectData } from "@/components/types"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { ProjectUpdates } from "@/components/project-updates"
 import { MilestoneForm } from "@/components/milestone-form"
+import { ProjectData } from "@/types"
 
 export default function RequestFunding() {
   const { toast } = useToast()
