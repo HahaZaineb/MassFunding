@@ -5,13 +5,13 @@ import { Button } from "./ui/button"
 import { Input } from "./ui/input"
 import { ArrowLeft, Info, Loader2 } from "lucide-react"
 import { useAccountStore, ConnectMassaWallet } from "@massalabs/react-ui-kit"
-import type { ProjectData } from "./types"
 import { NFTPreview } from "./nft-preview"
 import { vestingService, type VestingScheduleParams } from "../services/vesting-service"
 import { useToast } from "./ui/use-toast"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
 import { Progress } from "./ui/progress"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip"
+import { ProjectData } from "@/types"
 
 interface DonationFormProps {
   project: ProjectData
@@ -227,7 +227,7 @@ export function DonationForm({ project, onBack, onSubmit, isProcessing }: Donati
               {/* Wallet Connection and Submit */}
               <div className="space-y-4">
                 {!isWalletConnected ? (
-                  <div className="theme-light">
+                  <div className="theme-dark">
                     <ConnectMassaWallet />
                   </div>
                 ) : (

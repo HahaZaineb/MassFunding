@@ -20,6 +20,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { ProjectUpdates } from "@/components/project-updates"
 import { MilestoneForm } from "@/components/milestone-form"
 import { ProjectData } from "@/types"
+import { CATEGORIES } from "@/constants"
 
 export default function RequestFunding() {
   const { toast } = useToast()
@@ -192,7 +193,11 @@ export default function RequestFunding() {
 
   return (
     <div className="mx-auto py-8 px-4 bg-[#0f1629]">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className='max-w-3xl mx-auto'>
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="max-w-3xl mx-auto"
+      >
         <TabsList className="mb-8 bg-[#1a2340] border border-[#00ff9d]/20">
           <TabsTrigger
             value="request"
@@ -211,15 +216,18 @@ export default function RequestFunding() {
         </TabsList>
 
         <TabsContent value="request">
-
           <div className="max-w-3xl mx-auto">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
               <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-white to-[#00ff9d] bg-clip-text text-transparent">
                 Request Funding
               </h1>
               <p className="text-slate-300 mb-8">
-                Fill out the form below to request funding for your project. Your request will be reviewed by the
-                community.
+                Fill out the form below to request funding for your project.
+                Your request will be reviewed by the community.
               </p>
             </motion.div>
 
@@ -232,7 +240,8 @@ export default function RequestFunding() {
                 <CardHeader className="border-b border-[#00ff9d]/10">
                   <CardTitle className="text-white">Project Details</CardTitle>
                   <CardDescription className="text-slate-400">
-                    Provide information about your project and funding requirements.
+                    Provide information about your project and funding
+                    requirements.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="p-6">
@@ -289,16 +298,18 @@ export default function RequestFunding() {
                           onChange={handleFileChange}
                           className="text-white text-sm"
                         />
-                        {formData.image && formData.image.startsWith("data:") && (
-                          <img
-                            src={formData.image || "/placeholder.svg"}
-                            alt="Preview"
-                            className="h-12 w-12 object-cover rounded border border-[#00ff9d]/20"
-                          />
-                        )}
+                        {formData.image &&
+                          formData.image.startsWith('data:') && (
+                            <img
+                              src={formData.image || '/placeholder.svg'}
+                              alt="Preview"
+                              className="h-12 w-12 object-cover rounded border border-[#00ff9d]/20"
+                            />
+                          )}
                       </div>
                       <span className="text-xs text-slate-400">
-                        This image will be shown on your project card. You can paste a URL or upload a file.
+                        This image will be shown on your project card. You can
+                        paste a URL or upload a file.
                       </span>
                     </div>
 
@@ -327,17 +338,19 @@ export default function RequestFunding() {
                         </Label>
                         <Select
                           value={formData.category}
-                          onValueChange={(value) => handleSelectChange("category", value)}
+                          onValueChange={(value) =>
+                            handleSelectChange('category', value)
+                          }
                         >
                           <SelectTrigger className="bg-[#0f1629] border-[#00ff9d]/20 text-white focus:border-[#00ff9d] focus:ring-[#00ff9d]/20">
                             <SelectValue placeholder="Select category" />
                           </SelectTrigger>
-                          <SelectContent className="bg-[#1a2340] border-[#00ff9d]/20 text-white">
-                            <SelectItem value="Environment">Environment</SelectItem>
-                            <SelectItem value="Education">Education</SelectItem>
-                            <SelectItem value="Healthcare">Healthcare</SelectItem>
-                            <SelectItem value="Technology">Technology</SelectItem>
-                            <SelectItem value="Community">Community</SelectItem>
+                          <SelectContent className="bg-[#1a2340] border-[#00ff9d]/20 text-white max-h-[300px] overflow-y-auto">
+                            {CATEGORIES.map((category) => (
+                              <SelectItem key={category.name} value={category.name}>
+                                {category.name}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
@@ -349,13 +362,18 @@ export default function RequestFunding() {
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 text-slate-400"
+                              >
                                 <Info className="h-4 w-4" />
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent className="bg-[#1a2340] text-white border border-[#00ff9d]/20">
                               <p className="max-w-xs">
-                                Vesting schedules determine how and when funds are released to your project.
+                                Vesting schedules determine how and when funds
+                                are released to your project.
                               </p>
                             </TooltipContent>
                           </Tooltip>
@@ -369,7 +387,9 @@ export default function RequestFunding() {
                           </Label>
                           <Select
                             value={formData.lockPeriod}
-                            onValueChange={(value) => handleSelectChange("lockPeriod", value)}
+                            onValueChange={(value) =>
+                              handleSelectChange('lockPeriod', value)
+                            }
                           >
                             <SelectTrigger className="bg-[#0f1629] border-[#00ff9d]/20 text-white focus:border-[#00ff9d] focus:ring-[#00ff9d]/20">
                               <SelectValue placeholder="Select lock period" />
@@ -385,20 +405,29 @@ export default function RequestFunding() {
                         </div>
 
                         <div className="space-y-2">
-                          <Label htmlFor="releaseInterval" className="text-white">
+                          <Label
+                            htmlFor="releaseInterval"
+                            className="text-white"
+                          >
                             Release Interval (days)
                           </Label>
                           <Select
                             value={formData.releaseInterval}
-                            onValueChange={(value) => handleSelectChange("releaseInterval", value)}
+                            onValueChange={(value) =>
+                              handleSelectChange('releaseInterval', value)
+                            }
                           >
                             <SelectTrigger className="bg-[#0f1629] border-[#00ff9d]/20 text-white focus:border-[#00ff9d] focus:ring-[#00ff9d]/20">
                               <SelectValue placeholder="Select release interval" />
                             </SelectTrigger>
                             <SelectContent className="bg-[#1a2340] border-[#00ff9d]/20 text-white">
                               <SelectItem value="7">Weekly (7 days)</SelectItem>
-                              <SelectItem value="30">Monthly (30 days)</SelectItem>
-                              <SelectItem value="90">Quarterly (90 days)</SelectItem>
+                              <SelectItem value="30">
+                                Monthly (30 days)
+                              </SelectItem>
+                              <SelectItem value="90">
+                                Quarterly (90 days)
+                              </SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -406,10 +435,15 @@ export default function RequestFunding() {
 
                       <div className="space-y-2">
                         <div className="flex justify-between">
-                          <Label htmlFor="releasePercentage" className="text-white">
+                          <Label
+                            htmlFor="releasePercentage"
+                            className="text-white"
+                          >
                             Release Percentage per Interval
                           </Label>
-                          <span className="text-sm text-[#00ff9d] font-semibold">{formData.releasePercentage}%</span>
+                          <span className="text-sm text-[#00ff9d] font-semibold">
+                            {formData.releasePercentage}%
+                          </span>
                         </div>
                         <Slider
                           id="releasePercentage"
@@ -421,7 +455,8 @@ export default function RequestFunding() {
                           className="py-4"
                         />
                         <p className="text-xs text-slate-400">
-                          This determines what percentage of the total funds will be released at each interval.
+                          This determines what percentage of the total funds
+                          will be released at each interval.
                         </p>
                       </div>
                     </div>
@@ -432,16 +467,22 @@ export default function RequestFunding() {
                         className="w-full bg-gradient-to-r from-[#00ff9d] to-[#00cc7d] hover:from-[#00cc7d] hover:to-[#00ff9d] text-black font-bold py-3 transition-all duration-300"
                         disabled={isSubmitting}
                       >
-                        {isSubmitting ? "Creating Project..." : "Create Project"}
+                        {isSubmitting
+                          ? 'Creating Project...'
+                          : 'Create Project'}
                       </Button>
                     </div>
                   </form>
                 </CardContent>
                 <CardFooter className="text-xs text-slate-400 border-t border-[#00ff9d]/10 flex flex-col items-start">
                   <p className="mb-1">
-                    By submitting, you agree to the platform's terms and conditions regarding fund distribution.
+                    By submitting, you agree to the platform's terms and
+                    conditions regarding fund distribution.
                   </p>
-                  <p>Your project will be visible to potential funders after review.</p>
+                  <p>
+                    Your project will be visible to potential funders after
+                    review.
+                  </p>
                 </CardFooter>
               </Card>
             </motion.div>
@@ -472,7 +513,9 @@ export default function RequestFunding() {
                     <div className="flex items-center justify-center mb-2">
                       <TrendingUp className="h-8 w-8 text-[#00ff9d]" />
                     </div>
-                    <div className="text-2xl font-bold text-white">{totalProjects}</div>
+                    <div className="text-2xl font-bold text-white">
+                      {totalProjects}
+                    </div>
                     <div className="text-sm text-slate-400">Total Projects</div>
                   </CardContent>
                 </Card>
@@ -482,7 +525,9 @@ export default function RequestFunding() {
                     <div className="flex items-center justify-center mb-2">
                       <DollarSign className="h-8 w-8 text-[#00ff9d]" />
                     </div>
-                    <div className="text-2xl font-bold text-white">{totalFundsRaised.toFixed(1)}</div>
+                    <div className="text-2xl font-bold text-white">
+                      {totalFundsRaised.toFixed(1)}
+                    </div>
                     <div className="text-sm text-slate-400">MAS Raised</div>
                   </CardContent>
                 </Card>
@@ -492,8 +537,12 @@ export default function RequestFunding() {
                     <div className="flex items-center justify-center mb-2">
                       <Users className="h-8 w-8 text-[#00ff9d]" />
                     </div>
-                    <div className="text-2xl font-bold text-white">{totalSupporters}</div>
-                    <div className="text-sm text-slate-400">Total Supporters</div>
+                    <div className="text-2xl font-bold text-white">
+                      {totalSupporters}
+                    </div>
+                    <div className="text-sm text-slate-400">
+                      Total Supporters
+                    </div>
                   </CardContent>
                 </Card>
               </div>
@@ -518,28 +567,41 @@ export default function RequestFunding() {
                               <div className="flex items-center gap-3 mb-2">
                                 {project.image && (
                                   <img
-                                    src={project.image || "/placeholder.svg"}
+                                    src={project.image || '/placeholder.svg'}
                                     alt={project.name}
                                     className="w-12 h-12 rounded-lg object-cover border border-[#00ff9d]/20"
                                   />
                                 )}
                                 <div>
-                                  <h3 className="text-xl font-bold text-white">{project.name}</h3>
+                                  <h3 className="text-xl font-bold text-white">
+                                    {project.name}
+                                  </h3>
                                   <span className="inline-block px-2 py-1 text-xs bg-[#00ff9d]/20 text-[#00ff9d] rounded-full">
                                     {project.category}
                                   </span>
                                 </div>
                               </div>
-                              <p className="text-slate-300 text-sm">{project.description}</p>
+                              <p className="text-slate-300 text-sm">
+                                {project.description}
+                              </p>
                             </div>
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => setExpandedProject(expandedProject === project.id ? null : project.id)}
+                              onClick={() =>
+                                setExpandedProject(
+                                  expandedProject === project.id
+                                    ? null
+                                    : project.id,
+                                )
+                              }
                               className="text-[#00ff9d] hover:bg-[#00ff9d]/10"
                             >
                               <Eye className="h-4 w-4 mr-1" />
-                              {expandedProject === project.id ? "Hide" : "View"} Details
+                              {expandedProject === project.id
+                                ? 'Hide'
+                                : 'View'}{' '}
+                              Details
                             </Button>
                           </div>
                         </div>
@@ -548,22 +610,38 @@ export default function RequestFunding() {
                         <div className="p-6 border-b border-[#00ff9d]/10">
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             <div className="text-center">
-                              <div className="text-lg font-bold text-[#00ff9d]">{project.amountRaised}</div>
-                              <div className="text-xs text-slate-400">MAS Raised</div>
-                            </div>
-                            <div className="text-center">
-                              <div className="text-lg font-bold text-white">{project.goalAmount}</div>
-                              <div className="text-xs text-slate-400">Goal</div>
-                            </div>
-                            <div className="text-center">
-                              <div className="text-lg font-bold text-white">{project.supporters}</div>
-                              <div className="text-xs text-slate-400">Supporters</div>
+                              <div className="text-lg font-bold text-[#00ff9d]">
+                                {project.amountRaised}
+                              </div>
+                              <div className="text-xs text-slate-400">
+                                MAS Raised
+                              </div>
                             </div>
                             <div className="text-center">
                               <div className="text-lg font-bold text-white">
-                                {Math.round((project.amountRaised / project.goalAmount) * 100)}%
+                                {project.goalAmount}
                               </div>
-                              <div className="text-xs text-slate-400">Funded</div>
+                              <div className="text-xs text-slate-400">Goal</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-lg font-bold text-white">
+                                {project.supporters}
+                              </div>
+                              <div className="text-xs text-slate-400">
+                                Supporters
+                              </div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-lg font-bold text-white">
+                                {Math.round(
+                                  (project.amountRaised / project.goalAmount) *
+                                    100,
+                                )}
+                                %
+                              </div>
+                              <div className="text-xs text-slate-400">
+                                Funded
+                              </div>
                             </div>
                           </div>
 
@@ -573,7 +651,12 @@ export default function RequestFunding() {
                               <div
                                 className="bg-gradient-to-r from-[#00ff9d] to-[#00cc7d] h-2 rounded-full transition-all duration-300"
                                 style={{
-                                  width: `${Math.min((project.amountRaised / project.goalAmount) * 100, 100)}%`,
+                                  width: `${Math.min(
+                                    (project.amountRaised /
+                                      project.goalAmount) *
+                                      100,
+                                    100,
+                                  )}%`,
                                 }}
                               />
                             </div>
@@ -584,11 +667,19 @@ export default function RequestFunding() {
                         <div className="p-6 border-b border-[#00ff9d]/10">
                           <div className="flex flex-wrap gap-3">
                             <Button
-                              onClick={() => setShowMilestoneForm(showMilestoneForm === project.id ? null : project.id)}
+                              onClick={() =>
+                                setShowMilestoneForm(
+                                  showMilestoneForm === project.id
+                                    ? null
+                                    : project.id,
+                                )
+                              }
                               className="bg-blue-600 hover:bg-blue-700 text-white"
                             >
                               <Plus className="h-4 w-4 mr-2" />
-                              {showMilestoneForm === project.id ? "Cancel" : "Add Milestone"}
+                              {showMilestoneForm === project.id
+                                ? 'Cancel'
+                                : 'Add Milestone'}
                             </Button>
                             <Button
                               variant="outline"
@@ -610,8 +701,8 @@ export default function RequestFunding() {
                                   ...milestone,
                                   id: `milestone-${Date.now()}`,
                                   completed: false,
-                                })
-                                setShowMilestoneForm(null)
+                                });
+                                setShowMilestoneForm(null);
                               }}
                               onCancel={() => setShowMilestoneForm(null)}
                             />
@@ -621,7 +712,10 @@ export default function RequestFunding() {
                         {/* Project Updates - Only show if expanded */}
                         {expandedProject === project.id && (
                           <div className="p-6">
-                            <ProjectUpdates projectId={project.id} projectName={project.name} />
+                            <ProjectUpdates
+                              projectId={project.id}
+                              projectName={project.name}
+                            />
                           </div>
                         )}
                       </CardContent>
@@ -638,12 +732,15 @@ export default function RequestFunding() {
               >
                 <div className="bg-gradient-to-br from-[#1a2340] to-[#0f1629] border border-[#00ff9d]/20 rounded-2xl p-12 max-w-md mx-auto">
                   <TrendingUp className="h-16 w-16 text-[#00ff9d] mx-auto mb-6" />
-                  <h3 className="text-2xl font-bold text-white mb-4">No Projects Yet</h3>
+                  <h3 className="text-2xl font-bold text-white mb-4">
+                    No Projects Yet
+                  </h3>
                   <p className="text-slate-400 mb-6">
-                    You haven't created any projects yet. Start by requesting funding for your first project!
+                    You haven't created any projects yet. Start by requesting
+                    funding for your first project!
                   </p>
                   <Button
-                    onClick={() => setActiveTab("request")}
+                    onClick={() => setActiveTab('request')}
                     className="bg-gradient-to-r from-[#00ff9d] to-[#00cc7d] hover:from-[#00cc7d] hover:to-[#00ff9d] text-black font-bold"
                   >
                     <Plus className="h-4 w-4 mr-2" />
@@ -656,5 +753,5 @@ export default function RequestFunding() {
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }

@@ -11,15 +11,16 @@ const FeaturesSection = () => {
           How It Works
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Secure Vesting */}
           <motion.div
-            className="bg-[#0f1629] p-6 rounded-lg border border-[#00ff9d]/20"
+            className="bg-[#0f1629] p-6 rounded-lg border border-[#00ff9d]/20 flex flex-col items-center text-center"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
           >
-            <div className="bg-[#00ff9d] w-12 h-12 rounded-full flex items-center justify-center mb-4">
-              <Shield className="text-black" />
+            <div className="w-12 h-12 rounded-full flex items-center justify-center mb-4 bg-[#34d399]/20">
+              <Shield className="text-[#34d399] w-6 h-6" />
             </div>
             <h3 className="text-xl font-bold text-white mb-3">
               Secure Vesting
@@ -30,15 +31,16 @@ const FeaturesSection = () => {
             </p>
           </motion.div>
 
+          {/* NFT Receipts */}
           <motion.div
-            className="bg-[#0f1629] p-6 rounded-lg border border-[#00ff9d]/20"
+            className="bg-[#0f1629] p-6 rounded-lg border border-[#00ff9d]/20 flex flex-col items-center text-center"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
             viewport={{ once: true }}
           >
-            <div className="bg-[#00ff9d] w-12 h-12 rounded-full flex items-center justify-center mb-4">
-              <Coins className="text-black" />
+            <div className="w-12 h-12 rounded-full flex items-center justify-center mb-4 bg-[#fbbf24]/20">
+              <Coins className="text-[#fbbf24] w-6 h-6" />
             </div>
             <h3 className="text-xl font-bold text-white mb-3">NFT Receipts</h3>
             <p className="text-slate-300">
@@ -47,15 +49,16 @@ const FeaturesSection = () => {
             </p>
           </motion.div>
 
+          {/* Milestone Tracking */}
           <motion.div
-            className="bg-[#0f1629] p-6 rounded-lg border border-[#00ff9d]/20"
+            className="bg-[#0f1629] p-6 rounded-lg border border-[#00ff9d]/20 flex flex-col items-center text-center"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
             viewport={{ once: true }}
           >
-            <div className="bg-[#00ff9d] w-12 h-12 rounded-full flex items-center justify-center mb-4">
-              <Clock className="text-black" />
+            <div className="w-12 h-12 rounded-full flex items-center justify-center mb-4 bg-[#60a5fa]/20">
+              <Clock className="text-[#60a5fa] w-6 h-6" />
             </div>
             <h3 className="text-xl font-bold text-white mb-3">
               Milestone Tracking
@@ -69,6 +72,6 @@ const FeaturesSection = () => {
       </div>
     </section>
   );
-}
+};
 
-export default FeaturesSection
+export default FeaturesSection;

@@ -16,6 +16,8 @@ import { useAccountStore } from "@massalabs/react-ui-kit"
 import { vestingService } from "@/services/vesting-service"
 import Loader from "@/components/Loader"
 import { ProjectData } from "@/types"
+import { CATEGORIES } from "@/constants"
+import { getCategoryColor } from "@/lib/utils"
 
 // Mock data for projects with images
 const mockProjects = [
@@ -115,14 +117,6 @@ const mockProjects = [
       "https://images.unsplash.com/photo-1541675154750-0444c7d51e8e?auto=format&fit=crop&q=80&w=2070&ixlib=rb-4.0.3",
   },
 ]
-
-const categoryColors = {
-  Environment: "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white",
-  Education: "bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white",
-  Healthcare: "bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white",
-  Technology: "bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white",
-  All: "bg-gradient-to-r from-green-400 via-emerald-500 to-teal-600 hover:from-green-500 hover:via-emerald-600 hover:to-teal-700 text-white",
-}
 
 export default function Projects() {
   const { toast } = useToast()
@@ -403,26 +397,26 @@ export default function Projects() {
                 />
               </div>
             </div>
-
             {/* Enhanced Category Buttons */}
-            <div className="flex flex-wrap justify-center gap-4">
-              {["All", "Environment", "Education", "Healthcare", "Technology"].map((category) => {
+            <div className="flex flex-wrap justify-center gap-2">
+              {[{name: "All", color: '#00ff9d'}, ...CATEGORIES].map((category) => {
                 const count =
-                  category === "All" ? projects.length : projects.filter((p) => p.category === category).length
-                const isActive = selectedCategory === category
+                  category.name === "All" ? projects.length : projects.filter((p) => p.category === category.name).length
+                const isActive = selectedCategory === category.name
                 return (
                   <motion.button
-                    key={category}
+                    key={category.name}
                     whileHover={{ scale: 1.05, y: -2 }}
                     whileTap={{ scale: 0.95 }}
-                    onClick={() => setSelectedCategory(category)}
-                    className={`px-6 py-3 rounded-full font-bold transition-all duration-300 shadow-lg text-md ${
+                    onClick={() => setSelectedCategory(category.name)}
+                    className={`px-2 py-1 rounded-full font-bold transition-all duration-300 shadow-lg text-xs ${
                       isActive
-                        ? categoryColors[category as keyof typeof categoryColors] + " shadow-xl"
+                        ? `shadow-xl`
                         : "bg-slate-700/80 hover:bg-slate-600/80 text-slate-300 hover:text-white backdrop-blur-sm"
                     }`}
+                    style={isActive ? { backgroundColor: category.color } : {}}
                   >
-                    {category} ({count})
+                    {category.name} ({count})
                   </motion.button>
                 )
               })}
@@ -476,28 +470,13 @@ interface ProjectCardProps {
 function ProjectCard({ project, onDonate, onViewUpdates, isExpanded, onToggleExpand }: ProjectCardProps) {
   const percentFunded = (project.amountRaised / project.amountNeeded) * 100
 
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case "Environment":
-        return "bg-emerald-500"
-      case "Education":
-        return "bg-blue-500"
-      case "Healthcare":
-        return "bg-red-500"
-      case "Technology":
-        return "bg-purple-500"
-      default:
-        return "bg-slate-500"
-    }
-  }
-
   return (
     <Card className="bg-slate-800/80 border-slate-600 text-white overflow-hidden hover:shadow-2xl transition-all duration-300 hover:scale-105 backdrop-blur-sm border-2 hover:border-emerald-500/50">
       {/* Project Image */}
       <div className="relative h-48 overflow-hidden">
         <img src={project.image || "/placeholder.svg"} alt={project.name} className="w-full h-full object-cover" />
         <div className="absolute top-4 right-4">
-          <Badge className={`${getCategoryColor(project.category)} text-white border-0`}>{project.category}</Badge>
+          <Badge className={`text-white border-0`} style={{backgroundColor: getCategoryColor(project.category)}}>{project.category}</Badge>
         </div>
       </div>
 

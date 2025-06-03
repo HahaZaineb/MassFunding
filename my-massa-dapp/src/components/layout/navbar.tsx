@@ -88,15 +88,16 @@ export function Navbar() {
             <Button
               onClick={() => setShowWalletModal(true)}
               sx={{
-                bgcolor: connectedAccount ? '#00ff9d' : '#23243a',
-                color: connectedAccount ? '#181f36' : '#fff',
-                border: connectedAccount ? 'none' : '2px solid #00ff9d',
+                bgcolor: connectedAccount ? 'transparent' : '#00ff9d',
+                color: connectedAccount ? '#00ff9d' : '#0f1629',
+                border: connectedAccount ? '2px solid #00ff9d' : '2px solid #00ff9d',
                 fontWeight: 'bold',
                 px: 2,
                 py: 1,
+                borderRadius: 2,
                 textTransform: 'none',
                 '&:hover': {
-                  bgcolor: connectedAccount ? '#00ffaa' : '#2c2d4a',
+                  bgcolor: connectedAccount ? 'transparent' : 'rgba(0,255,157,0.9)',
                 },
               }}
               startIcon={
@@ -111,7 +112,7 @@ export function Navbar() {
               }
             >
               {connectedAccount
-                ? shortenAddress(connectedAccount.toString())
+                ? shortenAddress(connectedAccount?.address?.toString())
                 : 'Connect Wallet'}
             </Button>
 
