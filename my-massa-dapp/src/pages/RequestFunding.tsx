@@ -157,7 +157,7 @@ export default function RequestFunding() {
   const myProjectsRaw = connectedAccount
     ? projects.filter((p) => {
         const creatorAddress = p.creator?.toLowerCase() || ""
-        const connectedAddress = connectedAccount.toString().toLowerCase()
+        const connectedAddress = connectedAccount.address.toString().toLowerCase()
         const match = creatorAddress === connectedAddress
 
         if (!match) {
@@ -171,7 +171,7 @@ export default function RequestFunding() {
         return match
       })
     : []
-
+useEffect(() => {console.log(myProjectsRaw, "myProjectsRaw...")}, [myProjectsRaw])
   const allCategories = Array.from(new Set(myProjectsRaw.map((p) => p.category))).filter(Boolean)
   const categories = ["All", ...allCategories]
 
@@ -192,7 +192,7 @@ export default function RequestFunding() {
   const totalSupporters = myProjects.reduce((sum, project) => sum + project.supporters, 0)
 
   return (
-    <div className="mx-auto py-8 px-4 bg-[#0f1629]">
+    <div className="w-full p-4 min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <Tabs
         value={activeTab}
         onValueChange={setActiveTab}

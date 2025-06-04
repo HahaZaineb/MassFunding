@@ -1,7 +1,7 @@
 import { useAccountStore } from "@massalabs/react-ui-kit";
 import { useEffect, useState } from "react";
-import type { NFTMetadata, ProjectData } from "./types";
 import { NFTPreview } from "./nft-preview";
+import { NFTMetadata, ProjectData } from "@/types";
 
 export function MyNFTs() {
   const { connectedAccount } = useAccountStore();

@@ -16,15 +16,13 @@ import {
   Paper,
 } from '@mui/material';
 import { styled } from '@mui/system';
-import { useProjects } from '@/context/project-context';
-import ProjectMiniCard from '@/components/projects/ProjectMiniCard';
-
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import TimelineIcon from '@mui/icons-material/Timeline';
 import WorkOutlineIcon from '@mui/icons-material/WorkOutline';
 import FavoriteIcon from '@mui/icons-material/Favorite';
-import { ConnectMassaWallet, useAccountStore } from '@massalabs/react-ui-kit';
-import { useNavigate } from 'react-router-dom';
+import { ConnectMassaWallet } from '@massalabs/react-ui-kit';
+import UserActivity from '@/components/profile-page/UserActivity';
+import MyProjects from '@/components/profile-page/MyProjects';
 
 const StyledCard = styled(Card)(({ theme }) => ({
   backgroundColor: '#11182f',
@@ -36,11 +34,6 @@ const StyledCard = styled(Card)(({ theme }) => ({
 const AccentText = styled('span')({
   color: '#00ff9d',
   fontWeight: 500,
-});
-
-const Label = styled(Typography)({
-  color: '#888',
-  fontSize: '0.9rem',
 });
 
 const SectionHeader = ({
@@ -61,17 +54,14 @@ const SectionHeader = ({
 );
 
 const ProfilePage: React.FC = ({}) => {
-  const navigate = useNavigate();
-  const { projects } = useProjects();
-  const featuredProjects = projects.slice(0, 3);
-
+ 
   const donatedProjects = [
     { id: 'a1', name: 'Project 1', amount: 500, date: '2024-05-12' },
     { id: 'a2', name: 'Project 2', amount: 250, date: '2024-06-10' },
   ];
 
   return (
-    <Box sx={{ p: 4, backgroundColor: '#0f1629', minHeight: '100vh' }}>
+    <div className="w-full p-4 min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <Typography variant="h4" sx={{ color: '#fff', mb: 3 }}>
         My <AccentText>Profile</AccentText>
       </Typography>
@@ -83,7 +73,7 @@ const ProfilePage: React.FC = ({}) => {
         mb={4}
       >
         {/* Wallet Info */}
-        <StyledCard sx={{ flex: 1 }}>
+        <StyledCard sx={{ flex: 1 }} className='bg-gradient-to-br'>
           <CardContent>
             <SectionHeader
               icon={AccountBalanceWalletIcon}
@@ -98,7 +88,7 @@ const ProfilePage: React.FC = ({}) => {
         </StyledCard>
 
         {/* User Activity Summary */}
-        <StyledCard sx={{ flex: 1 }}>
+        <StyledCard sx={{ flex: 1 }} className='bg-gradient-to-br'>
           <CardContent>
             <SectionHeader
               icon={TimelineIcon}
@@ -106,33 +96,13 @@ const ProfilePage: React.FC = ({}) => {
               color="#ff9800"
             />
             <Divider sx={{ my: 2, borderColor: '#1f2a48' }} />
-            <Box display="flex" flexDirection="column" gap={1}>
-              <Label>Total Projects Created</Label>
-              <Typography>
-                <AccentText>{featuredProjects.length}</AccentText>
-              </Typography>
-
-              <Label>Total Donated</Label>
-              <Typography>
-                <AccentText>
-                  $
-                  {donatedProjects
-                    .reduce((sum, dp) => sum + dp.amount, 0)
-                    .toLocaleString()}
-                </AccentText>
-              </Typography>
-
-              <Label>Number of Donations</Label>
-              <Typography>
-                <AccentText>{donatedProjects.length}</AccentText>
-              </Typography>
-            </Box>
+            <UserActivity />
           </CardContent>
         </StyledCard>
       </Box>
 
       {/* My Projects */}
-      <StyledCard sx={{ mb: 4 }}>
+      <StyledCard sx={{ mb: 4 }} className='bg-gradient-to-br'>
         <CardContent>
           <SectionHeader
             icon={WorkOutlineIcon}
@@ -140,21 +110,7 @@ const ProfilePage: React.FC = ({}) => {
             color="#4caf50"
           />
           <Divider sx={{ my: 2, borderColor: '#1f2a48' }} />
-          {featuredProjects.length === 0 ? (
-            <Typography color="text.secondary">
-              No projects created yet.
-            </Typography>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {featuredProjects.map((project, index) => (
-                <ProjectMiniCard
-                  project={project}
-                  key={index}
-                  showFundBtn={false}
-                />
-              ))}
-            </div>
-          )}
+          <MyProjects/>
         </CardContent>
       </StyledCard>
 
@@ -206,7 +162,7 @@ const ProfilePage: React.FC = ({}) => {
           )}
         </CardContent>
       </StyledCard>
-    </Box>
+    </div>
   );
 };
 

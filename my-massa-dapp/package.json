@@ -12,9 +12,9 @@
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
-    "@massalabs/massa-web3": "^5.1.1",
-    "@massalabs/react-ui-kit": "^0.1.1-dev.20241030100406",
-    "@massalabs/wallet-provider": "^3.1.1",
+    "@massalabs/massa-web3": "^5.1.2-dev.20250408074543",    
+    "@massalabs/react-ui-kit": "^1.0.3-dev.20250409143242",    
+    "@massalabs/wallet-provider": "^3.1.2-dev.20250312132407",
     "@mui/icons-material": "^7.1.1",
     "@mui/material": "^7.1.1",
     "@radix-ui/react-dialog": "^1.1.14",

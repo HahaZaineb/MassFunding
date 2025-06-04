@@ -17,7 +17,7 @@ const initialProjects: ProjectData[] = [
     supporters: 128,
     category: "Environment",
     deadline: "2023-12-31",
-    creator: "AU12YgH8o2eiLW33c9jzZaXgY8BVXyj19MqqUMRfVeTiUoB5FCqP",
+    creator: "AU12nUWgAhJMhDpmPNj3FNDzu7GrEHFZJsiswRWXXqrisAtKu9K4V",
     image: "https://images.unsplash.com/photo-1484291470158-b8f8d608850d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1740&q=80",
     updates: [],
     milestones: []
@@ -36,7 +36,7 @@ const initialProjects: ProjectData[] = [
     supporters: 75,
     category: "Education",
     deadline: "2023-11-15",
-    creator: "AU12YgH8o2eiLW33c9jzZaXgY8BVXyj19MqqUMRfVeTiUoB5FCqP",
+    creator: "AU12nUWgAhJMhDpmPNj3FNDzu7GrEHFZJsiswRWXXqrisAtKu9K4V",
     image: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1722&q=80",
     updates: [],
     milestones: []
