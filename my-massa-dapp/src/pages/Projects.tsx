@@ -1,17 +1,48 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 import { CATEGORIES } from '@/constants';
 import ProjectCard from '@/components/projects/ProjectCard';
 import { useProjects } from '@/context/project-context';
+import { getAllProjects } from '@/services/contract-service';
+import { useAccountStore } from '@massalabs/react-ui-kit';
+import { useToast } from '@/components/ui/use-toast';
 
 export default function Projects() {
-  const { projects } = useProjects();
+  const { projects, setProjects } = useProjects();
+  const { connectedAccount } = useAccountStore();
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchProjects() {
+      if (!connectedAccount) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const fetchedProjects = await getAllProjects(connectedAccount);
+        setProjects(fetchedProjects);
+      } catch (error) {
+        console.error('Error fetching projects:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to fetch projects. Please try again.',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchProjects();
+  }, [connectedAccount, setProjects, toast]);
 
   // Filter projects based on search query and category
   const filteredProjects = useMemo(() => {
@@ -24,6 +55,14 @@ export default function Projects() {
       return matchesSearch && matchesCategory;
     });
   }, [projects, searchQuery, selectedCategory]);
+
+  if (isLoading) {
+    return (
+      <div className="w-full min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+        <div className="text-emerald-400 text-xl">Loading projects...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">

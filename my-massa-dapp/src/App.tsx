@@ -15,7 +15,7 @@ import { ProjectProvider } from '@/context/project-context';
 import LandingPage from '@/pages/Home';
 import Projects from '@/pages/Projects';
 import RequestFunding from '@/pages/RequestFunding';
-import AboutPage from '@/pages/About';
+import AboutPage from '@/pages/about';
 import ProfilePage from './pages/Profile';
 import PrivateRoute from './components/PrivateRoute';
 import { FundPage } from './pages/Fund';

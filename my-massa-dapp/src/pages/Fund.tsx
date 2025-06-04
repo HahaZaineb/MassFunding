@@ -6,8 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Info, Loader2 } from 'lucide-react';
 import { useAccountStore, ConnectMassaWallet } from '@massalabs/react-ui-kit';
 import {
-  vestingService,
-  type VestingScheduleParams,
+  fundProject,
 } from '../services/contract-service';
 import { useToast } from '@/components/ui/use-toast';
 import {
@@ -87,16 +86,12 @@ export function FundPage() {
     setIsSubmitting(true);
 
     try {
-      const vestingParams: VestingScheduleParams = {
-        beneficiary: project.beneficiary,
-        amount: amount,
-        lockPeriod: project.lockPeriod,
-        releaseInterval: project.releaseInterval,
-        releasePercentage: project.releasePercentage.toString(),
-      };
-      const operationId = await vestingService.createVestingSchedule(
+      const projectId = Number(project.id);
+      const amountInNanoMAS = BigInt(parseFloat(amount) * 1e9);
+      const operationId = await fundProject(
         connectedAccount,
-        vestingParams,
+        projectId,
+        amountInNanoMAS
       );
       toast({
         title: 'Donation Successful!',

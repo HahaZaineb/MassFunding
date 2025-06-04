@@ -319,6 +319,7 @@ return Storage.get(projectKey);
 export function getAllProjects(_: StaticArray<u8>): StaticArray<u8> {
 let projects: Project[] = [];
 let projectCount = getNextProjectId(); // This is actually the total number of projects
+generateEvent(`Total project count: ${projectCount}`);
 
 for (let i: u64 = 0; i < projectCount; i++) {
   const projectKey = new Args().add(PROJECTS_KEY).add(i).serialize();
@@ -327,12 +328,21 @@ for (let i: u64 = 0; i < projectCount; i++) {
     let project = new Project();
     project.deserialize(projectData);
     projects.push(project);
+    generateEvent(`Project ${i} found: title=${project.title}`);
+  } else {
+    generateEvent(`Project ${i} not found in storage`);
   }
 }
 
-// Serialize the array of projects to return
+generateEvent(`Number of projects serialized: ${projects.length}`);
 const args = new Args();
-args.addSerializableObjectArray(projects);
+// Modify to explicitly handle empty array serialization as suggested
+if (projects.length === 0) {
+  args.add<u64>(0);
+} else {
+  args.addSerializableObjectArray(projects);
+}
+generateEvent(`Serialized projects length: ${args.serialize().length}`);
 return args.serialize();
 }
 
@@ -513,7 +523,7 @@ const releaseArgs = new Args().add(vestingId).serialize();
 const releaseSlot = findCheapestSlot(
   startPeriod,
   startPeriod + 10, // Search window
-  20_000_000, // Gas
+  30_000_000, // Gas
   0 // No coins sent with the deferred call
 );
 
@@ -521,7 +531,7 @@ deferredCallRegister(
   Context.callee().toString(), // Call this contract (itself)
   'releaseVestedTokens', // Call the internal release function
   releaseSlot,
-  20_000_000, // Gas
+  30_000_000, // Gas
   releaseArgs,
   0 // No coins sent with deferred call
 );
@@ -704,3 +714,6 @@ generateEvent("Owner stop function executed. Note: Stopping specific deferred ca
 
 // Re-added export for processTask if it's part of the internals and needed
 export { processTask };
+
+// Add exports at the end of the file
+export { Project, vestingSchedule };

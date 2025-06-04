@@ -21,6 +21,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { MilestoneForm } from "@/components/milestone-form"
 import { ProjectData } from "@/types"
 import { CATEGORIES } from "@/constants"
+import { createProject } from '@/services/contract-service'
 
 export default function RequestFunding() {
   const { toast } = useToast()
@@ -83,43 +84,23 @@ export default function RequestFunding() {
     e.preventDefault()
     setIsSubmitting(true)
     try {
-      const creatorAddress = connectedAccount
-        ? connectedAccount.toString().toLowerCase()
-        : `AU${Date.now().toString(36)}`
-      console.log("[DEBUG] Creating project with creator address:", creatorAddress)
-
-      let imageToUse = formData.image
-      if (imageFile && formData.image.startsWith("data:")) {
-        imageToUse = formData.image
+      if (!connectedAccount) {
+        throw new Error('Please connect your wallet first')
       }
 
-      const newProject: ProjectData = {
-        id: `project-${Date.now()}`,
-        name: formData.projectName,
+      const response = await createProject(connectedAccount, {
+        title: formData.projectName,
         description: formData.description,
-        amountNeeded: Number.parseFloat(formData.amountNeeded),
-        goalAmount: Number.parseFloat(formData.amountNeeded),
-        amountRaised: 0,
-        beneficiary: formData.walletAddress || creatorAddress,
+        fundingGoal: formData.amountNeeded,
+        beneficiaryAddress: formData.walletAddress || connectedAccount.toString(),
+        category: formData.category,
         lockPeriod: formData.lockPeriod,
         releaseInterval: formData.releaseInterval,
         releasePercentage: formData.releasePercentage,
-        supporters: 0,
-        category: formData.category,
-        deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-        creator: creatorAddress,
-        updates: [],
-        milestones: [],
-        image: imageToUse || undefined,
-      }
+        image: formData.image,
+      })
 
-      console.log("[DEBUG] Adding project:", newProject)
-      addProject(newProject)
-
-      setTimeout(() => {
-        const allProjects = localStorage.getItem("projects")
-        console.log("[DEBUG] All projects after adding:", allProjects)
-      }, 100)
+      console.log('Project creation response:', response)
 
       toast({
         title: "Project Created",
@@ -145,7 +126,7 @@ export default function RequestFunding() {
       console.error("Error creating project:", error)
       toast({
         title: "Error",
-        description: "Failed to create project. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to create project. Please try again.",
         variant: "destructive",
       })
     } finally {
