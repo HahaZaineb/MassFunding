@@ -1,5 +1,5 @@
+import { ProjectData } from "@/types"
 import { createContext, useContext, useState, useEffect, ReactNode } from "react"
-import type { ProjectData } from "../components/types"
 
 // Sample project data
 const initialProjects: ProjectData[] = [
@@ -102,6 +102,7 @@ const initialProjects: ProjectData[] = [
 
 interface ProjectContextType {
   projects: ProjectData[]
+  setProjects: (projects: ProjectData[]) => void
   addProject: (project: ProjectData) => void
   updateProject: (project: ProjectData) => void
   addProjectMilestone: (projectId: string, milestone: any) => void
@@ -164,7 +165,15 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <ProjectContext.Provider value={{ projects, addProject, updateProject, addProjectMilestone, updateProjectMilestone, getProject }}>
+    <ProjectContext.Provider value={{ 
+      projects, 
+      setProjects, 
+      addProject, 
+      updateProject, 
+      addProjectMilestone, 
+      updateProjectMilestone, 
+      getProject 
+    }}>
       {children}
     </ProjectContext.Provider>
   )

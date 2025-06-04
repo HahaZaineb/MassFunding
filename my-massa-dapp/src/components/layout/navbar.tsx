@@ -1,84 +1,247 @@
-import { useState } from "react"
-import { Button } from "../ui/button"
-import { Menu, X } from "lucide-react"
-import MassaLogo from "./MassaLogo"
-import { ConnectMassaWallet, useAccountStore } from "@massalabs/react-ui-kit"
+import { useState } from 'react';
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
+  IconButton,
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
+  Box,
+  useMediaQuery,
+  useTheme,
+  Container,
+  Menu,
+  MenuItem,
+} from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
+import CloseIcon from '@mui/icons-material/Close';
+import PersonIcon from '@mui/icons-material/Person';
+import { useNavigate, useLocation } from 'react-router-dom';
+import WalletConnectModal from '../WalletConnectModal';
+import { useAccountStore } from '@massalabs/react-ui-kit';
+import { shortenAddress } from '@/lib/utils';
 
-type NavigationPage = "home" | "request" | "fund" | "about" | "projects"
+const navItems = [
+  { label: 'Explore Projects', path: '/projects' },
+  { label: 'Request Funding', path: '/request-funding' },
+  { label: 'How It Works', path: '/about' },
+];
 
-interface NavbarProps {
-  currentPage: NavigationPage
-  onNavigate: (page: NavigationPage) => void
-}
+export function Navbar() {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [showWalletModal, setShowWalletModal] = useState(false);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const { connectedAccount } = useAccountStore();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-function shortenAddress(addr: string) {
-  return addr.slice(0, 6) + "..." + addr.slice(-4);
-}
+  const toggleDrawer = () => setMobileOpen(!mobileOpen);
 
-export function Navbar({ currentPage, onNavigate }: NavbarProps) {
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const { connectedAccount } = useAccountStore()
-  const [showWalletModal, setShowWalletModal] = useState(false)
+  const handleNavigate = (path: string) => {
+    navigate(path);
+    if (isMobile) toggleDrawer();
+  };
 
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen)
-  }
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const menuOpen = Boolean(anchorEl);
 
   return (
-    <nav className="w-full bg-[#181f36] border-b border-[#23243a] py-2 px-4 flex items-center justify-between shadow-sm">
-      <div className="flex items-center gap-2">
-        <span className="text-2xl font-extrabold text-[#00ff9d] tracking-tight">MassFunding</span>
-      </div>
-      <div className="flex-1 flex justify-center">
-        <ul className="flex gap-8">
-          <li>
-            <button
-              className={`text-lg font-medium transition-colors duration-200 ${currentPage === "fund" ? "text-[#00ff9d]" : "text-white hover:text-[#00ff9d]"}`}
-              onClick={() => onNavigate("fund")}
+    <>
+      <AppBar
+        position="static"
+        sx={{ backgroundColor: '#181f36', borderBottom: '1px solid #23243a' }}
+      >
+        <Container maxWidth="xl">
+          <Toolbar sx={{ justifyContent: 'space-between', py: 1 }}>
+            <Typography
+              variant="h6"
+              fontWeight="bold"
+              sx={{ color: '#00ff9d', cursor: 'pointer' }}
+              onClick={() => handleNavigate('/')}
             >
-              Explore Projects
-            </button>
-          </li>
-          <li>
-            <button
-              className={`text-lg font-medium transition-colors duration-200 ${currentPage === "request" ? "text-[#00ff9d]" : "text-white hover:text-[#00ff9d]"}`}
-              onClick={() => onNavigate("request")}
-            >
-              Request Funding
-            </button>
-          </li>
-          <li>
-            <button
-              className={`text-lg font-medium transition-colors duration-200 ${currentPage === "about" ? "text-[#00ff9d]" : "text-white hover:text-[#00ff9d]"}`}
-              onClick={() => onNavigate("about")}
-            >
-              How It Works
-            </button>
-          </li>
-        </ul>
-      </div>
-      <div>
-        <button
-          className={`px-4 py-2 rounded font-bold shadow flex items-center transition-colors duration-200 ${connectedAccount ? 'bg-[#00ff9d] text-[#181f36]' : 'bg-[#23243a] text-white border border-[#00ff9d]'}`}
-          onClick={() => setShowWalletModal(true)}
+              MassFunding
+            </Typography>
+
+            {!isMobile && (
+              <Box display="flex" gap={3} flexGrow={1} justifyContent="center">
+                {navItems.map((item) => (
+                  <Button
+                    key={item.path}
+                    onClick={() => handleNavigate(item.path)}
+                    sx={{
+                      color:
+                        location.pathname === item.path ? '#00ff9d' : '#fff',
+                      fontWeight: '500',
+                      textTransform: 'none',
+                      '&:hover': { color: '#00ff9d' },
+                    }}
+                  >
+                    {item.label}
+                  </Button>
+                ))}
+              </Box>
+            )}
+
+            <Box display="flex" alignItems="center" gap={1}>
+              {connectedAccount ? (
+                <>
+                  <Button
+                    onClick={handleMenuOpen}
+                    sx={{
+                      bgcolor: 'transparent',
+                      color: '#00ff9d',
+                      border: '2px solid #00ff9d',
+                      fontWeight: 'bold',
+                      px: 2,
+                      py: 1,
+                      borderRadius: 2,
+                      textTransform: 'none',
+                      '&:hover': { bgcolor: 'transparent' },
+                    }}
+                    startIcon={
+                      <Box
+                        sx={{
+                          width: 10,
+                          height: 10,
+                          borderRadius: '50%',
+                          backgroundColor: 'green',
+                        }}
+                      />
+                    }
+                  >
+                    {shortenAddress(connectedAccount?.address?.toString())}
+                  </Button>
+                  <Menu
+                    anchorEl={anchorEl}
+                    open={menuOpen}
+                    onClose={handleMenuClose}
+                    PaperProps={{
+                      sx: {
+                        bgcolor: '#1f2a48',
+                        color: '#fff',
+                        mt: 1,
+                        borderRadius: 2,
+                      },
+                    }}
+                  >
+                    <MenuItem
+                      onClick={() => {
+                        handleNavigate('/profile');
+                        handleMenuClose();
+                      }}
+                    >
+                      <PersonIcon sx={{ mr: 1 }} /> My Profile
+                    </MenuItem>
+                    <MenuItem
+                      onClick={() => {
+                        setShowWalletModal(true);
+                        handleMenuClose();
+                      }}
+                    >
+                      🔄 Switch Wallet
+                    </MenuItem>
+                  </Menu>
+                </>
+              ) : (
+                <Button
+                  onClick={() => setShowWalletModal(true)}
+                  sx={{
+                    bgcolor: '#00ff9d',
+                    color: '#0f1629',
+                    border: '2px solid #00ff9d',
+                    fontWeight: 'bold',
+                    px: 2,
+                    py: 1,
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    '&:hover': {
+                      bgcolor: 'rgba(0,255,157,0.9)',
+                    },
+                  }}
+                  startIcon={
+                    <Box
+                      sx={{
+                        width: 10,
+                        height: 10,
+                        borderRadius: '50%',
+                        backgroundColor: 'red',
+                      }}
+                    />
+                  }
+                >
+                  Connect Wallet
+                </Button>
+              )}
+
+              {isMobile && (
+                <IconButton color="inherit" onClick={toggleDrawer}>
+                  <MenuIcon sx={{ color: '#00ff9d' }} />
+                </IconButton>
+              )}
+            </Box>
+          </Toolbar>
+        </Container>
+      </AppBar>
+
+      <Drawer anchor="left" open={mobileOpen} onClose={toggleDrawer}>
+        <Box
+          sx={{ width: 250, bgcolor: '#181f36', height: '100%', color: '#fff' }}
         >
-          <span className={`inline-block w-2 h-2 rounded-full mr-2 ${connectedAccount ? 'bg-green-500' : 'bg-red-500'}`}></span>
-          {connectedAccount ? shortenAddress(connectedAccount.toString()) : 'Connect Wallet'}
-        </button>
-        {showWalletModal && (
-          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-            <div className="bg-[#181f36] rounded-lg p-6 shadow-lg relative min-w-[350px] border border-[#00ff9d]">
-              <button
-                className="absolute top-2 right-2 text-xl text-[#00ff9d] hover:text-white"
-                onClick={() => setShowWalletModal(false)}
-              >
-                ×
-              </button>
-              <ConnectMassaWallet />
-            </div>
-          </div>
-        )}
-      </div>
-    </nav>
-  )
+          <Box
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+            p={2}
+          >
+            <Typography
+              variant="h6"
+              fontWeight="bold"
+              sx={{ color: '#00ff9d' }}
+            >
+              Menu
+            </Typography>
+            <IconButton onClick={toggleDrawer}>
+              <CloseIcon sx={{ color: '#00ff9d' }} />
+            </IconButton>
+          </Box>
+          <List>
+            {navItems.map((item) => (
+              <ListItem key={item.path} disablePadding>
+                <ListItemButton onClick={() => handleNavigate(item.path)}>
+                  <ListItemText
+                    primary={item.label}
+                    primaryTypographyProps={{
+                      sx: {
+                        color:
+                          location.pathname === item.path ? '#00ff9d' : '#fff',
+                        fontWeight: 500,
+                      },
+                    }}
+                  />
+                </ListItemButton>
+              </ListItem>
+            ))}
+          </List>
+        </Box>
+      </Drawer>
+
+      <WalletConnectModal
+        open={showWalletModal}
+        onClose={() => setShowWalletModal(false)}
+      />
+    </>
+  );
 }

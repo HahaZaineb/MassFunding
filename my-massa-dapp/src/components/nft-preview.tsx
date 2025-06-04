@@ -5,8 +5,8 @@ import { Button } from "./ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
 import { Badge } from "./ui/badge"
 import { ArrowLeft, ExternalLink, Copy, Check } from "lucide-react"
-import type { ProjectData } from "./types"
 import { useToast } from "./ui/use-toast"
+import { ProjectData } from "@/types"
 
 interface NFTPreviewProps {
   projectId: string
