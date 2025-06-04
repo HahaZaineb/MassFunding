@@ -8,7 +8,7 @@ import { useAccountStore, ConnectMassaWallet } from '@massalabs/react-ui-kit';
 import {
   vestingService,
   type VestingScheduleParams,
-} from '../services/vesting-service';
+} from '../services/contract-service';
 import { useToast } from '@/components/ui/use-toast';
 import {
   Card,
