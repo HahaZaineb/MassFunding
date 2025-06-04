@@ -1,4 +1,3 @@
-import React from 'react';
 import { LinearProgress, linearProgressClasses, LinearProgressProps } from '@mui/material';
 import { styled } from '@mui/material/styles';
 
@@ -21,10 +20,10 @@ const BorderLinearProgress = styled((props: StyledLinearProgressProps) => (
 }));
 
 const getProgressColor = (value: number): string => {
-  if (value < 25) return '#f44336'; // red
-  if (value < 50) return '#ff9800'; // orange
-  if (value < 75) return '#ffeb3b'; // yellow
-  return '#4caf50'; // green
+  if (value < 25) return '#f44336';
+  if (value < 50) return '#ff9800';
+  if (value < 75) return '#ffeb3b';
+  return '#4caf50';
 };
 
 const ProgressBar = ({ value }: { value: number }) => {

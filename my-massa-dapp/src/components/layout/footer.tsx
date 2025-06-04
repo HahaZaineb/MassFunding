@@ -55,7 +55,7 @@ export function Footer() {
         mt: 'auto',
       }}
     >
-      <Container maxWidth="lg">
+      <Container maxWidth="xl">
         <Stack
           direction={{ xs: 'column', md: 'row' }}
           spacing={{ xs: 4, md: 8 }}

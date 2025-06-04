@@ -18,28 +18,25 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { ProjectData } from '@/types';
 import { getCategoryColor } from '@/lib/utils';
 import ProgressBar from '../ProgressBar';
+import ProjectUpdates from './ProjectUpdates';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface ProjectCardProps {
   project: ProjectData & { image?: string };
-  onDonate: () => void;
-  onViewUpdates: () => void;
-  isExpanded: boolean;
-  onToggleExpand: () => void;
 }
 
 const ProjectCard = ({
   project,
-  onDonate,
-  onViewUpdates,
-  isExpanded,
-  onToggleExpand,
 }: ProjectCardProps) => {
+  const navigate = useNavigate()
   const percentFunded = (project.amountRaised / project.amountNeeded) * 100;
+  const [openProjectUpdates, setOpenProjectUpdates] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false)
 
   return (
     <Card className="bg-slate-800/80 border-slate-600 text-white overflow-hidden hover:shadow-2xl transition-all duration-300 hover:scale-105 backdrop-blur-sm border-2 hover:border-emerald-500/50">
@@ -152,7 +149,7 @@ const ProjectCard = ({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={onViewUpdates}
+                onClick={() => setOpenProjectUpdates(true)}
                 className="w-full text-white border-slate-600 hover:bg-slate-600"
               >
                 View Updates
@@ -164,7 +161,7 @@ const ProjectCard = ({
 
       <CardFooter className="flex flex-col gap-3 pt-4">
         <Button
-          onClick={onDonate}
+          onClick={() => navigate('/fund/'+project.id)}
           className="w-full bg-gradient-to-r from-emerald-500 via-green-500 to-teal-600 hover:from-emerald-600 hover:via-green-600 hover:to-teal-700 text-white font-bold py-3 text-lg shadow-lg hover:shadow-emerald-500/25 transition-all duration-300"
         >
           <ThumbsUp className="h-4 w-4 mr-2" />
@@ -175,7 +172,7 @@ const ProjectCard = ({
           variant="ghost"
           size="sm"
           className="text-slate-400 hover:text-white"
-          onClick={onToggleExpand}
+          onClick={() => setIsExpanded(current => !current)}
         >
           {isExpanded ? (
             <>
@@ -190,6 +187,7 @@ const ProjectCard = ({
           )}
         </Button>
       </CardFooter>
+      <ProjectUpdates open={openProjectUpdates} onClose={() => setOpenProjectUpdates(false)}/>
     </Card>
   );
 };

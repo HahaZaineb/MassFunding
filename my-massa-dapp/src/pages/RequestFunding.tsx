@@ -17,7 +17,7 @@ import { useProjects } from "../context/project-context"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAccountStore } from "@massalabs/react-ui-kit"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { ProjectUpdates } from "@/components/project-updates"
+// import { ProjectUpdates } from "@/components/project-updates"
 import { MilestoneForm } from "@/components/milestone-form"
 import { ProjectData } from "@/types"
 import { CATEGORIES } from "@/constants"
@@ -710,14 +710,14 @@ export default function RequestFunding() {
                         )}
 
                         {/* Project Updates - Only show if expanded */}
-                        {expandedProject === project.id && (
+                        {/* {expandedProject === project.id && (
                           <div className="p-6">
                             <ProjectUpdates
                               projectId={project.id}
                               projectName={project.name}
                             />
                           </div>
-                        )}
+                        )} */}
                       </CardContent>
                     </Card>
                   </motion.div>

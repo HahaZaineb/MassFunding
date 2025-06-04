@@ -6,12 +6,14 @@ import { ProjectData } from '@/types';
 import { getCategoryColor } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 import ProgressBar from '../ProgressBar';
+import { Clock, Coins, Users } from 'lucide-react';
 
 interface ProjectMiniCardProps {
   project: ProjectData & { image?: string };
+  showFundBtn?: boolean
 }
 
-const ProjectMiniCard = ({ project }: ProjectMiniCardProps) => {
+const ProjectMiniCard = ({ project, showFundBtn = true }: ProjectMiniCardProps) => {
   const navigate = useNavigate();
   const percentFunded = (project.amountRaised / project.amountNeeded) * 100;
 
@@ -59,13 +61,36 @@ const ProjectMiniCard = ({ project }: ProjectMiniCardProps) => {
           </div>
           <ProgressBar value={percentFunded}/>
         </div>
+        <div className="grid grid-cols-3 gap-3">
+          <div className="flex flex-col items-center p-3 bg-slate-700/50 rounded-lg">
+            <Users className="h-4 w-4 mb-1 text-blue-400" />
+            <span className="text-white text-center font-bold text-xs">
+              {project.supporters}
+            </span>
+            <span className="text-slate-400 text-xs">Supporters</span>
+          </div>
+          <div className="flex flex-col items-center p-3 bg-slate-700/50 rounded-lg">
+            <Clock className="h-4 w-4 mb-1 text-yellow-400" />
+            <span className="text-white text-center font-bold text-xs">
+              Every {project.releaseInterval} days
+            </span>
+            <span className="text-slate-400 text-xs">Interval</span>
+          </div>
+          <div className="flex flex-col items-center p-3 bg-slate-700/50 rounded-lg">
+            <Coins className="h-4 w-4 mb-1 text-emerald-400" />
+            <span className="text-white text-center font-bold text-xs">
+              {project.releasePercentage}%
+            </span>
+            <span className="text-slate-400 text-xs">Release</span>
+          </div>
+        </div>
 
-        <Button
+        {showFundBtn && <Button
           onClick={() => navigate('/projects')}
-          className="w-full bg-[#00ff9d] hover:bg-[#00ff9d]/90 text-[#0f1629] font-medium"
+          className="w-full bg-[#00ff9d] mt-3 hover:bg-[#00ff9d]/90 text-[#0f1629] font-medium"
         >
           Fund This Project
-        </Button>
+        </Button>}
       </div>
     </motion.div>
   );
