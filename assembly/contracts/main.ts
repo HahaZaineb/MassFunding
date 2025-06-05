@@ -324,32 +324,14 @@ return Storage.get(projectKey);
 }
 
 export function getAllProjects(_: StaticArray<u8>): StaticArray<u8> {
-let projects: Project[] = [];
 let projectCount = getNextProjectId(); // This is actually the total number of projects
 generateEvent(`Total project count: ${projectCount}`);
 
-for (let i: u64 = 0; i < projectCount; i++) {
-  const projectKey = new Args().add(PROJECTS_KEY).add(i).serialize();
-  if (Storage.has(projectKey)) {
-    const projectData = Storage.get(projectKey);
-    let project = new Project();
-    project.deserialize(projectData);
-    projects.push(project);
-    generateEvent(`Project ${i} found: title=${project.title}`);
-  } else {
-    generateEvent(`Project ${i} not found in storage`);
-  }
-}
-
-generateEvent(`Number of projects serialized: ${projects.length}`);
 const args = new Args();
-// Modify to explicitly handle empty array serialization as suggested
-if (projects.length === 0) {
-  args.add<u64>(0);
-} else {
-  args.addSerializableObjectArray(projects);
-}
-generateEvent(`Serialized projects length: ${args.serialize().length}`);
+args.add<u64>(projectCount);
+
+generateEvent(`Returning project count: ${projectCount}`);
+
 return args.serialize();
 }
 
@@ -724,3 +706,30 @@ export { processTask };
 
 // Add exports at the end of the file
 export { Project, vestingSchedule };
+
+// New function to get all project IDs
+export function getAllProjectIds(_: StaticArray<u8>): StaticArray<u8> {
+  let projectIds: u64[] = [];
+  let projectCount = getNextProjectId(); // Total number of projects created
+
+  for (let i: u64 = 0; i < projectCount; i++) {
+    const projectKey = new Args().add(PROJECTS_KEY).add(i).serialize();
+    // Check if a project exists at this potential ID
+    if (Storage.has(projectKey)) {
+      // Since the project exists, we add its ID to the list
+      projectIds.push(i);
+    }
+  }
+
+  const args = new Args();
+  // Add the array length first
+  args.add<u64>(projectIds.length);
+  // Then add each U64 ID individually
+  for (let i = 0; i < projectIds.length; i++) {
+    args.add(projectIds[i]);
+  }
+
+  generateEvent(`Returning ${projectIds.length} project IDs.`);
+
+  return args.serialize();
+}

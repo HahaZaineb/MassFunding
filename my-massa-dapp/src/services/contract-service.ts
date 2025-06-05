@@ -2,7 +2,7 @@ import { Args, SmartContract, Mas, OperationStatus, parseUnits } from '@massalab
 import { ProjectData } from '@/types';
 import { useEffect, useState } from 'react';
 
-const CONTRACT_ADDRESS = "AS12G2DXeeHn67tm7h7NYy81y51xQCBYhLM7yPJAQ5Nx68wKbB7CA"
+const CONTRACT_ADDRESS = "AS12dtU8byvpZUVNNHiPa61KJrUEWuetG46RofPtdGgYTm9xLQX7A"
 
 export async function createProject(
   connectedAccount: any,
@@ -40,7 +40,7 @@ export async function createProject(
   }
 }
 
-export async function getAllProjects(connectedAccount: any): Promise<ProjectData[]> {
+export async function getAllProjects(connectedAccount: any): Promise<number> {
     const contract = new SmartContract(connectedAccount, CONTRACT_ADDRESS);
     console.log("Calling getAllProjects with connectedAccount:", connectedAccount);
     const response = await contract.read('getAllProjects', new Args());
@@ -48,9 +48,9 @@ export async function getAllProjects(connectedAccount: any): Promise<ProjectData
     console.log("Response from getAllProjects:", response);
 
     const result = response.value;
-    if (!result || result.length < 8) {
+    if (!result || result.length === 0) {
         console.log("Invalid or empty response from contract:", result);
-        return [];
+        return 0; // Return 0 if no data (assuming 0 projects)
     }
 
     try {
@@ -58,78 +58,43 @@ export async function getAllProjects(connectedAccount: any): Promise<ProjectData
         console.log("Raw response.value length:", result.length, "Data:", result);
 
         const args = new Args(result);
-        // The first thing in the Args is the array length
-        const arrLen = Number(args.nextU64());
-        // Add logging for deserialized array length
-        console.log("Deserialized array length:", arrLen);
-
-        const projects: ProjectData[] = [];
-        for (let i = 0; i < arrLen; i++) {
-            // Read the length of the next serialized project object (u64 = 8 bytes)
-            const projectLength = Number(args.nextU64());
-            
-           
-            console.log(`Deserializing project ${i}. Current offset before nextU64 (projectId): ${args.offset}`);
-            const projectId = args.nextU64();
-            console.log(`Current offset before nextString (creator): ${args.offset}`);
-            const creator = args.nextString(); // Address serialized as string
-            console.log(`Current offset before nextString (title): ${args.offset}`);
-            const title = args.nextString();
-            console.log(`Current offset before nextString (description): ${args.offset}`);
-            const description = args.nextString();
-            console.log(`Current offset before nextU64 (fundingGoal): ${args.offset}`);
-            const fundingGoal = Number(args.nextU64());
-            console.log(`Current offset before nextU64 (amountRaised): ${args.offset}`);
-            const amountRaised = Number(args.nextU64());
-            console.log(`Current offset before nextString (beneficiary): ${args.offset}`);
-            const beneficiary = args.nextString(); // Address serialized as string
-            console.log(`Current offset before nextString (category): ${args.offset}`);
-            const category = args.nextString();
-            console.log(`Current offset before nextU64 (lockPeriod): ${args.offset}`);
-            const lockPeriod = Number(args.nextU64());
-            console.log(`Current offset before nextU64 (releaseInterval): ${args.offset}`);
-            const releaseInterval = Number(args.nextU64());
-            console.log(`Current offset before nextU64 (releasePercentage): ${args.offset}`);
-            const releasePercentage = Number(args.nextU64());
-            console.log(`Current offset before nextString (image): ${args.offset}`);
-            const image = args.nextString();
-            console.log(`Current offset before nextU64 (creationPeriod): ${args.offset}`);
-            const creationPeriod = Number(args.nextU64());
-            console.log(`Current offset before nextU64 (vestingScheduleId): ${args.offset}`);
-            const vestingScheduleId = Number(args.nextU64());
-            console.log(`Current offset before nextBool (initialVestingTriggered): ${args.offset}`);
-            const initialVestingTriggered = args.nextBool();
-            console.log(`Finished deserializing project ${i}. Final offset: ${args.offset}`);
-
-            // Map to ProjectData
-            projects.push({
-                id: projectId.toString(),
-                name: title,
-                description,
-                amountNeeded: fundingGoal,
-                goalAmount: fundingGoal,
-                amountRaised,
-                beneficiary,
-                lockPeriod: lockPeriod.toString(),
-                releaseInterval: releaseInterval.toString(),
-                releasePercentage,
-                supporters: 0, // Not tracked in contract
-                category,
-                updates: [], // Not tracked in contract
-                milestones: [], // Not tracked in contract
-                owner: '', // Not tracked in contract
-                creator,
-                deadline: '', // Not tracked in contract
-                image
-            });
-        }
-        return projects;
+        // Read the single u64 value (project count)
+        const projectCount = Number(args.nextU64());
+        console.log("Deserialized project count:", projectCount);
+        return projectCount;
     } catch (error) {
         console.error('Error deserializing projects:', error);
         // Add fallback to log raw data and return empty array on error
         console.log("Deserialization failed. Raw data:", result);
-        return [];
+        return 0; // Return 0 on error
     }
+}
+
+export async function getAllProjectIds(connectedAccount: any): Promise<number[]> {
+  try {
+    const contract = new SmartContract(connectedAccount, CONTRACT_ADDRESS);
+    const response = await contract.read('getAllProjectIds', new Args());
+    const result = response.value;
+
+    if (!result || result.length === 0) {
+      console.log("No project IDs returned.", result);
+      return [];
+    }
+
+    const argsReader = new Args(result);
+    const arrayLength = Number(argsReader.nextU64()); // Read array length
+    const projectIds: number[] = [];
+
+    for (let i = 0; i < arrayLength; i++) {
+      projectIds.push(Number(argsReader.nextU64())); // Read each u64 ID
+    }
+    console.log("Fetched and deserialized project IDs:", projectIds);
+    return projectIds;
+
+  } catch (error) {
+    console.error('Error fetching project IDs:', error);
+    throw error;
+  }
 }
 
 export async function getProject(connectedAccount: any, projectId: number): Promise<ProjectData> {

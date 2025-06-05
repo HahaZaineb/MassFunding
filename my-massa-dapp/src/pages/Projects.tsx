@@ -7,9 +7,18 @@ import { Search } from 'lucide-react';
 import { CATEGORIES } from '@/constants';
 import ProjectCard from '@/components/projects/ProjectCard';
 import { useProjects } from '@/context/project-context';
-import { getAllProjects } from '@/services/contract-service';
+import { fundProject, getAllProjectIds, getProject } from '@/services/contract-service';
 import { useAccountStore } from '@massalabs/react-ui-kit';
 import { useToast } from '@/components/ui/use-toast';
+import { ProjectData } from '@/types';
+
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 
 export default function Projects() {
   const { projects, setProjects } = useProjects();
@@ -27,7 +36,24 @@ export default function Projects() {
       }
 
       try {
-        const fetchedProjects = await getAllProjects(connectedAccount);
+        // 1. Fetch all project IDs
+        const projectIds: number[] = await getAllProjectIds(connectedAccount);
+        console.log("Fetched project IDs:", projectIds);
+
+        const fetchedProjects: ProjectData[] = [];
+
+        // 2. Fetch each project individually using its ID
+        for (const projectId of projectIds) {
+          try {
+            const projectData = await getProject(connectedAccount, projectId);
+            fetchedProjects.push(projectData);
+          } catch (projectError) {
+            console.error(`Error fetching project with ID ${projectId}:`, projectError);
+            // Optionally, handle individual project fetch errors (e.g., skip or show specific error)
+          }
+        }
+
+        // 3. Update the state with the fetched projects
         setProjects(fetchedProjects);
       } catch (error) {
         console.error('Error fetching projects:', error);
