@@ -14,17 +14,17 @@ import { Label } from '../ui/label';
 import { ProjectData } from '@/types';
 import { useProjects } from '@/context/project-context';
 
-interface MilestoneFormModalProps {
+interface AddMilestoneModalProps {
   project: ProjectData;
   open: boolean;
   onClose: () => void;
 }
 
-export default function MilestoneFormModal({
+export default function AddMilestoneModal({
   project,
   open,
   onClose,
-}: MilestoneFormModalProps) {
+}: AddMilestoneModalProps) {
   const { addProjectMilestone } = useProjects();
 
   const [formData, setFormData] = useState({

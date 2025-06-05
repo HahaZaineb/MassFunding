@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Plus, Calendar, Eye } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { ProjectData } from '@/types';
-import MilestoneFormModal from '../projects/AddMilestoneModal';
+import AddMilestoneModal from '../projects/AddMilestoneModal';
 import ProjectUpdates from '../projects/ProjectUpdates';
 
 interface MyProjectCardProps {
@@ -122,7 +122,7 @@ const MyProjectCard: React.FC<MyProjectCardProps> = ({ project }) => {
         open={openUpdates}
         onClose={() => setOpenUpdates(false)}
       />
-      <MilestoneFormModal
+      <AddMilestoneModal
         open={openAddMilestone}
         onClose={() => setOpenAddMilestone(false)}
         project={project}
