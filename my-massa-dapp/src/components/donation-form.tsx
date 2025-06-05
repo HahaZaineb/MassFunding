@@ -6,7 +6,7 @@ import { Input } from "./ui/input"
 import { ArrowLeft, Info, Loader2 } from "lucide-react"
 import { useAccountStore, ConnectMassaWallet } from "@massalabs/react-ui-kit"
 import { NFTPreview } from "./nft-preview"
-import { vestingService, type VestingScheduleParams } from "../services/contract-service"
+import { fundProject } from "../services/contract-service"
 import { useToast } from "./ui/use-toast"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
 import { Progress } from "./ui/progress"
@@ -62,22 +62,13 @@ export function DonationForm({ project, onBack, onSubmit, isProcessing }: Donati
       console.log("Project:", project)
       console.log("Amount:", amount)
 
-      // Prepare vesting schedule parameters
-      const vestingParams: VestingScheduleParams = {
-        beneficiary: project.beneficiary,
-        amount: amount,
-        lockPeriod: project.lockPeriod,
-        releaseInterval: project.releaseInterval,
-        releasePercentage: project.releasePercentage.toString(),
-      }
+      // Convert amount to BigInt in nanoMAS (1 MAS = 1e9 nanoMAS)
+      const amountInNanoMas = BigInt(Math.round(parseFloat(amount) * 1e9));
 
-      console.log("Vesting parameters:", vestingParams)
+      // Call the fundProject function from the service
+      await fundProject(Number(project.id), amountInNanoMas);
 
-      // Create vesting schedule through smart contract
-      const operationId = await vestingService.createVestingSchedule(connectedAccount, vestingParams)
-
-      console.log("Vesting schedule created with operation ID:", operationId)
-      setTransactionId(operationId)
+      console.log(`Project ${project.id} funded successfully.`);
 
       // Generate NFT ID (in a real implementation, this might come from the smart contract)
       const mockNftId = `MF-${Date.now().toString(36)}`
@@ -85,7 +76,7 @@ export function DonationForm({ project, onBack, onSubmit, isProcessing }: Donati
 
       toast({
         title: "Donation Successful!",
-        description: `Your donation of ${amount} MAS has been processed and the vesting schedule has been created.`,
+        description: `Your donation of ${amount} MAS to project ${project.name} has been processed.`,
         variant: "default",
       })
 

@@ -87,9 +87,8 @@ export function FundPage() {
 
     try {
       const projectId = Number(project.id);
-      const amountInNanoMAS = BigInt(parseFloat(amount) * 1e9);
-      const operationId = await fundProject(
-        connectedAccount,
+      const amountInNanoMAS = BigInt(Math.round(parseFloat(amount) * 1e9));
+      await fundProject(
         projectId,
         amountInNanoMAS
       );

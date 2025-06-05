@@ -27,17 +27,22 @@ processTask
 import { u256 } from 'as-bignum/assembly';
 
   
-const PROJECTS_KEY = stringToBytes('projects');
-const PROJECT_COUNT_KEY = stringToBytes('projectCount');
-const VESTING_CONTRACT_ADDRESS_KEY = stringToBytes('vestingContractAddress'); // This key might not be needed anymore if we fully internalize vesting
-const OWNER_KEY = stringToBytes('owner'); 
+// Storage keys
+export const PROJECTS_KEY = stringToBytes('projects');
+export const PROJECT_COUNT_KEY = stringToBytes('projectCount');
+export const VESTING_CONTRACT_ADDRESS_KEY = stringToBytes('vestingContractAddress');
+export const OWNER_KEY = stringToBytes('owner');
+export const VESTING_SCHEDULES_KEY_PREFIX = stringToBytes('vestingSchedules::');
+export const NEXT_VESTING_ID_KEY = stringToBytes('nextVestingId');
+export const PROJECT_UPDATES_KEY_PREFIX = stringToBytes('projectUpdates::');
 
-// Constants for vesting schedules
-const VESTING_SCHEDULES_KEY_PREFIX = stringToBytes('vestingSchedules::');
-const NEXT_VESTING_ID_KEY = stringToBytes('nextVestingId');
-
-// New constant for project updates storage
-const PROJECT_UPDATES_KEY_PREFIX = stringToBytes('projectUpdates::');
+// Event names
+export const PROJECT_CREATED_EVENT = 'PROJECT_CREATED';
+export const PROJECT_FUNDED_EVENT = 'PROJECT_FUNDED';
+export const VESTING_SCHEDULE_CREATED_EVENT = 'VESTING_SCHEDULE_CREATED';
+export const VESTING_SCHEDULE_UPDATED_EVENT = 'VESTING_SCHEDULE_UPDATED';
+export const VESTING_SCHEDULE_COMPLETED_EVENT = 'VESTING_SCHEDULE_COMPLETED';
+export const TOKENS_RELEASED_EVENT = 'TOKENS_RELEASED';
 
 class vestingSchedule implements Serializable {
 constructor(
@@ -191,23 +196,25 @@ function getVestingContractAddress(): Address {
 }
 
 export function constructor(binArgs: StaticArray<u8>): void {
+  assert(Context.isDeployingContract(), "ProjectManager: Not in deployment context");
 
-assert(Context.isDeployingContract(), "ProjectManager: Not in deployment context");
+  const args = new Args(binArgs);
+  const admin = args.nextString().expect('Invalid admin');
 
-// Store the contract owner (deployer)
-Storage.set(OWNER_KEY, stringToBytes(Context.caller().toString()));
+  // Store the contract owner (deployer)
+  Storage.set(OWNER_KEY, stringToBytes(admin));
 
-// Initialize project count if not already present
-if (!Storage.has(PROJECT_COUNT_KEY)) {
+  // Initialize project count if not already present
+  if (!Storage.has(PROJECT_COUNT_KEY)) {
     Storage.set(PROJECT_COUNT_KEY, new Args().add(0 as u64).serialize());
-}
+  }
 
-// Initialize Vesting specific storage
-if (!Storage.has(NEXT_VESTING_ID_KEY)) {
+  // Initialize Vesting specific storage
+  if (!Storage.has(NEXT_VESTING_ID_KEY)) {
     Storage.set(NEXT_VESTING_ID_KEY, new Args().add(0 as u64).serialize());
-}
+  }
 
-generateEvent("Combined contract initialized successfully");
+  generateEvent("ProjectManager contract initialized successfully");
 }
 
 // New function to set the address of the Vesting contract (owner only) - Might not be needed if fully internal
@@ -276,7 +283,7 @@ Storage.set(getProjectUpdatesKey(projectId), new Args().add([] as string[]).seri
 
 incrementProjectCount();
 
-generateEvent(`Project created with ID: ${projectId} in category: ${category}`);
+generateEvent(PROJECT_CREATED_EVENT);
 
 // Schedule the initial vesting trigger call
 const triggerPeriod = creationPeriod + lockPeriod;
@@ -284,10 +291,10 @@ const triggerArgs = new Args().add(projectId).serialize();
 
 // Find a suitable slot for the deferred call
 const triggerSlot = findCheapestSlot(
-    triggerPeriod,
-    triggerPeriod + 10, // Search window
-    20_000_000, // Gas
-    0 // No coins sent with this trigger call
+  triggerPeriod,
+  triggerPeriod + 10, // Search window
+  20_000_000, // Gas
+  0 // No coins sent with this trigger call
 );
 
 deferredCallRegister(
@@ -371,7 +378,7 @@ project.amountRaised += amountSent;
 // Save the updated project back to storage
 Storage.set(projectKey, project.serialize());
 
-generateEvent(`Project ${projectId} funded with ${amountSent} MAS. Total raised: ${project.amountRaised}`);
+generateEvent(PROJECT_FUNDED_EVENT);
 
 // If initial vesting has been triggered, call addToVestingSchedule (internal call)
 if (project.initialVestingTriggered) {
@@ -381,7 +388,7 @@ if (project.initialVestingTriggered) {
     // Call addToVestingSchedule internally
     addToVestingScheduleInternal(project.vestingScheduleId, amountSent);
 
-    generateEvent(`Added ${amountSent} MAS to vesting schedule ID ${project.vestingScheduleId} for project ${projectId}`);
+    generateEvent(VESTING_SCHEDULE_UPDATED_EVENT);
 }
 // Note: If initial vesting hasn't been triggered yet, the funds are just added to amountRaised.
 // The triggerInitialVesting function will handle vesting the total amount at the lock end.
@@ -536,7 +543,7 @@ deferredCallRegister(
   0 // No coins sent with deferred call
 );
 
-generateEvent(`Vesting schedule created internally with ID ${vestingId} for ${beneficiary.toString()}. First release scheduled for period ${releaseSlot.period}`);
+generateEvent(VESTING_SCHEDULE_CREATED_EVENT);
 
 // Return the vesting ID
 return vestingId;
@@ -613,7 +620,7 @@ if (amountToRelease > 0) {
     // We need to handle potential transfer failures gracefully.
     // In a real scenario, you might want error handling or a pull mechanism.
     Coins.transferCoins(beneficiaryAddress, amountToRelease);
-    generateEvent(`Transferred ${amountToRelease} MAS to ${beneficiaryAddress.toString()}`);
+    generateEvent(TOKENS_RELEASED_EVENT);
 
     // Update vesting schedule
     schedule.amountClaimed += amountToRelease;
@@ -653,7 +660,7 @@ if (schedule.amountClaimed < schedule.totalAmount) {
 } else {
   // Vesting completed - remove the schedule from storage
   Storage.del(scheduleKey);
-  generateEvent(`Vesting schedule with ID ${vestingId} completed and removed.`);
+  generateEvent(VESTING_SCHEDULE_COMPLETED_EVENT);
 }
 }
 

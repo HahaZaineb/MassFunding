@@ -2,7 +2,7 @@ import { Args, SmartContract, Mas, OperationStatus, parseUnits } from '@massalab
 import { ProjectData } from '@/types';
 import { useEffect, useState } from 'react';
 
-const CONTRACT_ADDRESS = "AS12evxNm1RaW58nyn7a5DPDhimPWCnN2ky2Zb1nmLyPGdjfbUYUQ"
+const CONTRACT_ADDRESS = "AS12G2DXeeHn67tm7h7NYy81y51xQCBYhLM7yPJAQ5Nx68wKbB7CA"
 
 export async function createProject(
   connectedAccount: any,
@@ -181,23 +181,23 @@ export async function getProject(connectedAccount: any, projectId: number): Prom
   }
 }
 
-export async function fundProject(
-  connectedAccount: any,
-  projectId: number,
-  amount: bigint // Amount in nanoMAS
-): Promise<string> {
+export async function fundProject(projectId: number, amount: bigint): Promise<void> {
   try {
-    const contract = new SmartContract(connectedAccount, CONTRACT_ADDRESS);
+    const contract = new SmartContract(null, CONTRACT_ADDRESS); // Assuming CONTRACT_ADDRESS is defined
     const args = new Args().addU64(BigInt(projectId));
-    // Amount to send is handled by the coins option, not in args for fundProject
-    const response = await contract.call('fundProject', args, { coins: amount });
-    console.log('Fund project transaction response:', response);
-    // Wait for speculative execution and return operation ID
-    await response.waitSpeculativeExecution();
-    return response.toString();
+
+    // Call the fundProject function, sending coins
+    await contract.call(
+      'fundProject',
+      args,
+      amount // Amount of coins to send
+    );
+
+    console.log(`Successfully funded project ${projectId} with ${amount} MAS.`);
+
   } catch (error) {
     console.error('Error funding project:', error);
-    throw error;
+    throw error; // Rethrow to be handled by the component
   }
 }
 
