@@ -7,7 +7,7 @@ import { Search } from 'lucide-react';
 import { CATEGORIES } from '@/constants';
 import ProjectCard from '@/components/projects/ProjectCard';
 import { useProjects } from '@/context/project-context';
-import { fundProject, getAllProjectIds, getProject } from '@/services/contract-service';
+import { fundProject, getAllProjects, getProject } from '@/services/contract-service';
 import { useAccountStore } from '@massalabs/react-ui-kit';
 import { useToast } from '@/components/ui/use-toast';
 import { ProjectData } from '@/types';
@@ -37,7 +37,7 @@ export default function Projects() {
 
       try {
         // 1. Fetch all project IDs
-        const projectIds: number[] = await getAllProjectIds(connectedAccount);
+        const projectIds: number[] = await getAllProjects(connectedAccount);
         console.log("Fetched project IDs:", projectIds);
 
         const fetchedProjects: ProjectData[] = [];

@@ -323,16 +323,31 @@ assert(Storage.has(projectKey), `Project with ID ${projectId} not found`);
 return Storage.get(projectKey);
 }
 
+// New function to get all project IDs (renamed to replace the old getAllProjects)
 export function getAllProjects(_: StaticArray<u8>): StaticArray<u8> {
-let projectCount = getNextProjectId(); // This is actually the total number of projects
-generateEvent(`Total project count: ${projectCount}`);
+  let projectIds: u64[] = [];
+  let projectCount = getNextProjectId(); // Total number of projects created
 
-const args = new Args();
-args.add<u64>(projectCount);
+  for (let i: u64 = 0; i < projectCount; i++) {
+    const projectKey = new Args().add(PROJECTS_KEY).add(i).serialize();
+    // Check if a project exists at this potential ID
+    if (Storage.has(projectKey)) {
+      // Since the project exists, we add its ID to the list
+      projectIds.push(i);
+    }
+  }
 
-generateEvent(`Returning project count: ${projectCount}`);
+  const args = new Args();
+  // Add the array length first
+  args.add<u64>(projectIds.length);
+  // Then add each U64 ID individually
+  for (let i = 0; i < projectIds.length; i++) {
+    args.add(projectIds[i]);
+  }
 
-return args.serialize();
+  generateEvent(`Returning ${projectIds.length} project IDs (via getAllProjects).`);
+
+  return args.serialize();
 }
 
 export function fundProject(binArgs: StaticArray<u8>): void {
@@ -706,30 +721,3 @@ export { processTask };
 
 // Add exports at the end of the file
 export { Project, vestingSchedule };
-
-// New function to get all project IDs
-export function getAllProjectIds(_: StaticArray<u8>): StaticArray<u8> {
-  let projectIds: u64[] = [];
-  let projectCount = getNextProjectId(); // Total number of projects created
-
-  for (let i: u64 = 0; i < projectCount; i++) {
-    const projectKey = new Args().add(PROJECTS_KEY).add(i).serialize();
-    // Check if a project exists at this potential ID
-    if (Storage.has(projectKey)) {
-      // Since the project exists, we add its ID to the list
-      projectIds.push(i);
-    }
-  }
-
-  const args = new Args();
-  // Add the array length first
-  args.add<u64>(projectIds.length);
-  // Then add each U64 ID individually
-  for (let i = 0; i < projectIds.length; i++) {
-    args.add(projectIds[i]);
-  }
-
-  generateEvent(`Returning ${projectIds.length} project IDs.`);
-
-  return args.serialize();
-}
