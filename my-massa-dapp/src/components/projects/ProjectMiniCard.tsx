@@ -44,11 +44,11 @@ const ProjectMiniCard = ({ project, showFundBtn = true }: ProjectMiniCardProps) 
 
       {/* Project Info */}
       <div className="p-6">
-        <h3 className="text-xl font-bold text-[#00ff9d] mb-2">
+        <h3 className="text-xl font-bold text-[#00ff9d] mb-2 line-clamp-1">
           {project.name}
         </h3>
-        <p className="text-slate-300 text-sm mb-4">
-          {project.description.substring(0, 100)}...
+        <p className="text-slate-300 text-sm mb-4 line-clamp-2">
+          {project.description}
         </p>
 
         {/* Progress Bar */}

@@ -30,13 +30,11 @@ interface ProjectCardProps {
   project: ProjectData & { image?: string };
 }
 
-const ProjectCard = ({
-  project,
-}: ProjectCardProps) => {
-  const navigate = useNavigate()
+const ProjectCard = ({ project }: ProjectCardProps) => {
+  const navigate = useNavigate();
   const percentFunded = (project.amountRaised / project.amountNeeded) * 100;
-  const [openProjectUpdates, setOpenProjectUpdates] = useState(false)
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [openProjectUpdates, setOpenProjectUpdates] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   return (
     <Card className="bg-slate-800/80 border-slate-600 text-white overflow-hidden hover:shadow-2xl transition-all duration-300 hover:scale-105 backdrop-blur-sm border-2 hover:border-emerald-500/50">
@@ -58,13 +56,11 @@ const ProjectCard = ({
       </div>
 
       <CardHeader className="pb-4">
-        <CardTitle className="text-white text-xl leading-tight">
+        <CardTitle className="text-white text-xl leading-tight line-clamp-1">
           {project.name}
         </CardTitle>
-        <CardDescription className="text-slate-300 text-sm leading-relaxed">
-          {isExpanded
-            ? project.description
-            : `${project.description.substring(0, 100)}...`}
+        <CardDescription className="text-slate-300 text-sm leading-relaxed line-clamp-2">
+          {project.description}
         </CardDescription>
       </CardHeader>
 
@@ -80,29 +76,29 @@ const ProjectCard = ({
               {percentFunded.toFixed(0)}%
             </span>
           </div>
-          <ProgressBar value={percentFunded}/>
+          <ProgressBar value={percentFunded} />
         </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-3 gap-3">
           <div className="flex flex-col items-center p-3 bg-slate-700/50 rounded-lg">
             <Users className="h-4 w-4 mb-1 text-blue-400" />
-            <span className="text-white font-bold text-lg">
+            <span className="text-white font-bold text-sm text-center">
               {project.supporters}
             </span>
             <span className="text-slate-400 text-xs">Supporters</span>
           </div>
           <div className="flex flex-col items-center p-3 bg-slate-700/50 rounded-lg">
             <Clock className="h-4 w-4 mb-1 text-yellow-400" />
-            <span className="text-white font-bold text-lg">
+            <span className="text-white font-bold text-sm text-center">
               Every {project.releaseInterval} days
             </span>
             <span className="text-slate-400 text-xs">Interval</span>
           </div>
           <div className="flex flex-col items-center p-3 bg-slate-700/50 rounded-lg">
             <Coins className="h-4 w-4 mb-1 text-emerald-400" />
-            <span className="text-white font-bold text-lg">
-              {project.releasePercentage}% Release
+            <span className="text-white font-bold text-sm text-center">
+              {project.releasePercentage}%
             </span>
             <span className="text-slate-400 text-xs">Release</span>
           </div>
@@ -161,7 +157,7 @@ const ProjectCard = ({
 
       <CardFooter className="flex flex-col gap-3 pt-4">
         <Button
-          onClick={() => navigate('/fund/'+project.id)}
+          onClick={() => navigate('/fund/' + project.id)}
           className="w-full bg-gradient-to-r from-emerald-500 via-green-500 to-teal-600 hover:from-emerald-600 hover:via-green-600 hover:to-teal-700 text-white font-bold py-3 text-lg shadow-lg hover:shadow-emerald-500/25 transition-all duration-300"
         >
           <ThumbsUp className="h-4 w-4 mr-2" />
@@ -172,7 +168,7 @@ const ProjectCard = ({
           variant="ghost"
           size="sm"
           className="text-slate-400 hover:text-white"
-          onClick={() => setIsExpanded(current => !current)}
+          onClick={() => setIsExpanded((current) => !current)}
         >
           {isExpanded ? (
             <>
@@ -187,7 +183,10 @@ const ProjectCard = ({
           )}
         </Button>
       </CardFooter>
-      <ProjectUpdates open={openProjectUpdates} onClose={() => setOpenProjectUpdates(false)}/>
+      <ProjectUpdates
+        open={openProjectUpdates}
+        onClose={() => setOpenProjectUpdates(false)}
+      />
     </Card>
   );
 };

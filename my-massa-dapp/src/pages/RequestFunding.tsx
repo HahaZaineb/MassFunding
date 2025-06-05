@@ -2,25 +2,53 @@
 
 import type React from 'react';
 
-import { useState, useEffect } from "react"
-import { motion } from "framer-motion"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
-import { ArrowLeft, Info, Plus, TrendingUp, Users, DollarSign, Calendar, Settings, Eye } from "lucide-react"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Slider } from "@/components/ui/slider"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { useToast } from "@/components/ui/use-toast"
-import { useProjects } from "../context/project-context"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { useAccountStore } from "@massalabs/react-ui-kit"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import {
+  ArrowLeft,
+  Info,
+  Plus,
+  TrendingUp,
+  Users,
+  DollarSign,
+  Calendar,
+  Settings,
+  Eye,
+} from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { useToast } from '@/components/ui/use-toast';
+import { useProjects } from '../context/project-context';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { useAccountStore } from '@massalabs/react-ui-kit';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 //import { ProjectUpdates } from "@/components/project-updates"
-import { ProjectData } from "@/types"
-import { CATEGORIES } from "@/constants"
-import { createProject } from '@/services/contract-service'
+import { ProjectData } from '@/types';
+import { CATEGORIES } from '@/constants';
+import { createProject } from '@/services/contract-service';
+import { Slider } from '@mui/material';
 
 export default function RequestFunding() {
   const { toast } = useToast();
@@ -60,8 +88,8 @@ export default function RequestFunding() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSliderChange = (value: number[]) => {
-    setFormData((prev) => ({ ...prev, releasePercentage: value[0] }));
+  const handleSliderChange = (event: Event, value: number) => {
+    setFormData((prev) => ({ ...prev, releasePercentage: value }));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -81,22 +109,23 @@ export default function RequestFunding() {
     setIsSubmitting(true);
     try {
       if (!connectedAccount) {
-        throw new Error('Please connect your wallet first')
+        throw new Error('Please connect your wallet first');
       }
 
       const response = await createProject(connectedAccount, {
         title: formData.projectName,
         description: formData.description,
         fundingGoal: formData.amountNeeded,
-        beneficiaryAddress: formData.walletAddress || connectedAccount.toString(),
+        beneficiaryAddress:
+          formData.walletAddress || connectedAccount.toString(),
         category: formData.category,
         lockPeriod: formData.lockPeriod,
         releaseInterval: formData.releaseInterval,
         releasePercentage: formData.releasePercentage,
         image: formData.image,
-      })
+      });
 
-      console.log('Project creation response:', response)
+      console.log('Project creation response:', response);
 
       toast({
         title: 'Project Created',
@@ -119,10 +148,13 @@ export default function RequestFunding() {
     } catch (error) {
       console.error('Error creating project:', error);
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create project. Please try again.",
-        variant: "destructive",
-      })
+        title: 'Error',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Failed to create project. Please try again.',
+        variant: 'destructive',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -350,13 +382,14 @@ export default function RequestFunding() {
                       </span>
                     </div>
                     <Slider
-                      id="releasePercentage"
+                      aria-label="releasePercentage"
+                      defaultValue={formData.releasePercentage}
+                      valueLabelDisplay="auto"
+                      step={5}
+                      marks
                       min={5}
                       max={50}
-                      step={5}
-                      value={[formData.releasePercentage]}
-                      onValueChange={handleSliderChange}
-                      className="py-4"
+                      onChange={handleSliderChange}
                     />
                     <p className="text-xs text-slate-400">
                       This determines what percentage of the total funds will be
@@ -376,7 +409,7 @@ export default function RequestFunding() {
                 </div>
               </form>
             </CardContent>
-            <CardFooter className="text-xs text-slate-400 border-t border-[#00ff9d]/10 flex flex-col items-start">
+            <CardFooter className="text-xs text-slate-400 border-t border-[#00ff9d]/10 flex flex-col items-start pt-4">
               <p className="mb-1">
                 By submitting, you agree to the platform's terms and conditions
                 regarding fund distribution.
