@@ -1,0 +1,77 @@
+'use client';
+
+import { motion } from 'framer-motion';
+import { TrendingUp, Users, DollarSign } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { useAccountStore } from '@massalabs/react-ui-kit';
+import { useProjects } from '@/context/project-context';
+
+export default function Stats() {
+  const { projects } = useProjects();
+  const { connectedAccount } = useAccountStore();
+
+  const myProjects = connectedAccount
+    ? projects.filter((p) => {
+        const creatorAddress = p.creator?.toLowerCase() || '';
+        const connectedAddress = connectedAccount.address
+          .toString()
+          .toLowerCase();
+        const match = creatorAddress === connectedAddress;
+        return match;
+      })
+    : [];
+
+  const totalProjects = myProjects.length;
+  const totalFundsRaised = myProjects.reduce(
+    (sum, project) => sum + project.amountRaised,
+    0,
+  );
+  const totalSupporters = myProjects.reduce(
+    (sum, project) => sum + project.supporters,
+    0,
+  );
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <Card className="bg-gradient-to-br from-[#1a2340] to-[#0f1629] border border-[#00ff9d]/20">
+          <CardContent className="p-6 text-center">
+            <div className="flex items-center justify-center mb-2">
+              <TrendingUp className="h-8 w-8 text-[#00ff9d]" />
+            </div>
+            <div className="text-2xl font-bold text-white">{totalProjects}</div>
+            <div className="text-sm text-slate-400">Total Projects</div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-[#1a2340] to-[#0f1629] border border-[#00ff9d]/20">
+          <CardContent className="p-6 text-center">
+            <div className="flex items-center justify-center mb-2">
+              <DollarSign className="h-8 w-8 text-[#00ff9d]" />
+            </div>
+            <div className="text-2xl font-bold text-white">
+              {totalFundsRaised.toFixed(1)}
+            </div>
+            <div className="text-sm text-slate-400">MAS Raised</div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-[#1a2340] to-[#0f1629] border border-[#00ff9d]/20">
+          <CardContent className="p-6 text-center">
+            <div className="flex items-center justify-center mb-2">
+              <Users className="h-8 w-8 text-[#00ff9d]" />
+            </div>
+            <div className="text-2xl font-bold text-white">
+              {totalSupporters}
+            </div>
+            <div className="text-sm text-slate-400">Total Supporters</div>
+          </CardContent>
+        </Card>
+      </div>
+    </motion.div>
+  );
+}
