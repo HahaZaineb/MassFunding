@@ -11,3 +11,5 @@ export const defaultNetworkConfig = {
   nodeUrl: MASSA_NODE_URL,
   explorerUrl: "https://buildnet.massa.net/explorer",
 }
+
+export const MASSA_NETWORK: 'buildnet' | 'mainnet' = 'buildnet'

@@ -1,8 +1,7 @@
-import { Args, SmartContract, Mas, OperationStatus, parseUnits } from '@massalabs/massa-web3';
+import { Args, SmartContract } from '@massalabs/massa-web3';
 import { ProjectData } from '@/types';
-import { useEffect, useState } from 'react';
-
-const CONTRACT_ADDRESS = "AS12dtU8byvpZUVNNHiPa61KJrUEWuetG46RofPtdGgYTm9xLQX7A"
+import { readSmartContractPublic } from '@/lib/smartContract';
+import { CONTRACT_ADDRESS } from '@/constants';
 
 export async function createProject(
   connectedAccount: any,
@@ -40,34 +39,25 @@ export async function createProject(
   }
 }
 
-export async function getAllProjects(connectedAccount: any): Promise<number> {
-    const contract = new SmartContract(connectedAccount, CONTRACT_ADDRESS);
-    console.log("Calling getAllProjects with connectedAccount:", connectedAccount);
-    const response = await contract.read('getAllProjects', new Args());
-    console.log("Type of response.value:", typeof response.value, "Value:", response.value);
-    console.log("Response from getAllProjects:", response);
+export async function getAllProjects(): Promise<number> {
+  const response = await readSmartContractPublic(
+    CONTRACT_ADDRESS,
+    'getAllProjects',
+    new Args(),
+  );
+  const result = response.value;
+  if (!result || result.length === 0) {
+    return 0;
+  }
 
-    const result = response.value;
-    if (!result || result.length === 0) {
-        console.log("Invalid or empty response from contract:", result);
-        return 0; // Return 0 if no data (assuming 0 projects)
-    }
-
-    try {
-        // Add logging for raw data and length
-        console.log("Raw response.value length:", result.length, "Data:", result);
-
-        const args = new Args(result);
-        // Read the single u64 value (project count)
-        const projectCount = Number(args.nextU64());
-        console.log("Deserialized project count:", projectCount);
-        return projectCount;
-    } catch (error) {
-        console.error('Error deserializing projects:', error);
-        // Add fallback to log raw data and return empty array on error
-        console.log("Deserialization failed. Raw data:", result);
-        return 0; // Return 0 on error
-    }
+  try {
+    const args = new Args(result);
+    const projectCount = Number(args.nextU64());
+    return projectCount;
+  } catch (error) {
+    console.error('Error deserializing projects:', error);
+    return 0;
+  }
 }
 
 export async function getAllProjectIds(connectedAccount: any): Promise<number[]> {
