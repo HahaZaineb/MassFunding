@@ -1,4 +1,4 @@
-import { Args, SmartContract, Mas, OperationStatus, parseUnits } from '@massalabs/massa-web3';
+import { Args, SmartContract } from '@massalabs/massa-web3';
 import { ProjectData } from '@/types';
 import { useEffect, useState } from 'react';
 
