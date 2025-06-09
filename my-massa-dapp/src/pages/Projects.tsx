@@ -8,7 +8,6 @@ import { CATEGORIES } from '@/constants';
 import ProjectCard from '@/components/projects/ProjectCard';
 import { useProjects } from '@/context/project-context';
 import { fundProject, getAllProjects, getProject } from '@/services/contract-service';
-import { useAccountStore } from '@massalabs/react-ui-kit';
 import { useToast } from '@/components/ui/use-toast';
 import { ProjectData } from '@/types';
 
@@ -22,7 +21,6 @@ import {
 
 export default function Projects() {
   const { projects, setProjects } = useProjects();
-  const { connectedAccount } = useAccountStore();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -30,11 +28,6 @@ export default function Projects() {
 
   useEffect(() => {
     async function fetchProjects() {
-      if (!connectedAccount) {
-        setIsLoading(false);
-        return;
-      }
-
       try {
         // Fetch all project data directly
         const fetchedProjects: ProjectData[] = await getAllProjects();
@@ -55,7 +48,7 @@ export default function Projects() {
     }
 
     fetchProjects();
-  }, [connectedAccount, setProjects, toast]);
+  }, [setProjects, toast]);
 
   // Filter projects based on search query and category
   const filteredProjects = useMemo(() => {
