@@ -2,12 +2,12 @@ import { LinearProgress, linearProgressClasses, LinearProgressProps } from '@mui
 import { styled } from '@mui/material/styles';
 
 interface StyledLinearProgressProps extends LinearProgressProps {
-  valueColor: string;
+  valuecolor: string;
 }
 
 const BorderLinearProgress = styled((props: StyledLinearProgressProps) => (
   <LinearProgress {...props} />
-))(({ theme, valueColor }) => ({
+))(({ theme, valuecolor }) => ({
   height: 10,
   borderRadius: 5,
   [`&.${linearProgressClasses.colorPrimary}`]: {
@@ -15,7 +15,7 @@ const BorderLinearProgress = styled((props: StyledLinearProgressProps) => (
   },
   [`& .${linearProgressClasses.bar}`]: {
     borderRadius: 5,
-    backgroundColor: valueColor,
+    backgroundColor: valuecolor,
   },
 }));
 
@@ -33,7 +33,7 @@ const ProgressBar = ({ value }: { value: number }) => {
     <BorderLinearProgress
       variant="determinate"
       value={value}
-      valueColor={color}
+      valuecolor={color}
     />
   );
 };

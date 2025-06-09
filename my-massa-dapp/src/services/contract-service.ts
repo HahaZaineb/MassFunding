@@ -103,9 +103,9 @@ export async function getProject(projectId: number): Promise<ProjectData> {
     const contract = new SmartContract(publicProvider, CONTRACT_ADDRESS);
     const args = new Args().addU64(BigInt(projectId));
     const response = await contract.read('getProject', args);
-
     // Use bytesToSerializableObjectArray to deserialize the response
     const [project] = bytesToSerializableObjectArray(response.value, Project);
+    console.log(project, 'project')
 
     // Convert the deserialized Project object to a ProjectData object
     return convertProjectToProjectData(project);

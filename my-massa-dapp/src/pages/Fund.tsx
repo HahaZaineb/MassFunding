@@ -1,13 +1,10 @@
 import type React from 'react';
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Info, Loader2 } from 'lucide-react';
 import { useAccountStore, ConnectMassaWallet } from '@massalabs/react-ui-kit';
-import {
-  fundProject,
-} from '../services/contract-service';
+import { fundProject } from '../services/contract-service';
 import { useToast } from '@/components/ui/use-toast';
 import {
   Card,
@@ -22,38 +19,28 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { ProjectData } from '@/types';
-import { useProjects } from '@/context/project-context';
 import { useParams } from 'react-router-dom';
 import Loader from '@/components/Loader';
 import { styled } from '@mui/system';
 import ProgressBar from '@/components/ProgressBar';
 import { shortenAddress } from '@/utils/functions';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { fetchProjectById } from '@/store/slices/projectSlice';
 
 export function FundPage() {
+  const dispatch = useAppDispatch();
   const { connectedAccount } = useAccountStore();
   const { toast } = useToast();
   const { projectId } = useParams();
-  const { projects } = useProjects();
-  const [project, setProject] = useState<ProjectData | null>(null);
   const [amount, setAmount] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const { selected, loading } = useAppSelector((state) => state.projects);
 
   useEffect(() => {
-    if (projects.length > 0 && projectId) {
-      const selectedProject = projects.find(
-        (p) => p.id === projectId.toString(),
-      );
-      setProject(selectedProject || null);
+    if (projectId) {
+      dispatch(fetchProjectById(projectId));
     }
-  }, [projectId, projects]);
-
-  useEffect(() => {
-    if (project !== undefined) {
-      setIsLoading(false);
-    }
-  }, [project]);
+  }, [dispatch, projectId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,16 +65,12 @@ export function FundPage() {
     setIsSubmitting(true);
 
     try {
-      const projectIdNum = Number(project?.id);
+      const projectIdNum = Number(selected?.id);
       if (isNaN(projectIdNum)) {
         throw new Error('Invalid project ID.');
       }
       const amountInNanoMAS = BigInt(Math.round(parseFloat(amount) * 1e9));
-      await fundProject(
-        connectedAccount,
-        projectIdNum,
-        amountInNanoMAS
-      );
+      await fundProject(connectedAccount, projectIdNum, amountInNanoMAS);
       toast({
         title: 'Donation Successful!',
         description: `Your donation of ${amount} MAS has been processed and the vesting schedule has been created.`,
@@ -115,16 +98,21 @@ export function FundPage() {
     fontWeight: 500,
   });
 
-  if (isLoading || !project || !connectedAccount) {
-    if (!isLoading && !project) {
-      return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
-          <h1 className="text-3xl font-bold mb-4">Project Not Found</h1>
-          <p className="text-lg">The project you are looking for does not exist or has been removed.</p>
-        </div>
-      );
-    }
-    return <Loader />;
+  if (loading) {
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
+      return <Loader />;
+    </div>;
+  }
+
+  if (!loading && !selected) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
+        <h1 className="text-3xl font-bold mb-4">Project Not Found</h1>
+        <p className="text-lg">
+          The project you are looking for does not exist or has been removed.
+        </p>
+      </div>
+    );
   }
 
   return (
@@ -132,7 +120,7 @@ export function FundPage() {
       <Card className="bg-gradient-to-br from-[#1a2340] to-[#0f1629] border border-[#00ff9d]/20 shadow-2xl max-w-xl mx-auto">
         <CardHeader className="border-b border-[#00ff9d]/10">
           <CardTitle className="text-white">
-            Donate to <AccentText>{project.name}</AccentText>
+            Donate to <AccentText>{selected?.name}</AccentText>
           </CardTitle>
           <CardDescription className="text-slate-300">
             Support this project with a secure vesting schedule
@@ -148,24 +136,30 @@ export function FundPage() {
                   Project Progress
                 </label>
                 <div className="flex justify-between text-sm text-slate-400 mb-1">
-                  <span>Current: {project.amountRaised} MAS</span>
-                  <span>Goal: {project.goalAmount} MAS</span>
+                  <span>Current: {selected?.amountRaised} MAS</span>
+                  <span>Goal: {selected?.goalAmount} MAS</span>
                 </div>
                 <ProgressBar
-                  value={Math.min(
-                    Math.round(
-                      (project.amountRaised / project.goalAmount) * 100,
-                    ),
-                    100,
-                  )}
+                  value={
+                    selected?.goalAmount && selected?.goalAmount > 0
+                      ? Math.min(
+                          Math.round(
+                            (selected.amountRaised / selected.goalAmount) * 100,
+                          ),
+                          100,
+                        )
+                      : 0
+                  }
                 />
                 <div className="text-center text-sm text-slate-400 mt-1">
-                  {Math.min(
-                    Math.round(
-                      (project.amountRaised / project.goalAmount) * 100,
-                    ),
-                    100,
-                  )}
+                  {selected?.goalAmount && selected?.goalAmount > 0
+                    ? Math.min(
+                        Math.round(
+                          (selected.amountRaised / selected.goalAmount) * 100,
+                        ),
+                        100,
+                      )
+                    : 0}
                   % funded
                 </div>
               </div>
@@ -180,33 +174,33 @@ export function FundPage() {
                   <div>
                     <span className="text-slate-400">Lock Period:</span>
                     <div className="text-white font-medium">
-                      {project.lockPeriod} days
+                      {selected?.lockPeriod} days
                     </div>
                   </div>
                   <div>
                     <span className="text-slate-400">Release Interval:</span>
                     <div className="text-white font-medium">
-                      {project.releaseInterval} days
+                      {selected?.releaseInterval} days
                     </div>
                   </div>
                   <div>
                     <span className="text-slate-400">Release %:</span>
                     <div className="text-white font-medium">
-                      {project.releasePercentage}%
+                      {selected?.releasePercentage}%
                     </div>
                   </div>
                   <div>
                     <span className="text-slate-400">Beneficiary:</span>
                     <div className="text-white font-medium text-xs font-mono">
-                      {project.beneficiary.slice(0, 8)}...
-                      {project.beneficiary.slice(-6)}
+                      {selected?.beneficiary.slice(0, 8)}...
+                      {selected?.beneficiary.slice(-6)}
                     </div>
                   </div>
                 </div>
                 <div className="mt-3 text-xs text-slate-400">
-                  Your funds will be locked for {project.lockPeriod} days, then
-                  released {project.releasePercentage}% every{' '}
-                  {project.releaseInterval} days.
+                  Your funds will be locked for {selected?.lockPeriod} days,
+                  then released {selected?.releasePercentage}% every{' '}
+                  {selected?.releaseInterval} days.
                 </div>
               </div>
 

@@ -86,7 +86,7 @@ const ProjectMiniCard = ({ project, showFundBtn = true }: ProjectMiniCardProps) 
         </div>
 
         {showFundBtn && <Button
-          onClick={() => navigate('/projects')}
+          onClick={() => navigate('/fund/' + project.id)}
           className="w-full bg-[#00ff9d] mt-3 hover:bg-[#00ff9d]/90 text-[#0f1629] font-medium"
         >
           Fund This Project

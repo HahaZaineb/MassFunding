@@ -26,9 +26,9 @@ import { useAccountStore } from '@massalabs/react-ui-kit';
 import { shortenAddress } from '@/utils/functions';
 
 const navItems = [
+  { label: 'Home', path: '/' },
   { label: 'Explore Projects', path: '/projects' },
   { label: 'Request Funding', path: '/request-funding' },
-  { label: 'How It Works', path: '/about' },
 ];
 
 export function Navbar() {
