@@ -1,5 +1,4 @@
-// Import type patches first
-import "./types/wallet-patch"
+
 
 
 import React from "react"

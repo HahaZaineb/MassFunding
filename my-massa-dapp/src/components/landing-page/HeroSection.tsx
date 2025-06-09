@@ -2,13 +2,45 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, HandCoins, Rocket, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import {
+  getTotalDonations,
+  getTotalProjectsFunded,
+  getTotalSupporters,
+} from '@/services/contract-service';
 
 const HeroSection = () => {
   const navigate = useNavigate();
 
-  const totalDonations = '$1,200,000';
-  const totalProjects = 128;
-  const totalSupporters = 5632;
+  const [totalDonations, setTotalDonations] = useState<number>(0);
+  const [totalProjects, setTotalProjects] = useState<number>(0);
+  const [totalSupporters, setTotalSupporters] = useState<number>(0);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const donations = await getTotalDonations();
+        setTotalDonations(donations);
+
+        const projects = await getTotalProjectsFunded();
+        setTotalProjects(projects);
+
+        const supporters = await getTotalSupporters();
+        setTotalSupporters(supporters);
+      } catch (error) {
+        console.error('Error fetching hero section stats:', error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const formattedTotalDonations = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'MAS',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(totalDonations);
 
   return (
     <section className="py-16 px-4 bg-[#0f1629]">
@@ -52,7 +84,7 @@ const HeroSection = () => {
         >
           <div className="flex flex-col items-center">
             <HandCoins className="h-8 w-8 text-yellow-400 mb-2" />
-            <p className="text-3xl font-semibold text-yellow-400">{totalDonations}</p>
+            <p className="text-3xl font-semibold text-yellow-400">{formattedTotalDonations}</p>
             <p className="text-slate-400 mt-1">Total Donations</p>
           </div>
           <div className="flex flex-col items-center">

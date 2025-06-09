@@ -4,25 +4,32 @@ import {
   Args,
   Mas,
   SmartContract,
-  JsonRpcProvider,
+  Web3Provider,
 } from '@massalabs/massa-web3';
 import { getScByteCode } from './utils';
 
+const rpcUrl = 'https://labnet.massa.net/api/v2:33035';
 const account = await Account.fromEnv();
-const provider = JsonRpcProvider.buildnet(account);
+const provider = Web3Provider.buildnet(account);
 
 console.log('Deploying contract...');
 
 const byteCode = getScByteCode('build', 'main.wasm');
 
-const name = 'Massa';
-const constructorArgs = new Args().addString(name);
+// 1 minutes in period of 16 seconds
+const periodInSeconds = 16;
+const minutes = 1;
+const periods = Math.round((minutes * 60) / periodInSeconds);
+
+const constructorArgs = new Args().addU64(BigInt(periods));
+
+
 
 const contract = await SmartContract.deploy(
   provider,
   byteCode,
   constructorArgs,
-  { coins: Mas.fromString('0.01') },
+  { coins: Mas.fromString('1') },
 );
 
 console.log('Contract deployed at:', contract.address);

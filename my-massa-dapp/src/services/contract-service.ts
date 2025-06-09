@@ -3,7 +3,7 @@ import { ProjectData } from '@/types';
 import { Project, VestingSchedule, ProjectMilestone, ProjectUpdate } from '@/models/ContractModels';
 
 
-const CONTRACT_ADDRESS = "AS1v6tMDz8Q1wzUXKpVg4yYDeULrmwAnm5Mb1wpAZL3UdSi6avEM"; 
+const CONTRACT_ADDRESS = "AS12pjQtdybHyDrMLxogS6CwAJq37nK4WJamojr8RLzwFKuPnmcus"; 
 
 // Create a public provider for read-only operations
 const publicProvider = JsonRpcProvider.buildnet();
@@ -19,8 +19,8 @@ function convertProjectToProjectData(project: Project): ProjectData {
     amountRaised: Number(project.amountRaised),
     beneficiary: project.beneficiary,
     category: project.category,
-    lockPeriod: project.lockPeriod.toString(),
-    releaseInterval: project.releaseInterval.toString(),
+    lockPeriod: (Number(project.lockPeriod) / 5760).toString(), // Convert periods to days
+    releaseInterval: (Number(project.releaseInterval) / 5760).toString(), // Convert periods to days
     releasePercentage: Number(project.releasePercentage),
     image: project.image,
     // Default values for properties not directly from contract or not needed from contract
@@ -329,6 +329,42 @@ export async function viewNextVestingId(): Promise<number> {
     return Number(argsReader.nextU64());
   } catch (error) {
     console.error('Error fetching next vesting ID:', error);
+    throw error;
+  }
+}
+
+export async function getTotalDonations(): Promise<number> {
+  try {
+    const contract = new SmartContract(publicProvider, CONTRACT_ADDRESS);
+    const response = await contract.read('getTotalDonations', new Args());
+    const argsReader = new Args(response.value);
+    return Number(argsReader.nextU64());
+  } catch (error) {
+    console.error('Error fetching total donations:', error);
+    throw error;
+  }
+}
+
+export async function getTotalProjectsFunded(): Promise<number> {
+  try {
+    const contract = new SmartContract(publicProvider, CONTRACT_ADDRESS);
+    const response = await contract.read('getTotalProjectsFunded', new Args());
+    const argsReader = new Args(response.value);
+    return Number(argsReader.nextU64());
+  } catch (error) {
+    console.error('Error fetching total projects funded:', error);
+    throw error;
+  }
+}
+
+export async function getTotalSupporters(): Promise<number> {
+  try {
+    const contract = new SmartContract(publicProvider, CONTRACT_ADDRESS);
+    const response = await contract.read('getTotalSupporters', new Args());
+    const argsReader = new Args(response.value);
+    return Number(argsReader.nextU64());
+  } catch (error) {
+    console.error('Error fetching total supporters:', error);
     throw error;
   }
 }

@@ -29,7 +29,7 @@ processTask
 import { u256 } from 'as-bignum/assembly';
 
 export const PERIODS_PER_DAY: u64 = 86400 / 15;
-
+ 
 // Storage keys
 export const PROJECTS_KEY = stringToBytes('projects');
 export const PROJECT_COUNT_KEY = stringToBytes('projectCount');
@@ -37,6 +37,9 @@ export const VESTING_CONTRACT_ADDRESS_KEY = stringToBytes('vestingContractAddres
 export const OWNER_KEY = stringToBytes('owner');
 export const VESTING_SCHEDULES_KEY_PREFIX = stringToBytes('vesting_schedule_');
 export const NEXT_VESTING_ID_KEY = stringToBytes('next_vesting_id');
+export const TOTAL_DONATIONS_KEY = stringToBytes('total_donations');
+export const TOTAL_SUPPORTERS_KEY = stringToBytes('total_supporters');
+export const DONATORS_KEY_PREFIX = stringToBytes('donators_');
 
 
 // Event names
@@ -206,7 +209,8 @@ constructor(
   public image: string = '', // Optional project image
   public creationPeriod: u64 = 0, // Period when the project was created
   public vestingScheduleId: u64 = 0, // ID of the associated vesting schedule
-  public initialVestingTriggered: bool = false // Flag to indicate if initial vesting has been triggered
+  public initialVestingTriggered: bool = false, // Flag to indicate if initial vesting has been triggered
+  public totalAmountRaisedAtLockEnd: u64 = 0 // New field to store total amount raised at the end of the lock period
 ) {}
 
 serialize(): StaticArray<u8> {
@@ -226,6 +230,7 @@ serialize(): StaticArray<u8> {
   args.add(this.creationPeriod);
   args.add(this.vestingScheduleId);
   args.add(this.initialVestingTriggered);
+  args.add(this.totalAmountRaisedAtLockEnd);
   return args.serialize();
 }
 
@@ -246,6 +251,7 @@ deserialize(data: StaticArray<u8>, offset: u64 = 0): Result<i32> {
   this.creationPeriod = args.nextU64().expect('Failed to deserialize creationPeriod');
   this.vestingScheduleId = args.nextU64().expect('Failed to deserialize vestingScheduleId');
   this.initialVestingTriggered = args.nextBool().expect('Failed to deserialize initialVestingTriggered');
+  this.totalAmountRaisedAtLockEnd = args.nextU64().expect('Failed to deserialize totalAmountRaisedAtLockEnd');
   return new Result(args.offset);
 }
 }
@@ -295,6 +301,14 @@ export function constructor(binArgs: StaticArray<u8>): void {
   // Initialize Vesting specific storage
   if (!Storage.has(NEXT_VESTING_ID_KEY)) {
     Storage.set(NEXT_VESTING_ID_KEY, new Args().add(0 as u64).serialize());
+  }
+
+  // Initialize statistics storage
+  if (!Storage.has(TOTAL_DONATIONS_KEY)) {
+    Storage.set(TOTAL_DONATIONS_KEY, new Args().add(0 as u64).serialize());
+  }
+  if (!Storage.has(TOTAL_SUPPORTERS_KEY)) {
+    Storage.set(TOTAL_SUPPORTERS_KEY, new Args().add(0 as u64).serialize());
   }
 
   generateEvent("ProjectManager contract initialized successfully");
@@ -357,7 +371,8 @@ const newProject = new Project(
   image,
   creationPeriod,
   0, // Initialize vestingScheduleId to 0
-  false // Initialize initialVestingTriggered to false
+  false, // Initialize initialVestingTriggered to false
+  0 // Initialize totalAmountRaisedAtLockEnd to 0
 );
 
 Storage.set(
@@ -457,42 +472,38 @@ export function fundProject(binArgs: StaticArray<u8>): void {
   let project = new Project();
   project.deserialize(Storage.get(projectKey));
 
+  // Check if the lock period has ended. If so, no more donations are allowed.
+  const currentPeriod = Context.currentPeriod();
+  const lockEndPeriod = project.creationPeriod + project.lockPeriod;
+
+  assert(currentPeriod <= lockEndPeriod, `Project ${projectId} is no longer accepting donations. Lock period ended at period ${lockEndPeriod}. Current period: ${currentPeriod}.`);
+
   // Add the amount to the total raised
   project.amountRaised += amountSent;
+  project.totalAmountRaisedAtLockEnd = project.amountRaised; // Update this with every donation during lock period
 
   // Save the updated project back to storage
   Storage.set(projectKey, project.serialize());
 
+  // Update global total donations
+  let totalDonations = new Args(Storage.get(TOTAL_DONATIONS_KEY)).nextU64().expect('Failed to deserialize total donations');
+  totalDonations += amountSent;
+  Storage.set(TOTAL_DONATIONS_KEY, new Args().add(totalDonations).serialize());
+
+  // Update global total supporters
+  const donatorKey = new Args().add(DONATORS_KEY_PREFIX).add(Context.caller().toString()).serialize();
+  if (!Storage.has(donatorKey)) {
+    Storage.set(donatorKey, boolToByte(true)); // Mark this address as a unique donator
+    let totalSupporters = new Args(Storage.get(TOTAL_SUPPORTERS_KEY)).nextU64().expect('Failed to deserialize total supporters');
+    totalSupporters++;
+    Storage.set(TOTAL_SUPPORTERS_KEY, new Args().add(totalSupporters).serialize());
+  }
+
   generateEvent(PROJECT_FUNDED_EVENT);
 
-  // Handle vesting logic:
-  // If initial vesting was already triggered (even if amount was 0 at that time),
-  // we need to manage the vesting schedule.
-  if (project.initialVestingTriggered) {
-    if (project.vestingScheduleId === 0) {
-      // This case means initial vesting was triggered but skipped due to 0 funds.
-      // Now, funds are coming in, so create a new vesting schedule for the total raised.
-      const vestingScheduleId = createVestingScheduleInternal(
-        project.beneficiary,
-        project.amountRaised, // Vest the total amount raised so far
-        0 as u64, // No additional lock period needed since initial lock is over
-        project.releaseInterval, // Already in periods
-        project.releasePercentage
-      );
-      project.vestingScheduleId = vestingScheduleId;
-      Storage.set(projectKey, project.serialize()); // Update project with new vesting ID
-      generateEvent(`New vesting schedule created for project ${projectId} due to late funding. Schedule ID: ${vestingScheduleId}.`);
-    } else {
-      // Vesting schedule already exists, add new funds to it
-      addToVestingScheduleInternal(project.vestingScheduleId, amountSent);
-      generateEvent(VESTING_SCHEDULE_UPDATED_EVENT);
-    }
-  } else {
-    // If initial vesting hasn't been triggered yet, just add to amountRaised
-    // The deferred triggerInitialVesting function will handle creating the vesting schedule
-    // at the end of the lock period
-    generateEvent(`Added ${amountSent} MAS to project ${projectId}. Initial vesting not yet triggered.`);
-  }
+  // The initial vesting trigger is already scheduled in createProject, it will handle vesting logic
+  // after the lock period has passed using totalAmountRaisedAtLockEnd.
+  generateEvent(`Added ${amountSent} MAS to project ${projectId}. Total raised: ${project.amountRaised}.`);
 }
 
 export function triggerInitialVesting(binArgs: StaticArray<u8>): void {
@@ -540,7 +551,7 @@ export function triggerInitialVesting(binArgs: StaticArray<u8>): void {
   }
 
   // Get the amount raised at the end of the lock period
-  const amountToVest = project.amountRaised;
+  const amountToVest = project.totalAmountRaisedAtLockEnd;
 
   // If no funds were raised, no vesting schedule is needed
   if (amountToVest === 0) {
@@ -680,11 +691,13 @@ if (currentPeriod < schedule.nextReleasePeriod) {
 }
 
 generateEvent(`Total amount for ID ${vestingId}: ${schedule.totalAmount}, Already claimed: ${schedule.amountClaimed}`);
+// Calculate amount to release based on the *original total amount*
 let amountToRelease = (schedule.totalAmount * schedule.releasePercentage) / 100;
-let remainingAmount = schedule.totalAmount - schedule.amountClaimed;
 
+// Ensure we don't release more than remains
+let remainingAmount = schedule.totalAmount - schedule.amountClaimed;
 if (amountToRelease > remainingAmount) {
-  amountToRelease = remainingAmount; // Ensure we don't release more than remains
+  amountToRelease = remainingAmount;
   generateEvent(`Adjusted release amount to remaining for ID ${vestingId}: ${amountToRelease}`);
 }
 
@@ -729,10 +742,11 @@ if (schedule.amountClaimed < schedule.totalAmount) {
     0 // No coins sent
   );
   generateEvent(`Next release for ID ${vestingId} scheduled for period ${nextReleaseSlot.period}`);
+  // The nextReleasePeriod needs to be set to the actual scheduled period from the slot.
   schedule.nextReleasePeriod = nextReleaseSlot.period;
 
   // Update the schedule again with the actual scheduled period
-   Storage.set(scheduleKey, schedule.serialize());
+  Storage.set(scheduleKey, schedule.serialize());
 
 } else {
   // Vesting completed - remove the schedule from storage
@@ -950,4 +964,35 @@ export function getProjectUpdates(binArgs: StaticArray<u8>): StaticArray<u8> {
   
   args.addSerializableObjectArray(updates);
   return args.serialize();
+}
+
+// New function to get the total amount of MAS donated across all projects
+export function getTotalDonations(_: StaticArray<u8>): StaticArray<u8> {
+  assert(Storage.has(TOTAL_DONATIONS_KEY), "Total donations not initialized");
+  return Storage.get(TOTAL_DONATIONS_KEY);
+}
+
+// New function to get the total number of projects that have received funding
+export function getTotalProjectsFunded(_: StaticArray<u8>): StaticArray<u8> {
+  let fundedProjectsCount: u64 = 0;
+  let projectCount = getNextProjectId(); // Total number of projects created
+
+  for (let i: u64 = 0; i < projectCount; i++) {
+    const projectKey = new Args().add(PROJECTS_KEY).add(i).serialize();
+    if (Storage.has(projectKey)) {
+      const projectData = Storage.get(projectKey);
+      const project = new Project();
+      project.deserialize(projectData);
+      if (project.amountRaised > 0) {
+        fundedProjectsCount++;
+      }
+    }
+  }
+  return new Args().add(fundedProjectsCount).serialize();
+}
+
+// New function to get the total number of unique supporters
+export function getTotalSupporters(_: StaticArray<u8>): StaticArray<u8> {
+  assert(Storage.has(TOTAL_SUPPORTERS_KEY), "Total supporters not initialized");
+  return Storage.get(TOTAL_SUPPORTERS_KEY);
 }
