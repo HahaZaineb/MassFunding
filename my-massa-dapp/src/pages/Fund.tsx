@@ -28,7 +28,7 @@ import { useParams } from 'react-router-dom';
 import Loader from '@/components/Loader';
 import { styled } from '@mui/system';
 import ProgressBar from '@/components/ProgressBar';
-import { shortenAddress } from '@/lib/utils';
+import { shortenAddress } from '@/utils/functions';
 
 export function FundPage() {
   const { connectedAccount } = useAccountStore();

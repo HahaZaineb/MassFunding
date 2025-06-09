@@ -3,10 +3,10 @@
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { ProjectData } from '@/types';
-import { getCategoryColor } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 import ProgressBar from '../ProgressBar';
 import { Clock, Coins, Users } from 'lucide-react';
+import { getCategoryColor } from '@/utils/functions';
 
 interface ProjectMiniCardProps {
   project: ProjectData & { image?: string };

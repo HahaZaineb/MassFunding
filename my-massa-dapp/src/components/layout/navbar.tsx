@@ -23,7 +23,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import { useNavigate, useLocation } from 'react-router-dom';
 import WalletConnectModal from '../WalletConnectModal';
 import { useAccountStore } from '@massalabs/react-ui-kit';
-import { shortenAddress } from '@/lib/utils';
+import { shortenAddress } from '@/utils/functions';
 
 const navItems = [
   { label: 'Explore Projects', path: '/projects' },
