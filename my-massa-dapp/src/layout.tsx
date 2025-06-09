@@ -1,9 +1,9 @@
-import type React from "react"
-import "./index.css"
-import { ThemeProvider } from "./components/theme-provider"
+import type React from 'react';
+import { ThemeProvider } from './components/theme-provider';
+import './index.css';
 
 interface LayoutProps {
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 export default function Layout({ children }: LayoutProps) {
@@ -15,6 +15,5 @@ export default function Layout({ children }: LayoutProps) {
         </ThemeProvider>
       </body>
     </html>
-  )
+  );
 }
-

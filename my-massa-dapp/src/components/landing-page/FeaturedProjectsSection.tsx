@@ -1,18 +1,24 @@
 'use client';
-
+import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useProjects } from '@/context/project-context';
 import ProjectMiniCard from '../projects/ProjectMiniCard';
+import { useAppDispatch, useAppSelector } from '@/store/hooks'
+import { fetchProjects } from '@/store/slices/projectSlice'
 
 const FeaturedProjectsSection = () => {
   const navigate = useNavigate();
-  const { projects } = useProjects();
-  const featuredProjects = projects.slice(0, 3);
+    const { list, loading, error } = useAppSelector(state => state.projects)
 
+  const featuredProjects = list.slice(0, 3);
+  const dispatch = useAppDispatch()
+
+  useEffect(() => {
+    dispatch(fetchProjects())
+  }, [dispatch])
   return (
-    <section className="py-16 bg-[#0f1629]">
+    <>{list?.length > 0 && <section className="py-16 bg-[#0f1629]">
       <div className="container mx-auto px-4">
         <h2 className="text-3xl font-bold text-white text-center mb-4">
           Featured Projects
@@ -38,7 +44,7 @@ const FeaturedProjectsSection = () => {
           </Button>
         </div>
       </div>
-    </section>
+    </section>}</>
   );
 };
 

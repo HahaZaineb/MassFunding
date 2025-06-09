@@ -16,7 +16,8 @@ export class Project implements Serializable<Project> {
     public image: string = "",
     public creationPeriod: bigint = 0n,
     public vestingScheduleId: bigint = 0n,
-    public initialVestingTriggered: boolean = false
+    public initialVestingTriggered: boolean = false,
+    public totalAmountRaisedAtLockEnd: bigint = 0n
   ) {}
 
   serialize(): Uint8Array {
@@ -35,7 +36,8 @@ export class Project implements Serializable<Project> {
       .addString(this.image)
       .addU64(this.creationPeriod)
       .addU64(this.vestingScheduleId)
-      .addBool(this.initialVestingTriggered);
+      .addBool(this.initialVestingTriggered)
+      .addU64(this.totalAmountRaisedAtLockEnd);
     return args.serialize();
   }
 
@@ -56,6 +58,7 @@ export class Project implements Serializable<Project> {
     this.creationPeriod = args.nextU64();
     this.vestingScheduleId = args.nextU64();
     this.initialVestingTriggered = args.nextBool();
+    this.totalAmountRaisedAtLockEnd = args.nextU64();
     return { instance: this, offset: args.getOffset() };
   }
 }
@@ -101,40 +104,40 @@ export class VestingSchedule implements Serializable<VestingSchedule> {
 
 export class ProjectMilestone implements Serializable<ProjectMilestone> {
   constructor(
-    public id: bigint = 0n,
+    public id: string = "",
     public title: string = "",
     public description: string = "",
     public deadline: string = "",
-    public progress: bigint = 0n,
-    public completed: boolean = false
+    public completed: boolean = false,
+    public progress: bigint = 0n
   ) {}
 
   serialize(): Uint8Array {
     const args = new Args()
-      .addU64(this.id)
+      .addString(this.id)
       .addString(this.title)
       .addString(this.description)
       .addString(this.deadline)
-      .addU64(this.progress)
-      .addBool(this.completed);
+      .addBool(this.completed)
+      .addU64(this.progress);
     return args.serialize();
   }
 
   deserialize(data: Uint8Array, offset: number): DeserializedResult<ProjectMilestone> {
     const args = new Args(data, offset);
-    this.id = args.nextU64();
+    this.id = args.nextString();
     this.title = args.nextString();
     this.description = args.nextString();
     this.deadline = args.nextString();
-    this.progress = args.nextU64();
     this.completed = args.nextBool();
+    this.progress = args.nextU64();
     return { instance: this, offset: args.getOffset() };
   }
 }
 
 export class ProjectUpdate implements Serializable<ProjectUpdate> {
   constructor(
-    public id: bigint = 0n,
+    public id: string = "",
     public date: string = "",
     public title: string = "",
     public content: string = "",
@@ -143,7 +146,7 @@ export class ProjectUpdate implements Serializable<ProjectUpdate> {
 
   serialize(): Uint8Array {
     const args = new Args()
-      .addU64(this.id)
+      .addString(this.id)
       .addString(this.date)
       .addString(this.title)
       .addString(this.content)
@@ -153,7 +156,7 @@ export class ProjectUpdate implements Serializable<ProjectUpdate> {
 
   deserialize(data: Uint8Array, offset: number): DeserializedResult<ProjectUpdate> {
     const args = new Args(data, offset);
-    this.id = args.nextU64();
+    this.id = args.nextString();
     this.date = args.nextString();
     this.title = args.nextString();
     this.content = args.nextString();

@@ -1,37 +1,13 @@
 import { Args, SmartContract, JsonRpcProvider, bytesToSerializableObjectArray } from '@massalabs/massa-web3';
 import { ProjectData } from '@/types';
 import { Project, VestingSchedule, ProjectMilestone, ProjectUpdate } from '@/models/ContractModels';
+import { readSmartContractPublic } from '@/utils/smartContract';
+import { CONTRACT_ADDRESS } from '@/constants';
+import { convertProjectToProjectData } from '@/utils/project';
 
-
-const CONTRACT_ADDRESS = "AS12pjQtdybHyDrMLxogS6CwAJq37nK4WJamojr8RLzwFKuPnmcus"; 
 
 // Create a public provider for read-only operations
 const publicProvider = JsonRpcProvider.buildnet();
-
-// Helper function to convert a contract Project object to a frontend ProjectData object
-function convertProjectToProjectData(project: Project): ProjectData {
-  return {
-    id: project.projectId.toString(),
-    creator: project.creator,
-    name: project.title,
-    description: project.description,
-    goalAmount: Number(project.fundingGoal),
-    amountRaised: Number(project.amountRaised),
-    beneficiary: project.beneficiary,
-    category: project.category,
-    lockPeriod: (Number(project.lockPeriod) / 5760).toString(), // Convert periods to days
-    releaseInterval: (Number(project.releaseInterval) / 5760).toString(), // Convert periods to days
-    releasePercentage: Number(project.releasePercentage),
-    image: project.image,
-    // Default values for properties not directly from contract or not needed from contract
-    amountNeeded: Number(project.fundingGoal - project.amountRaised),
-    supporters: 0, // This would ideally come from contract or be calculated dynamically
-    deadline: "N/A", // This would ideally come from contract or be calculated dynamically
-    // Removed updates and milestones as they are now fetched separately
-    updates: [], // Initialize empty, will be populated by separate fetches
-    milestones: [], // Initialize empty, will be populated by separate fetches
-  };
-}
 
 // Frontend interfaces for Milestone and Update data matching the contract structure
 export interface ContractProjectMilestoneData {
@@ -104,8 +80,7 @@ export async function createProject(
 
 export async function getAllProjects(): Promise<ProjectData[]> {
   try {
-    const contract = new SmartContract(publicProvider, CONTRACT_ADDRESS);
-    const response = await contract.read('getAllProjects', new Args());
+    const response = await readSmartContractPublic(CONTRACT_ADDRESS, 'getAllProjects', new Args())
     const result = response.value;
 
     if (!result || result.length === 0) {
@@ -115,11 +90,9 @@ export async function getAllProjects(): Promise<ProjectData[]> {
     const arrArgs = new Args(result);
     const deserializedProjects = arrArgs.nextSerializableObjectArray<Project>(Project);
 
-
-    console.log('msg', deserializedProjects);
-
     // Convert deserialized Project objects to ProjectData objects
-    return deserializedProjects.map(convertProjectToProjectData);
+    const projectDataPromises = deserializedProjects.map(project => convertProjectToProjectData(project));
+    return Promise.all(projectDataPromises);
 
   } catch (error) {
     console.error('Error fetching projects:', error);
@@ -132,9 +105,8 @@ export async function getProject(projectId: number): Promise<ProjectData> {
     const contract = new SmartContract(publicProvider, CONTRACT_ADDRESS);
     const args = new Args().addU64(BigInt(projectId));
     const response = await contract.read('getProject', args);
-
-    // Use bytesToSerializableObjectArray to deserialize the response
     const [project] = bytesToSerializableObjectArray(response.value, Project);
+    console.log(project, 'project')
 
     // Convert the deserialized Project object to a ProjectData object
     return convertProjectToProjectData(project);
@@ -365,6 +337,19 @@ export async function getTotalSupporters(): Promise<number> {
     return Number(argsReader.nextU64());
   } catch (error) {
     console.error('Error fetching total supporters:', error);
+    throw error;
+  }
+}
+
+export async function getProjectSupportersCount(projectId: bigint): Promise<number> {
+  try {
+    const contract = new SmartContract(publicProvider, CONTRACT_ADDRESS);
+    const args = new Args().addU64(projectId);
+    const response = await contract.read('getProjectSupportersCount', args);
+    const argsReader = new Args(response.value);
+    return Number(argsReader.nextU64());
+  } catch (error) {
+    console.error('Error fetching project supporters count:', error);
     throw error;
   }
 }

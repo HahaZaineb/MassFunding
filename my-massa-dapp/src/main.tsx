@@ -8,14 +8,12 @@ import "./index.css"
 import { ProjectProvider } from "./context/project-context.tsx"
 
 // Add error boundary to catch and display errors
-const rootElement = document.getElementById("root")
+const rootElement = document.getElementById('root');
 
 if (rootElement) {
   ReactDOM.createRoot(rootElement).render(
     <React.StrictMode>
-      <ProjectProvider>
-        <App />
-      </ProjectProvider>
-    </React.StrictMode>
-  )
+      <App />
+    </React.StrictMode>,
+  );
 }

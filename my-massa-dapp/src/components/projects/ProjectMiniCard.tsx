@@ -3,10 +3,10 @@
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { ProjectData } from '@/types';
-import { getCategoryColor } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 import ProgressBar from '../ProgressBar';
 import { Clock, Coins, Users } from 'lucide-react';
+import { getCategoryColor } from '@/utils/functions';
 
 interface ProjectMiniCardProps {
   project: ProjectData & { image?: string };
@@ -86,7 +86,7 @@ const ProjectMiniCard = ({ project, showFundBtn = true }: ProjectMiniCardProps) 
         </div>
 
         {showFundBtn && <Button
-          onClick={() => navigate('/projects')}
+          onClick={() => navigate('/fund/' + project.id)}
           className="w-full bg-[#00ff9d] mt-3 hover:bg-[#00ff9d]/90 text-[#0f1629] font-medium"
         >
           Fund This Project

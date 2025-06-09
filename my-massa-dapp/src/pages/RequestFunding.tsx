@@ -8,17 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import {
-  ArrowLeft,
-  Info,
-  Plus,
-  TrendingUp,
-  Users,
-  DollarSign,
-  Calendar,
-  Settings,
-  Eye,
-} from 'lucide-react';
+import { Info } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -33,7 +23,6 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';
-import { useProjects } from '../context/project-context';
 import {
   Card,
   CardContent,
@@ -43,16 +32,12 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { useAccountStore } from '@massalabs/react-ui-kit';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-//import { ProjectUpdates } from "@/components/project-updates"
-import { ProjectData } from '@/types';
-import { CATEGORIES } from '@/constants';
 import { createProject } from '@/services/contract-service';
+import { CATEGORIES } from '@/constants';
 import { Slider } from '@mui/material';
 
 export default function RequestFunding() {
   const { toast } = useToast();
-  const { addProject } = useProjects();
   const { connectedAccount } = useAccountStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -66,7 +51,6 @@ export default function RequestFunding() {
     category: 'Environment',
     image: '',
   });
-  const [imageFile, setImageFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (connectedAccount) {
@@ -88,14 +72,13 @@ export default function RequestFunding() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSliderChange = (event: Event, value: number) => {
+  const handleSliderChange = (e: any, value: number) => {
     setFormData((prev) => ({ ...prev, releasePercentage: value }));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files && e.target.files[0];
     if (file) {
-      setImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setFormData((prev) => ({ ...prev, image: reader.result as string }));
@@ -144,7 +127,6 @@ export default function RequestFunding() {
         category: 'Environment',
         image: '',
       });
-      setImageFile(null);
     } catch (error) {
       console.error('Error creating project:', error);
       toast({

@@ -6,53 +6,23 @@ import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 import { CATEGORIES } from '@/constants';
 import ProjectCard from '@/components/projects/ProjectCard';
-import { useProjects } from '@/context/project-context';
-import { fundProject, getAllProjects, getProject } from '@/services/contract-service';
-import { useToast } from '@/components/ui/use-toast';
-import { ProjectData } from '@/types';
-
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { fetchProjects } from '@/store/slices/projectSlice';
+import Loader from '@/components/Loader';
 
 export default function Projects() {
-  const { projects, setProjects } = useProjects();
-  const { toast } = useToast();
+  const dispatch = useAppDispatch();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [isLoading, setIsLoading] = useState(true);
+  const { list, loading } = useAppSelector((state) => state.projects);
 
   useEffect(() => {
-    async function fetchProjects() {
-      try {
-        // Fetch all project data directly
-        const fetchedProjects: ProjectData[] = await getAllProjects();
-        console.log("Fetched projects:", fetchedProjects);
-
-        // Update the state with the fetched projects
-        setProjects(fetchedProjects);
-      } catch (error) {
-        console.error('Error fetching projects:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to fetch projects. Please try again.',
-          variant: 'destructive',
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    fetchProjects();
-  }, [setProjects, toast]);
+    dispatch(fetchProjects());
+  }, [dispatch]);
 
   // Filter projects based on search query and category
   const filteredProjects = useMemo(() => {
-    return projects.filter((project) => {
+    return list.filter((project) => {
       const matchesSearch =
         project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         project.description.toLowerCase().includes(searchQuery.toLowerCase());
@@ -60,12 +30,12 @@ export default function Projects() {
         selectedCategory === 'All' || project.category === selectedCategory;
       return matchesSearch && matchesCategory;
     });
-  }, [projects, searchQuery, selectedCategory]);
+  }, [list, searchQuery, selectedCategory]);
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="w-full min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
-        <div className="text-emerald-400 text-xl">Loading projects...</div>
+        <Loader/>
       </div>
     );
   }
@@ -119,9 +89,8 @@ export default function Projects() {
               (category) => {
                 const count =
                   category.name === 'All'
-                    ? projects.length
-                    : projects.filter((p) => p.category === category.name)
-                        .length;
+                    ? list.length
+                    : list.filter((p) => p.category === category.name).length;
                 const isActive = selectedCategory === category.name;
                 return (
                   <motion.button

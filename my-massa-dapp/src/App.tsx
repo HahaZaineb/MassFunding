@@ -5,13 +5,13 @@ import {
   Route,
   Navigate,
 } from 'react-router-dom';
-
 import { ThemeProvider } from '@/components/theme-provider';
 import { Navbar } from '@/components/layout/navbar';
 import { Footer } from '@/components/layout/footer';
 import Loader from '@/components/Loader';
 import { ProjectProvider } from '@/context/project-context';
-
+import { Provider } from 'react-redux';
+import { store } from '@/store';
 import LandingPage from '@/pages/Home';
 import Projects from '@/pages/Projects';
 import RequestFunding from '@/pages/RequestFunding';
@@ -40,29 +40,31 @@ function App() {
 
   return (
     <ThemeProvider>
-      <ProjectProvider>
-        <Router>
-          <Navbar />
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/request-funding" element={<RequestFunding />} />
-            <Route path="/projects" element={<Projects />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/fund/:projectId" element={<FundPage />} />
-            <Route path="swap" element={<SwapPage />} />
-            <Route
-              path="/profile"
-              element={
-                <PrivateRoute>
-                  <ProfilePage />
-                </PrivateRoute>
-              }
-            />
-            <Route path="*" element={<Navigate to="/" />} />
-          </Routes>
-          <Footer />
-        </Router>
-      </ProjectProvider>
+      <Provider store={store}>
+        <ProjectProvider>
+          <Router>
+            <Navbar />
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/request-funding" element={<RequestFunding />} />
+              <Route path="/projects" element={<Projects />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/fund/:projectId" element={<FundPage />} />
+              <Route path="swap" element={<SwapPage />} />
+              <Route
+                path="/profile"
+                element={
+                  <PrivateRoute>
+                    <ProfilePage />
+                  </PrivateRoute>
+                }
+              />
+              <Route path="*" element={<Navigate to="/" />} />
+            </Routes>
+            <Footer />
+          </Router>
+        </ProjectProvider>
+      </Provider>
     </ThemeProvider>
   );
 }

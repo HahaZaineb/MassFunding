@@ -8,6 +8,7 @@ import {
   getTotalProjectsFunded,
   getTotalSupporters,
 } from '@/services/contract-service';
+import { formatMas } from '@massalabs/massa-web3';
 
 const HeroSection = () => {
   const navigate = useNavigate();
@@ -40,7 +41,7 @@ const HeroSection = () => {
     currency: 'MAS',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(totalDonations);
+  }).format(Number(formatMas(totalDonations)));
 
   return (
     <section className="py-16 px-4 bg-[#0f1629]">

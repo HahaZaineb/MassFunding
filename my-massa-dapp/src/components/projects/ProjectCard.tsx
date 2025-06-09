@@ -20,11 +20,11 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ProjectData } from '@/types';
-import { getCategoryColor } from '@/lib/utils';
 import ProgressBar from '../ProgressBar';
 import ProjectUpdates from './ProjectUpdates';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getCategoryColor } from '@/utils/functions';
 
 interface ProjectCardProps {
   project: ProjectData & { image?: string };
@@ -184,6 +184,7 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
         </Button>
       </CardFooter>
       <ProjectUpdates
+        projectId={project.id}
         open={openProjectUpdates}
         onClose={() => setOpenProjectUpdates(false)}
       />

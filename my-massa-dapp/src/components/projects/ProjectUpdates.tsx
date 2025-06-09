@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, IconButton, Typography } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { CheckCircle2, Calendar, User, TrendingUp, Loader2 } from 'lucide-react';
 import { ContractProjectMilestoneData, ContractProjectUpdateData, getProjectUpdates, getMilestones } from '@/services/contract-service';
@@ -9,7 +9,7 @@ import { ContractProjectMilestoneData, ContractProjectUpdateData, getProjectUpda
 interface ProjectUpdatesProps {
   open: boolean;
   onClose: () => void;
-  projectId: number;
+  projectId: string;
 }
 
 const ProjectUpdates: React.FC<ProjectUpdatesProps> = ({ open, onClose, projectId }) => {
@@ -24,8 +24,8 @@ const ProjectUpdates: React.FC<ProjectUpdatesProps> = ({ open, onClose, projectI
       setLoading(true);
       setError(null);
       try {
-        const fetchedUpdates = await getProjectUpdates(projectId);
-        const fetchedMilestones = await getMilestones(projectId);
+        const fetchedUpdates = await getProjectUpdates(BigInt(projectId));
+        const fetchedMilestones = await getMilestones(BigInt(projectId));
         setUpdates(fetchedUpdates);
         setMilestones(fetchedMilestones);
       } catch (err) {

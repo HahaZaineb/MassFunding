@@ -40,6 +40,9 @@ export const NEXT_VESTING_ID_KEY = stringToBytes('next_vesting_id');
 export const TOTAL_DONATIONS_KEY = stringToBytes('total_donations');
 export const TOTAL_SUPPORTERS_KEY = stringToBytes('total_supporters');
 export const DONATORS_KEY_PREFIX = stringToBytes('donators_');
+export const PROJECT_DONORS_KEY_PREFIX = stringToBytes('project_donors_');
+export const PROJECT_MILESTONES_KEY_PREFIX = stringToBytes('project_milestones_');
+export const PROJECT_UPDATES_KEY_PREFIX = stringToBytes('project_updates_');
 
 
 // Event names
@@ -448,10 +451,10 @@ export function getAllProjects(_: StaticArray<u8>): StaticArray<u8> {
   args.addSerializableObjectArray(projects);
   
   // Add the array length first
-  args.add<u64>(projectIds.length);
+  args.add<u64>(projectIds.length as u64);
   // Then add each U64 ID individually
-  for (let i = 0; i < projectIds.length; i++) {
-    args.add(projectIds[i]);
+  for (let i: u64 = 0; i < (projectIds.length as u64); i++) {
+    args.add(projectIds[i as i32]);
   }
 
   generateEvent(`Returning ${projectIds.length} project IDs (via getAllProjects).`);
@@ -497,6 +500,23 @@ export function fundProject(binArgs: StaticArray<u8>): void {
     let totalSupporters = new Args(Storage.get(TOTAL_SUPPORTERS_KEY)).nextU64().expect('Failed to deserialize total supporters');
     totalSupporters++;
     Storage.set(TOTAL_SUPPORTERS_KEY, new Args().add(totalSupporters).serialize());
+  }
+
+  // Track unique donors per project
+  const callerAddressStr = Context.caller().toString();
+  let projectDonors = loadProjectDonors(projectId);
+
+  let isNewDonorForProject = true;
+  for (let i: u64 = 0; i < (projectDonors.length as u64); i++) {
+    if (projectDonors[i as i32] === callerAddressStr) {
+      isNewDonorForProject = false;
+      break;
+    }
+  }
+
+  if (isNewDonorForProject) {
+    projectDonors.push(callerAddressStr);
+    storeProjectDonors(projectId, projectDonors);
   }
 
   generateEvent(PROJECT_FUNDED_EVENT);
@@ -816,9 +836,32 @@ export { processTask };
 // Add exports at the end of the file
 export { Project, vestingSchedule };
 
-// New storage keys for milestones and updates
-export const PROJECT_MILESTONES_KEY_PREFIX = stringToBytes('project_milestones_');
-export const PROJECT_UPDATES_KEY_PREFIX = stringToBytes('project_updates_');
+// Helper to store project donors (addresses as strings)
+function storeProjectDonors(projectId: u64, donors: string[]): void {
+  const key = new Args().add(PROJECT_DONORS_KEY_PREFIX).add(projectId).serialize();
+  const args = new Args();
+  args.add<u64>(donors.length as u64);
+  for (let i: u64 = 0; i < (donors.length as u64); i++) {
+    args.add<string>(donors[i as i32]);
+  }
+  Storage.set(key, args.serialize());
+}
+
+// Helper to load project donors (addresses as strings)
+function loadProjectDonors(projectId: u64): string[] {
+  const key = new Args().add(PROJECT_DONORS_KEY_PREFIX).add(projectId).serialize();
+  if (!Storage.has(key)) {
+    return [];
+  }
+  const data = Storage.get(key);
+  const args = new Args(data);
+  const length = args.nextU64().expect('Failed to deserialize length');
+  const donors: string[] = [];
+  for (let i: u64 = 0; i < length; i++) {
+    donors.push(args.nextString().expect('Failed to deserialize donor address'));
+  }
+  return donors;
+}
 
 // Helper to get the next available milestone ID for a project
 function getNextMilestoneId(projectId: u64): u64 {
@@ -995,4 +1038,13 @@ export function getTotalProjectsFunded(_: StaticArray<u8>): StaticArray<u8> {
 export function getTotalSupporters(_: StaticArray<u8>): StaticArray<u8> {
   assert(Storage.has(TOTAL_SUPPORTERS_KEY), "Total supporters not initialized");
   return Storage.get(TOTAL_SUPPORTERS_KEY);
+}
+
+// New function to get the number of unique supporters for a specific project
+export function getProjectSupportersCount(binArgs: StaticArray<u8>): StaticArray<u8> {
+  const args = new Args(binArgs);
+  const projectId = args.nextU64().expect('Missing project ID');
+
+  const projectDonors = loadProjectDonors(projectId);
+  return new Args().add(projectDonors.length as u64).serialize();
 }
