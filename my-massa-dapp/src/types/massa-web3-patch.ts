@@ -17,6 +17,7 @@ declare module "@massalabs/massa-web3" {
     nextBool(): any
     serialize(): any
     offset: number
+    nextSerializableObjectArray<T>(factory: any): T[]
   }
 
   export class Mas {

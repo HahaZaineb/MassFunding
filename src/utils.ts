@@ -8,7 +8,7 @@ dotenv.config();
 
 // Paste the address of the deployed contract here
 export const CONTRACT_ADDR =
-  'AS12gqgHdGxAft1hBwqxHy7UqRpzrCuiotTJsf5qgJehjHXDJynBw';
+  'AS121iDysVbhagjrswyi6Hht78aGEL1CXnndh1ia5yBVwZpKvfhfh';
 
 export function getScByteCode(folderName: string, fileName: string): Buffer {
   // Obtain the current file name and directory paths

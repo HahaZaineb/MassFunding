@@ -19,76 +19,51 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { useAppDispatch, useAppSelector } from '@/store/hooks'
+import { fetchProjects } from '@/store/slices/projectSlice'
 
 export default function Projects() {
+  const dispatch = useAppDispatch()
+
   const { projects, setProjects } = useProjects();
   const { connectedAccount } = useAccountStore();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchProjects() {
-      if (!connectedAccount) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        // 1. Fetch all project IDs
-        const projectIds: number[] = await getAllProjects(connectedAccount);
-        console.log("Fetched project IDs:", projectIds);
-
-        const fetchedProjects: ProjectData[] = [];
-
-        // 2. Fetch each project individually using its ID
-        for (const projectId of projectIds) {
-          try {
-            const projectData = await getProject(connectedAccount, projectId);
-            fetchedProjects.push(projectData);
-          } catch (projectError) {
-            console.error(`Error fetching project with ID ${projectId}:`, projectError);
-            // Optionally, handle individual project fetch errors (e.g., skip or show specific error)
-          }
-        }
-
-        // 3. Update the state with the fetched projects
-        setProjects(fetchedProjects);
-      } catch (error) {
-        console.error('Error fetching projects:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to fetch projects. Please try again.',
-          variant: 'destructive',
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    fetchProjects();
-  }, [connectedAccount, setProjects, toast]);
+  const { list, loading, error } = useAppSelector(state => state.projects)
+const fetch = async () => {
+  await getAllProjects()
+}
+    useEffect(() => {
+      fetch()
+    dispatch(fetchProjects())
+  }, [dispatch])
+    useEffect(() => {
+    console.log(list, "list....")
+  }, [list])
 
   // Filter projects based on search query and category
   const filteredProjects = useMemo(() => {
-    return projects.filter((project) => {
+    return list.filter((project) => {
       const matchesSearch =
-        project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         project.description.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory =
         selectedCategory === 'All' || project.category === selectedCategory;
       return matchesSearch && matchesCategory;
     });
-  }, [projects, searchQuery, selectedCategory]);
+  }, [list, searchQuery, selectedCategory]);
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="w-full min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
         <div className="text-emerald-400 text-xl">Loading projects...</div>
       </div>
     );
   }
+
+
 
   return (
     <div className="w-full min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
@@ -139,8 +114,8 @@ export default function Projects() {
               (category) => {
                 const count =
                   category.name === 'All'
-                    ? projects.length
-                    : projects.filter((p) => p.category === category.name)
+                    ? list.length
+                    : list.filter((p) => p.category === category.name)
                         .length;
                 const isActive = selectedCategory === category.name;
                 return (
@@ -180,7 +155,7 @@ export default function Projects() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {filteredProjects.map((project, index) => (
                   <motion.div
-                    key={project.id}
+                    key={project.projectId}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: index * 0.1 }}

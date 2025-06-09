@@ -1,8 +1,10 @@
-import { Args, SmartContract } from '@massalabs/massa-web3';
+import { Args, bytesToSerializableObjectArray, SmartContract } from '@massalabs/massa-web3';
 import { ProjectData } from '@/types';
 import { useEffect, useState } from 'react';
+import { readSmartContractPublic } from '@/lib/smartContract';
+import { Project } from '@/types/Project';
+import { CONTRACT_ADDRESS } from '@/constants';
 
-const CONTRACT_ADDRESS = "AS14j9kaiJ7RVJy9yUKfNpYeTNqFiEPVqRv5XTh2q6V74UZu4V4y"
 
 export async function createProject(
   connectedAccount: any,
@@ -41,26 +43,19 @@ export async function createProject(
 }
 
 
-export async function getAllProjects(connectedAccount: any): Promise<number[]> {
+export async function getAllProjects(): Promise<any[]> {
   try {
-    const contract = new SmartContract(connectedAccount, CONTRACT_ADDRESS);
-    const response = await contract.read('getAllProjects', new Args());
-    const result = response.value;
+    const response = await readSmartContractPublic(CONTRACT_ADDRESS, 'getAllProjects', new Args())
 
-    if (!result || result.length === 0) {
-      console.log("No project IDs returned.", result);
+    if (!response.value || response.value.length === 0) {
+      console.log("There is no Data");
       return [];
     }
+    const args = new Args(response.value);
+    const projects = args.nextSerializableObjectArray<Project>(Project);
 
-    const argsReader = new Args(result);
-    const arrayLength = Number(argsReader.nextU64()); // Read array length
-    const projectIds: number[] = [];
 
-    for (let i = 0; i < arrayLength; i++) {
-      projectIds.push(Number(argsReader.nextU64())); // Read each u64 ID
-    }
-    console.log("Fetched and deserialized project IDs:", projectIds);
-    return projectIds;
+    console.log('projects', projects);
 
   } catch (error) {
     console.error('Error fetching project IDs:', error);
@@ -267,4 +262,3 @@ export async function viewNextVestingId(): Promise<number> {
     throw error;
   }
 }
-

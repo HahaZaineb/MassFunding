@@ -1,3 +1,4 @@
+import { getAllProjects } from "@/services/contract-service"
 import { ProjectData } from "@/types"
 import { createContext, useContext, useState, useEffect, ReactNode } from "react"
 
@@ -114,7 +115,6 @@ const ProjectContext = createContext<ProjectContextType | undefined>(undefined)
 
 export function ProjectProvider({ children }: { children: ReactNode }) {
   const [projects, setProjects] = useState<ProjectData[]>(initialProjects)
-
   // Load projects from localStorage on initial render
   useEffect(() => {
     const savedProjects = localStorage.getItem("projects")

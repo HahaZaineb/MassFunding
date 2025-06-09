@@ -11,7 +11,8 @@ import { Navbar } from '@/components/layout/navbar';
 import { Footer } from '@/components/layout/footer';
 import Loader from '@/components/Loader';
 import { ProjectProvider } from '@/context/project-context';
-
+import { Provider } from 'react-redux'
+import { store } from '@/store'
 import LandingPage from '@/pages/Home';
 import Projects from '@/pages/Projects';
 import RequestFunding from '@/pages/RequestFunding';
@@ -39,6 +40,8 @@ function App() {
 
   return (
     <ThemeProvider>
+    <Provider store={store}>
+
       <ProjectProvider>
         <Router>
           <Navbar />
@@ -61,6 +64,7 @@ function App() {
           <Footer />
         </Router>
       </ProjectProvider>
+      </Provider>
     </ThemeProvider>
   );
 }

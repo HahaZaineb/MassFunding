@@ -25,14 +25,15 @@ import ProgressBar from '../ProgressBar';
 import ProjectUpdates from './ProjectUpdates';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Project } from '@/types/Project';
 
 interface ProjectCardProps {
-  project: ProjectData & { image?: string };
+  project: Project;
 }
 
 const ProjectCard = ({ project }: ProjectCardProps) => {
   const navigate = useNavigate();
-  const percentFunded = (project.amountRaised / project.amountNeeded) * 100;
+  const percentFunded = (Number(project.amountRaised) / Number(project.fundingGoal)) * 100;
   const [openProjectUpdates, setOpenProjectUpdates] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -42,7 +43,7 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
       <div className="relative h-48 overflow-hidden">
         <img
           src={project.image || '/placeholder.svg'}
-          alt={project.name}
+          alt={project.title}
           className="w-full h-full object-cover"
         />
         <div className="absolute top-4 right-4">
@@ -57,7 +58,7 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
 
       <CardHeader className="pb-4">
         <CardTitle className="text-white text-xl leading-tight line-clamp-1">
-          {project.name}
+          {project.title}
         </CardTitle>
         <CardDescription className="text-slate-300 text-sm leading-relaxed line-clamp-2">
           {project.description}
@@ -70,7 +71,7 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
           <div className="flex justify-between text-sm">
             <span className="font-medium text-white">
               {project.amountRaised.toLocaleString()} /{' '}
-              {project.amountNeeded.toLocaleString()} MAS
+              {project.fundingGoal.toLocaleString()} MAS
             </span>
             <span className="font-bold text-emerald-400">
               {percentFunded.toFixed(0)}%
@@ -84,21 +85,21 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
           <div className="flex flex-col items-center p-3 bg-slate-700/50 rounded-lg">
             <Users className="h-4 w-4 mb-1 text-blue-400" />
             <span className="text-white font-bold text-sm text-center">
-              {project.supporters}
+              {/* {project.supporters} */}
             </span>
             <span className="text-slate-400 text-xs">Supporters</span>
           </div>
           <div className="flex flex-col items-center p-3 bg-slate-700/50 rounded-lg">
             <Clock className="h-4 w-4 mb-1 text-yellow-400" />
             <span className="text-white font-bold text-sm text-center">
-              Every {project.releaseInterval} days
+              Every {Number(project.releaseInterval)} days
             </span>
             <span className="text-slate-400 text-xs">Interval</span>
           </div>
           <div className="flex flex-col items-center p-3 bg-slate-700/50 rounded-lg">
             <Coins className="h-4 w-4 mb-1 text-emerald-400" />
             <span className="text-white font-bold text-sm text-center">
-              {project.releasePercentage}%
+              {Number(project.releasePercentage)}%
             </span>
             <span className="text-slate-400 text-xs">Release</span>
           </div>
@@ -125,19 +126,19 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
                 <div className="flex justify-between">
                   <span className="text-slate-300">Lock Period:</span>
                   <span className="text-white font-medium">
-                    {project.lockPeriod} days
+                    {Number(project.lockPeriod)} days
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-300">Release Interval:</span>
                   <span className="text-white font-medium">
-                    {project.releaseInterval} days
+                    {Number(project.releaseInterval)} days
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-300">Release Percentage:</span>
                   <span className="text-white font-medium">
-                    {project.releasePercentage}%
+                    {Number(project.releasePercentage)}%
                   </span>
                 </div>
               </div>
@@ -157,7 +158,7 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
 
       <CardFooter className="flex flex-col gap-3 pt-4">
         <Button
-          onClick={() => navigate('/fund/' + project.id)}
+          onClick={() => navigate('/fund/' + project.projectId)}
           className="w-full bg-gradient-to-r from-emerald-500 via-green-500 to-teal-600 hover:from-emerald-600 hover:via-green-600 hover:to-teal-700 text-white font-bold py-3 text-lg shadow-lg hover:shadow-emerald-500/25 transition-all duration-300"
         >
           <ThumbsUp className="h-4 w-4 mr-2" />

@@ -165,6 +165,12 @@ deserialize(data: StaticArray<u8>, offset: u64 = 0): Result<i32> {
   this.initialVestingTriggered = args.nextBool().expect('Failed to deserialize initialVestingTriggered');
   return new Result(args.offset);
 }
+
+static deserializee(data: StaticArray<u8>): Project {
+  const project = new Project();
+  project.deserialize(data); // Calls the instance version you already wrote
+  return project;
+}
 }
 
 // Helper function to get the next project ID
@@ -323,31 +329,21 @@ assert(Storage.has(projectKey), `Project with ID ${projectId} not found`);
 return Storage.get(projectKey);
 }
 
-// New function to get all project IDs (renamed to replace the old getAllProjects)
 export function getAllProjects(_: StaticArray<u8>): StaticArray<u8> {
-  let projectIds: u64[] = [];
-  let projectCount = getNextProjectId(); // Total number of projects created
+  const projectCount = getNextProjectId();
+  const projects: Project[] = [];
 
   for (let i: u64 = 0; i < projectCount; i++) {
-    const projectKey = new Args().add(PROJECTS_KEY).add(i).serialize();
-    // Check if a project exists at this potential ID
-    if (Storage.has(projectKey)) {
-      // Since the project exists, we add its ID to the list
-      projectIds.push(i);
+    const key = new Args().add(PROJECTS_KEY).add(i).serialize();
+    const projectData = Storage.get(key);
+    if (projectData) {
+      const project = new Project();
+      project.deserialize(projectData);
+      projects.push(project);
     }
   }
 
-  const args = new Args();
-  // Add the array length first
-  args.add<u64>(projectIds.length);
-  // Then add each U64 ID individually
-  for (let i = 0; i < projectIds.length; i++) {
-    args.add(projectIds[i]);
-  }
-
-  generateEvent(`Returning ${projectIds.length} project IDs (via getAllProjects).`);
-
-  return args.serialize();
+  return new Args().addSerializableObjectArray(projects).serialize();
 }
 
 export function fundProject(binArgs: StaticArray<u8>): void {
