@@ -44,12 +44,6 @@ export function FundPage() {
     }
   }, [dispatch, projectId]);
 
-  useEffect(() => {
-    if (selected) {
-      console.log(selected.beneficiary, ".beneficiary")
-    }
-  },[selected])
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 

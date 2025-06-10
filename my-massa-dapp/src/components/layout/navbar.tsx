@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   AppBar,
   Toolbar,
@@ -27,6 +27,8 @@ import WalletConnectModal from '../WalletConnectModal';
 import { useAccountStore } from '@massalabs/react-ui-kit';
 import { shortenAddress } from '@/utils/functions';
 import { ArrowRight, HandCoins, Rocket, Users, Home } from 'lucide-react';
+import { useAppDispatch } from '@/store/hooks';
+import { setConnectedAccount } from '@/store/slices/accountSlice';
 
 const navItems = [
   { label: 'Home', path: '/', icon: <Home className='w-4' /> },
@@ -35,6 +37,7 @@ const navItems = [
 ];
 
 export function Navbar() {
+  const dispatch = useAppDispatch();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -60,6 +63,12 @@ export function Navbar() {
   };
 
   const menuOpen = Boolean(anchorEl);
+
+  useEffect(() => {
+    if(connectedAccount){
+      dispatch(setConnectedAccount(connectedAccount))
+    }
+  },[connectedAccount])
 
   return (
     <>

@@ -8,7 +8,10 @@ import { ProjectData } from '@/types';
 import AddMilestoneModal from '../projects/AddMilestoneModal';
 import ProjectUpdates from '../projects/ProjectUpdates';
 import AddUpdateModal from '../projects/AddUpdateModal';
+
 import { getProjectSupportersCount, getProjectCreationDate } from '@/services/contract-service';
+import ProgressBar from '../ProgressBar';
+
 
 interface MyProjectCardProps {
   project: ProjectData;
@@ -29,7 +32,12 @@ const MyProjectCard: React.FC<MyProjectCardProps> = ({ project }) => {
         const date = await getProjectCreationDate(Number(project.id));
         setCreationDate(date);
       } catch (error) {
-        console.error(`Error fetching data for project ${project.id}:`, error);
+
+        console.error(
+          `Error fetching supporters for project ${project.id}:`,
+          error,
+        );
+
       }
     };
 
@@ -82,7 +90,7 @@ const MyProjectCard: React.FC<MyProjectCardProps> = ({ project }) => {
 
         {/* Project Stats */}
         <div className="p-6 border-b border-[#00ff9d]/10">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
             <div className="text-center">
               <div className="text-lg font-bold text-[#00ff9d]">
                 {project.amountRaised.toString()}
@@ -103,26 +111,22 @@ const MyProjectCard: React.FC<MyProjectCardProps> = ({ project }) => {
             </div>
             <div className="text-center">
               <div className="text-lg font-bold text-white">
-                {Math.round((Number(project.amountRaised) / Number(project.goalAmount)) * 100)}%
+                {Math.min(
+                  (Number(project.amountRaised) / Number(project.goalAmount)) *
+                    100,
+                  100,
+                ).toFixed(2)}
+                %
               </div>
               <div className="text-xs text-slate-400">Funded</div>
             </div>
           </div>
-
-          {/* Progress Bar */}
-          <div className="mt-4">
-            <div className="w-full bg-[#0f1629] rounded-full h-2">
-              <div
-                className="bg-gradient-to-r from-[#00ff9d] to-[#00cc7d] h-2 rounded-full transition-all duration-300"
-                style={{
-                  width: `${Math.min(
-                    (Number(project.amountRaised) / Number(project.goalAmount)) * 100,
-                    100,
-                  )}%`,
-                }}
-              />
-            </div>
-          </div>
+          <ProgressBar
+            value={Math.min(
+              (Number(project.amountRaised) / Number(project.goalAmount)) * 100,
+              100,
+            )}
+          />
         </div>
 
         {/* Project Actions */}

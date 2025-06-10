@@ -31,14 +31,14 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { useAccountStore } from '@massalabs/react-ui-kit';
 import { createProject } from '@/services/contract-service';
 import { CATEGORIES } from '@/constants';
 import { Slider } from '@mui/material';
+import { useAppSelector } from '@/store/hooks';
 
 export default function RequestFunding() {
   const { toast } = useToast();
-  const { connectedAccount } = useAccountStore();
+  const { connectedAccount } = useAppSelector((state) => state.account);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     projectName: '',
@@ -58,7 +58,7 @@ export default function RequestFunding() {
     if (connectedAccount) {
       setFormData((prev) => ({
         ...prev,
-        walletAddress: connectedAccount.toString(),
+        walletAddress: connectedAccount?.address || '',
       }));
     }
   }, [connectedAccount]);
@@ -101,7 +101,7 @@ export default function RequestFunding() {
         description: formData.description,
         fundingGoal: formData.amountNeeded,
         beneficiaryAddress:
-          formData.walletAddress || connectedAccount.toString(),
+          formData.walletAddress || connectedAccount?.address,
         category: formData.category,
         lockPeriod: formData.lockPeriod,
         releaseInterval: formData.releaseInterval,
@@ -121,7 +121,7 @@ export default function RequestFunding() {
         projectName: '',
         description: '',
         amountNeeded: '',
-        walletAddress: connectedAccount ? connectedAccount.toString() : '',
+        walletAddress: connectedAccount ? connectedAccount?.address : '',
         lockPeriod: '30',
         releaseInterval: '30',
         releasePercentage: 10,
