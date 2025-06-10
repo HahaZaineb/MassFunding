@@ -5,10 +5,35 @@ import { FilePlus2, HandHeart, DollarSign } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAccountStore } from '@massalabs/react-ui-kit';
 import { useProjects } from '@/context/project-context';
+import { fetchUserDonations, ContractVestingScheduleData } from '@/services/contract-service';
+import { useState, useEffect } from 'react';
 
 export default function UserActivity() {
   const { projects } = useProjects();
   const { connectedAccount } = useAccountStore();
+  const [userDonations, setUserDonations] = useState<ContractVestingScheduleData[]>([]);
+  const [loadingDonations, setLoadingDonations] = useState(true);
+
+  useEffect(() => {
+    const getDonations = async () => {
+      if (connectedAccount) {
+        setLoadingDonations(true);
+        try {
+          const donations = await fetchUserDonations(connectedAccount.address.toString());
+          setUserDonations(donations);
+        } catch (error) {
+          console.error("Failed to fetch user donations:", error);
+          setUserDonations([]);
+        } finally {
+          setLoadingDonations(false);
+        }
+      } else {
+        setUserDonations([]);
+        setLoadingDonations(false);
+      }
+    };
+    getDonations();
+  }, [connectedAccount]);
 
   const myProjects = connectedAccount
     ? projects.filter((p) => {
@@ -20,13 +45,11 @@ export default function UserActivity() {
       })
     : [];
 
-  const totalProjects = myProjects.length;
-  const totalAmountDonated = myProjects.reduce(
-    (sum, project) => sum + project.amountRaised,
-    0,
-  );
-  const totalDonations = myProjects.reduce(
-    (sum, project) => sum + project.supporters,
+  const totalProjectsCreated = myProjects.length;
+
+  const totalDonationsCount = userDonations.length;
+  const totalAmountDonated = userDonations.reduce(
+    (sum, schedule) => sum + schedule.totalAmount / 1e9,
     0,
   );
 
@@ -42,7 +65,7 @@ export default function UserActivity() {
             <div className="flex items-center justify-center mb-2">
               <FilePlus2 className="h-8 w-8 text-[#00ff9d]" />
             </div>
-            <div className="text-2xl font-bold text-white">{totalProjects}</div>
+            <div className="text-2xl font-bold text-white">{totalProjectsCreated}</div>
             <div className="text-sm text-slate-400">Projects Created</div>
           </CardContent>
         </Card>
@@ -52,7 +75,7 @@ export default function UserActivity() {
             <div className="flex items-center justify-center mb-2">
               <HandHeart className="h-8 w-8 text-[#00ff9d]" />
             </div>
-            <div className="text-2xl font-bold text-white">{totalDonations}</div>
+            <div className="text-2xl font-bold text-white">{loadingDonations ? '...' : totalDonationsCount}</div>
             <div className="text-sm text-slate-400">Total Donations</div>
           </CardContent>
         </Card>
@@ -63,7 +86,7 @@ export default function UserActivity() {
               <DollarSign className="h-8 w-8 text-[#00ff9d]" />
             </div>
             <div className="text-2xl font-bold text-white">
-              {totalAmountDonated.toFixed(1)}
+              {loadingDonations ? '...' : totalAmountDonated.toFixed(1)}
             </div>
             <div className="text-sm text-slate-400">Total Amount Donated (MAS)</div>
           </CardContent>

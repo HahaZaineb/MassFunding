@@ -45,7 +45,9 @@ export function FundPage() {
   }, [dispatch, projectId]);
 
   useEffect(() => {
-    console.log(selected.beneficiary, ".beneficiary")
+    if (selected) {
+      console.log(selected.beneficiary, ".beneficiary")
+    }
   },[selected])
 
   const handleSubmit = async (e: React.FormEvent) => {

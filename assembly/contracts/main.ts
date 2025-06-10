@@ -43,6 +43,7 @@ export const DONATORS_KEY_PREFIX = stringToBytes('donators_');
 export const PROJECT_DONORS_KEY_PREFIX = stringToBytes('project_donors_');
 export const PROJECT_MILESTONES_KEY_PREFIX = stringToBytes('project_milestones_');
 export const PROJECT_UPDATES_KEY_PREFIX = stringToBytes('project_updates_');
+export const USER_VESTING_SCHEDULES_KEY_PREFIX = stringToBytes('user_vesting_schedules_');
 
 
 // Event names
@@ -633,6 +634,11 @@ const schedule = new vestingSchedule(
 // Store the new vesting schedule
 Storage.set(getVestingScheduleKey(vestingId), schedule.serialize());
 
+// Update user-specific vesting schedules mapping
+let userVestingSchedules = loadUserVestingSchedules(beneficiary);
+userVestingSchedules.push(vestingId);
+storeUserVestingSchedules(beneficiary, userVestingSchedules);
+
 // Schedule the first release call for this specific schedule
 const releaseArgs = new Args().add(vestingId).serialize();
 const releaseSlot = findCheapestSlot(
@@ -1044,7 +1050,57 @@ export function getTotalSupporters(_: StaticArray<u8>): StaticArray<u8> {
 export function getProjectSupportersCount(binArgs: StaticArray<u8>): StaticArray<u8> {
   const args = new Args(binArgs);
   const projectId = args.nextU64().expect('Missing project ID');
-
   const projectDonors = loadProjectDonors(projectId);
   return new Args().add(projectDonors.length as u64).serialize();
+}
+
+// Helper to load user-specific vesting schedule IDs
+function loadUserVestingSchedules(userAddress: Address): u64[] {
+  const key = new Args().add(USER_VESTING_SCHEDULES_KEY_PREFIX).add(userAddress as Serializable).serialize();
+  if (!Storage.has(key)) {
+    return [];
+  }
+  const data = Storage.get(key);
+  const args = new Args(data);
+  const length = args.nextU64().expect('Failed to deserialize length');
+  const vestingIds: u64[] = [];
+  for (let i: u64 = 0; i < length; i++) {
+    vestingIds.push(args.nextU64().expect('Failed to deserialize vesting ID'));
+  }
+  return vestingIds;
+}
+
+// Helper to store user-specific vesting schedule IDs
+function storeUserVestingSchedules(userAddress: Address, vestingIds: u64[]): void {
+  const key = new Args().add(USER_VESTING_SCHEDULES_KEY_PREFIX).add(userAddress as Serializable).serialize();
+  const args = new Args();
+  args.add<u64>(vestingIds.length as u64);
+  for (let i: u64 = 0; i < (vestingIds.length as u64); i++) {
+    args.add<u64>(vestingIds[i as i32]);
+  }
+  Storage.set(key, args.serialize());
+}
+
+export function getUserVestingSchedules(binArgs: StaticArray<u8>): StaticArray<u8> {
+  const args = new Args(binArgs);
+  const userAddress = new Address(args.nextString().expect('Missing user address'));
+  const vestingIds = loadUserVestingSchedules(userAddress);
+  const returnArgs = new Args();
+  returnArgs.add<u64>(vestingIds.length as u64);
+  for (let i: u64 = 0; i < (vestingIds.length as u64); i++) {
+    returnArgs.add<u64>(vestingIds[i as i32]);
+  }
+  return returnArgs.serialize();
+}
+
+export function getProjectCreationDate(binArgs: StaticArray<u8>): StaticArray<u8> {
+  const args = new Args(binArgs);
+  const projectId = args.nextU64().expect('Missing project ID');
+  const projectKey = new Args().add(PROJECTS_KEY).add(projectId).serialize();
+  assert(Storage.has(projectKey), `Project with ID ${projectId} not found`);
+
+  let project = new Project();
+  project.deserialize(Storage.get(projectKey));
+
+  return new Args().add(project.creationPeriod).serialize();
 }

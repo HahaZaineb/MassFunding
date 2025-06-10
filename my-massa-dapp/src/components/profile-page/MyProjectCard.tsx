@@ -8,7 +8,7 @@ import { ProjectData } from '@/types';
 import AddMilestoneModal from '../projects/AddMilestoneModal';
 import ProjectUpdates from '../projects/ProjectUpdates';
 import AddUpdateModal from '../projects/AddUpdateModal';
-import { getProjectSupportersCount } from '@/services/contract-service';
+import { getProjectSupportersCount, getProjectCreationDate } from '@/services/contract-service';
 
 interface MyProjectCardProps {
   project: ProjectData;
@@ -18,18 +18,22 @@ const MyProjectCard: React.FC<MyProjectCardProps> = ({ project }) => {
   const [openUpdates, setOpenUpdates] = useState<boolean>(false);
   const [openAddUpdate, setOpenAddUpdate] = useState<boolean>(false);
   const [supportersCount, setSupportersCount] = useState<number>(0);
+  const [creationDate, setCreationDate] = useState<Date | null>(null);
 
   useEffect(() => {
-    const fetchSupporters = async () => {
+    const fetchSupportersAndCreationDate = async () => {
       try {
         const count = await getProjectSupportersCount(BigInt(project.id));
         setSupportersCount(count);
+
+        const date = await getProjectCreationDate(Number(project.id));
+        setCreationDate(date);
       } catch (error) {
-        console.error(`Error fetching supporters for project ${project.id}:`, error);
+        console.error(`Error fetching data for project ${project.id}:`, error);
       }
     };
 
-    fetchSupporters();
+    fetchSupportersAndCreationDate();
   }, [project.id]);
 
   return (
@@ -54,6 +58,12 @@ const MyProjectCard: React.FC<MyProjectCardProps> = ({ project }) => {
                   <span className="inline-block px-2 py-1 text-xs bg-[#00ff9d]/20 text-[#00ff9d] rounded-full">
                     {project.category}
                   </span>
+                  {creationDate && (
+                    <div className="text-xs text-slate-400 mt-1 flex items-center">
+                      <Calendar className="h-3 w-3 mr-1" />
+                      Created: {creationDate.toLocaleDateString()}
+                    </div>
+                  )}
                 </div>
               </div>
               <p className="text-slate-300 text-sm">{project.description}</p>
