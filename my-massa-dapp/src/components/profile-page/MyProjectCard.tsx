@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus, Calendar, Eye } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,6 +8,7 @@ import { ProjectData } from '@/types';
 import AddMilestoneModal from '../projects/AddMilestoneModal';
 import ProjectUpdates from '../projects/ProjectUpdates';
 import AddUpdateModal from '../projects/AddUpdateModal';
+import { getProjectSupportersCount } from '@/services/contract-service';
 
 interface MyProjectCardProps {
   project: ProjectData;
@@ -16,6 +17,20 @@ const MyProjectCard: React.FC<MyProjectCardProps> = ({ project }) => {
   const [openAddMilestone, setOpenAddMilestone] = useState<boolean>(false);
   const [openUpdates, setOpenUpdates] = useState<boolean>(false);
   const [openAddUpdate, setOpenAddUpdate] = useState<boolean>(false);
+  const [supportersCount, setSupportersCount] = useState<number>(0);
+
+  useEffect(() => {
+    const fetchSupporters = async () => {
+      try {
+        const count = await getProjectSupportersCount(BigInt(project.id));
+        setSupportersCount(count);
+      } catch (error) {
+        console.error(`Error fetching supporters for project ${project.id}:`, error);
+      }
+    };
+
+    fetchSupporters();
+  }, [project.id]);
 
   return (
     <Card className="bg-gradient-to-br from-[#1a2340] to-[#0f1629] border border-[#00ff9d]/20 shadow-xl overflow-hidden">
@@ -72,7 +87,7 @@ const MyProjectCard: React.FC<MyProjectCardProps> = ({ project }) => {
             </div>
             <div className="text-center">
               <div className="text-lg font-bold text-white">
-                {/* project.supporters */}
+                {supportersCount}
               </div>
               <div className="text-xs text-slate-400">Supporters</div>
             </div>
@@ -124,7 +139,7 @@ const MyProjectCard: React.FC<MyProjectCardProps> = ({ project }) => {
       <ProjectUpdates
         open={openUpdates}
         onClose={() => setOpenUpdates(false)}
-        projectId={Number(project.id)}
+        projectId={project.id}
       />
       <AddMilestoneModal
         open={openAddMilestone}

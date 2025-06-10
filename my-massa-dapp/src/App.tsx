@@ -19,6 +19,7 @@ import AboutPage from '@/pages/about';
 import ProfilePage from './pages/Profile';
 import PrivateRoute from './components/PrivateRoute';
 import { FundPage } from './pages/Fund';
+import SwapPage from './pages/swap';
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
@@ -49,6 +50,7 @@ function App() {
               <Route path="/projects" element={<Projects />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/fund/:projectId" element={<FundPage />} />
+              <Route path="swap" element={<SwapPage />} />
               <Route
                 path="/profile"
                 element={

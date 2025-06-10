@@ -1,5 +1,6 @@
 import { ProjectData } from "@/types"
 import { createContext, useContext, useState, useEffect, ReactNode } from "react"
+import { getAllProjects as fetchAllProjects } from "@/services/contract-service";
 
 // Sample project data
 const initialProjects: ProjectData[] = [
@@ -113,19 +114,30 @@ interface ProjectContextType {
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined)
 
 export function ProjectProvider({ children }: { children: ReactNode }) {
-  const [projects, setProjects] = useState<ProjectData[]>(initialProjects)
+  const [projects, setProjects] = useState<ProjectData[]>([]) // Initialize with empty array
 
-  // Load projects from localStorage on initial render
+  // Load projects from localStorage on initial render (if desired), then fetch from blockchain
   useEffect(() => {
-    const savedProjects = localStorage.getItem("projects")
-    if (savedProjects) {
-      try {
-        setProjects(JSON.parse(savedProjects))
-      } catch (error) {
-        console.error("Failed to parse saved projects:", error)
+    const loadAndFetchProjects = async () => {
+      const savedProjects = localStorage.getItem("projects");
+      if (savedProjects) {
+        try {
+          setProjects(JSON.parse(savedProjects));
+        } catch (error) {
+          console.error("Failed to parse saved projects:", error);
+        }
       }
-    }
-  }, [])
+
+      try {
+        const fetchedProjects = await fetchAllProjects();
+        setProjects(fetchedProjects);
+      } catch (error) {
+        console.error("Error fetching projects from contract:", error);
+      }
+    };
+
+    loadAndFetchProjects();
+  }, []);
 
   // Save projects to localStorage whenever they change
   useEffect(() => {

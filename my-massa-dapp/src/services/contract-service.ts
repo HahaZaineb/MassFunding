@@ -2,8 +2,9 @@ import { Args, SmartContract, JsonRpcProvider, bytesToSerializableObjectArray } 
 import { ProjectData } from '@/types';
 import { Project, VestingSchedule, ProjectMilestone, ProjectUpdate } from '@/models/ContractModels';
 import { readSmartContractPublic } from '@/utils/smartContract';
-import { convertProjectToProjectData } from '@/utils/project';
 import { CONTRACT_ADDRESS } from '@/constants';
+import { convertProjectToProjectData } from '@/utils/project';
+
 
 // Create a public provider for read-only operations
 const publicProvider = JsonRpcProvider.buildnet();
@@ -90,7 +91,8 @@ export async function getAllProjects(): Promise<ProjectData[]> {
     const deserializedProjects = arrArgs.nextSerializableObjectArray<Project>(Project);
 
     // Convert deserialized Project objects to ProjectData objects
-    return deserializedProjects.map(convertProjectToProjectData);
+    const projectDataPromises = deserializedProjects.map(project => convertProjectToProjectData(project));
+    return Promise.all(projectDataPromises);
 
   } catch (error) {
     console.error('Error fetching projects:', error);
@@ -103,7 +105,6 @@ export async function getProject(projectId: number): Promise<ProjectData> {
     const contract = new SmartContract(publicProvider, CONTRACT_ADDRESS);
     const args = new Args().addU64(BigInt(projectId));
     const response = await contract.read('getProject', args);
-    // Use bytesToSerializableObjectArray to deserialize the response
     const [project] = bytesToSerializableObjectArray(response.value, Project);
 
     // Convert the deserialized Project object to a ProjectData object
@@ -299,6 +300,55 @@ export async function viewNextVestingId(): Promise<number> {
     return Number(argsReader.nextU64());
   } catch (error) {
     console.error('Error fetching next vesting ID:', error);
+    throw error;
+  }
+}
+
+export async function getTotalDonations(): Promise<number> {
+  try {
+    const contract = new SmartContract(publicProvider, CONTRACT_ADDRESS);
+    const response = await contract.read('getTotalDonations', new Args());
+    const argsReader = new Args(response.value);
+    return Number(argsReader.nextU64());
+  } catch (error) {
+    console.error('Error fetching total donations:', error);
+    throw error;
+  }
+}
+
+export async function getTotalProjectsFunded(): Promise<number> {
+  try {
+    const contract = new SmartContract(publicProvider, CONTRACT_ADDRESS);
+    const response = await contract.read('getTotalProjectsFunded', new Args());
+    const argsReader = new Args(response.value);
+    return Number(argsReader.nextU64());
+  } catch (error) {
+    console.error('Error fetching total projects funded:', error);
+    throw error;
+  }
+}
+
+export async function getTotalSupporters(): Promise<number> {
+  try {
+    const contract = new SmartContract(publicProvider, CONTRACT_ADDRESS);
+    const response = await contract.read('getTotalSupporters', new Args());
+    const argsReader = new Args(response.value);
+    return Number(argsReader.nextU64());
+  } catch (error) {
+    console.error('Error fetching total supporters:', error);
+    throw error;
+  }
+}
+
+export async function getProjectSupportersCount(projectId: bigint): Promise<number> {
+  try {
+    const contract = new SmartContract(publicProvider, CONTRACT_ADDRESS);
+    const args = new Args().addU64(projectId);
+    const response = await contract.read('getProjectSupportersCount', args);
+    const argsReader = new Args(response.value);
+    return Number(argsReader.nextU64());
+  } catch (error) {
+    console.error('Error fetching project supporters count:', error);
     throw error;
   }
 }

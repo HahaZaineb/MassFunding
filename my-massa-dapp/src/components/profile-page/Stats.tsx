@@ -5,10 +5,47 @@ import { TrendingUp, Users, DollarSign } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAccountStore } from '@massalabs/react-ui-kit';
 import { useProjects } from '@/context/project-context';
+import React, { useEffect, useState } from 'react';
+import {
+  getTotalDonations,
+  getTotalProjectsFunded,
+  getTotalSupporters,
+} from '@/services/contract-service';
+import { formatMas } from '@massalabs/massa-web3';
 
 export default function Stats() {
   const { projects } = useProjects();
   const { connectedAccount } = useAccountStore();
+
+  const [totalDonations, setTotalDonations] = useState<number>(0);
+  const [totalProjectsFunded, setTotalProjectsFunded] = useState<number>(0);
+  const [totalSupporters, setTotalSupporters] = useState<number>(0);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const donations = await getTotalDonations();
+        setTotalDonations(donations);
+
+        const projectsFunded = await getTotalProjectsFunded();
+        setTotalProjectsFunded(projectsFunded);
+
+        const supporters = await getTotalSupporters();
+        setTotalSupporters(supporters);
+      } catch (error) {
+        console.error('Error fetching global stats for profile page:', error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const formattedTotalDonations = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'MAS',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(Number(formatMas(BigInt(totalDonations.toString()))));
 
   const myProjects = connectedAccount
     ? projects.filter((p) => {
@@ -22,14 +59,6 @@ export default function Stats() {
     : [];
 
   const totalProjects = myProjects.length;
-  const totalFundsRaised = myProjects.reduce(
-    (sum, project) => sum + project.amountRaised,
-    0,
-  );
-  const totalSupporters = myProjects.reduce(
-    (sum, project) => sum + project.supporters,
-    0,
-  );
 
   return (
     <motion.div
@@ -44,7 +73,7 @@ export default function Stats() {
               <TrendingUp className="h-8 w-8 text-[#00ff9d]" />
             </div>
             <div className="text-2xl font-bold text-white">{totalProjects}</div>
-            <div className="text-sm text-slate-400">Total Projects</div>
+            <div className="text-sm text-slate-400">Projects Created</div>
           </CardContent>
         </Card>
 
@@ -54,9 +83,9 @@ export default function Stats() {
               <DollarSign className="h-8 w-8 text-[#00ff9d]" />
             </div>
             <div className="text-2xl font-bold text-white">
-              {totalFundsRaised.toFixed(1)}
+              {formattedTotalDonations}
             </div>
-            <div className="text-sm text-slate-400">MAS Raised</div>
+            <div className="text-sm text-slate-400">Total Donations</div>
           </CardContent>
         </Card>
 

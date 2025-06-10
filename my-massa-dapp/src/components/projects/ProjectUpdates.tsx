@@ -24,8 +24,8 @@ const ProjectUpdates: React.FC<ProjectUpdatesProps> = ({ open, onClose, projectI
       setLoading(true);
       setError(null);
       try {
-        const fetchedUpdates = await getProjectUpdates(Number(projectId));
-        const fetchedMilestones = await getMilestones(Number(projectId));
+        const fetchedUpdates = await getProjectUpdates(BigInt(projectId));
+        const fetchedMilestones = await getMilestones(BigInt(projectId));
         setUpdates(fetchedUpdates);
         setMilestones(fetchedMilestones);
       } catch (err) {
