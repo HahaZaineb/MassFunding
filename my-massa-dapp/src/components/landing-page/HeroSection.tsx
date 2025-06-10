@@ -41,7 +41,7 @@ const HeroSection = () => {
     currency: 'MAS',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(Number(formatMas(totalDonations)));
+  }).format(Number(formatMas(BigInt(totalDonations))));
 
   return (
     <section className="py-16 px-4 bg-[#0f1629]">
