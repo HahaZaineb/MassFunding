@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Card,
@@ -20,9 +20,11 @@ import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import TimelineIcon from '@mui/icons-material/Timeline';
 import WorkOutlineIcon from '@mui/icons-material/WorkOutline';
 import FavoriteIcon from '@mui/icons-material/Favorite';
-import { ConnectMassaWallet } from '@massalabs/react-ui-kit';
+import { ConnectMassaWallet, useAccountStore } from '@massalabs/react-ui-kit';
 import UserActivity from '@/components/profile-page/UserActivity';
 import MyProjects from '@/components/profile-page/MyProjects';
+import { getUserDonations } from '@/services/contract-service';
+import { useProjects } from '@/context/project-context';
 
 const StyledCard = styled(Card)(() => ({
   backgroundColor: '#11182f',
@@ -54,11 +56,42 @@ const SectionHeader = ({
 );
 
 const ProfilePage: React.FC = ({}) => {
- 
-  const donatedProjects = [
-    { id: 'a1', name: 'Project 1', amount: 500, date: '2024-05-12' },
-    { id: 'a2', name: 'Project 2', amount: 250, date: '2024-06-10' },
-  ];
+  const { connectedAccount } = useAccountStore();
+  const { projects } = useProjects();
+  const [donatedProjects, setDonatedProjects] = useState<Array<{ id: string; name: string; amount: number; date: string }>>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDonatedProjects = async () => {
+      if (connectedAccount) {
+        try {
+          setLoading(true);
+          const donations = await getUserDonations(connectedAccount.address.toString());
+          console.log('User donations:', donations);
+          console.log('Projects:', projects);
+          // Map donations to projects
+          const mappedProjects = donations.map((donation) => {
+            const project = projects.find(p => p.id.toString() === donation.projectId);
+            return {
+              id: donation.projectId,
+              name: project ? project.name : `Project #${donation.projectId}`,
+              amount: donation.amount,
+              date: project && project.creationDate ? project.creationDate : ''
+            };
+          });
+          setDonatedProjects(mappedProjects);
+        } catch (error) {
+          setDonatedProjects([]);
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setDonatedProjects([]);
+        setLoading(false);
+      }
+    };
+    fetchDonatedProjects();
+  }, [connectedAccount, projects]);
 
   return (
     <div className="w-full p-4 min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
@@ -123,7 +156,11 @@ const ProfilePage: React.FC = ({}) => {
             color="#f44336"
           />
           <Divider sx={{ my: 2, borderColor: '#1f2a48' }} />
-          {donatedProjects.length === 0 ? (
+          {loading ? (
+            <Typography color="text.secondary">
+              Loading donations...
+            </Typography>
+          ) : donatedProjects.length === 0 ? (
             <Typography color="text.secondary">
               No donations made yet.
             </Typography>

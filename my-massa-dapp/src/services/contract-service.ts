@@ -1,4 +1,4 @@
-import { Args, SmartContract, JsonRpcProvider, bytesToSerializableObjectArray } from '@massalabs/massa-web3';
+import { Args, SmartContract, JsonRpcProvider, bytesToSerializableObjectArray} from '@massalabs/massa-web3';
 import { ProjectData } from '@/types';
 import { Project, VestingSchedule, ProjectMilestone, ProjectUpdate } from '@/models/ContractModels';
 import { readSmartContractPublic } from '@/utils/smartContract';
@@ -406,5 +406,45 @@ export function getProjectCreationDate(creationPeriod: number): Date {
   const creationTimestampMs = MASSA_GENESIS_TIMESTAMP_MS + (creationPeriod * MASSA_PERIOD_DURATION_MS);
 
   return new Date(creationTimestampMs);
+}
+
+export async function getUserDonations(userAddress: string): Promise<Array<{ projectId: string; amount: number }>> {
+  try {
+    const contract = new SmartContract(publicProvider, CONTRACT_ADDRESS);
+    const args = new Args().addString(userAddress);
+    const response = await contract.read('getUserDonations', args);
+    const argsReader = new Args(response.value);
+    const length = Number(argsReader.nextU64());
+    const donations: Array<{ projectId: string; amount: number }> = [];
+    for (let i = 0; i < length; i++) {
+      const projectId = argsReader.nextU64().toString();
+      const amount = Number(argsReader.nextU64()) / 1e9;
+      donations.push({ projectId, amount });
+    }
+    return donations;
+  } catch (error) {
+    console.error('Error fetching user donations:', error);
+    throw error;
+  }
+}
+
+export async function getTotalDonatedAmount(userAddress: string): Promise<number> {
+  try {
+    const donations = await getUserDonations(userAddress);
+    return donations.reduce((total, d) => total + d.amount, 0);
+  } catch (error) {
+    console.error('Error calculating total donated amount:', error);
+    throw error;
+  }
+}
+
+export async function getTotalClaimedAmount(userAddress: string): Promise<number> {
+  try {
+    const vestingSchedules = await getUserVestingSchedules(userAddress);
+    return vestingSchedules.reduce((total, schedule) => total + schedule, 0);
+  } catch (error) {
+    console.error('Error calculating total claimed amount:', error);
+    throw error;
+  }
 }
 

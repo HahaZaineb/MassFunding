@@ -1,5 +1,3 @@
-
-
 import { motion } from 'framer-motion';
 import { useAccountStore } from '@massalabs/react-ui-kit';
 import { useProjects } from '@/context/project-context';
@@ -8,8 +6,11 @@ import NoProjectFound from './NoProjectFound';
 import MyProjectCard from './MyProjectCard';
 
 export default function MyProjects() {
-  const { projects } = useProjects();
+  const { projects, getProject } = useProjects();
   const { connectedAccount } = useAccountStore();
+
+  console.log('All projects:', projects);
+  console.log('Connected account:', connectedAccount?.address?.toString());
 
   const myProjects = connectedAccount
     ? projects.filter((p) => {
@@ -18,10 +19,16 @@ export default function MyProjects() {
           .toString()
           .toLowerCase();
         const match = creatorAddress === connectedAddress;
+        if (match) {
+          console.log('Matched project:', p);
+        }
         return match;
       })
     : [];
 
+  console.log('My projects:', myProjects);
+
+  
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}

@@ -17,15 +17,16 @@ export default function Stats() {
         const connectedAddress = connectedAccount.address
           .toString()
           .toLowerCase();
-        const match = creatorAddress === connectedAddress;
-        return match;
-      })
-    : [];
+          const match = creatorAddress === connectedAddress;
+          return match;
+        })
+      : [];
 
   const totalProjectsCreated = myProjects.length;
 
+  // Total MAS received by all my projects
   const totalDonationsReceived = myProjects.reduce(
-    (sum, project) => sum + project.amountRaised,
+    (sum, project) => sum + project.amountRaised ,
     0,
   );
 
@@ -34,12 +35,10 @@ export default function Stats() {
     0,
   );
 
-  const formattedTotalDonations = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'MAS',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(Number(formatMas(BigInt(totalDonationsReceived.toString()))));
+  const formattedTotalDonations = totalDonationsReceived.toLocaleString('en-US', {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  }) + ' MAS';
 
   return (
     <motion.div
@@ -78,7 +77,7 @@ export default function Stats() {
             <div className="text-2xl font-bold text-white">
               {totalSupportersReceived}
             </div>
-            <div className="text-sm text-slate-400">Total Supporters</div>
+            <div className="text-sm text-slate-400">Total Support</div>
           </CardContent>
         </Card>
       </div>
