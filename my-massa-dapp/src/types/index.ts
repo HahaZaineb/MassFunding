@@ -28,6 +28,7 @@ export interface ProjectData {
   creator?: string
   deadline?: string
   image?: string
+  creationDate?: string
 }
 
 export interface WalletInfo {

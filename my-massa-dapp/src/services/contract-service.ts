@@ -388,27 +388,23 @@ export async function fetchUserDonations(userAddress: string): Promise<ContractV
   }
 }
 
-export async function getProjectCreationDate(projectId: number): Promise<Date> {
+export async function getCurrentMassaPeriod(): Promise<number> {
   try {
     const contract = new SmartContract(publicProvider, CONTRACT_ADDRESS);
-    const args = new Args().addU64(BigInt(projectId));
-    const response = await contract.read('getProjectCreationDate', args);
+    const response = await contract.read('getCurrentMassaPeriod', new Args());
     const argsReader = new Args(response.value);
-    const creationPeriod = Number(argsReader.nextU64());
-
-    // Assuming Massa periods are 15 seconds each, and we have a reference genesis date.
-    // For accurate conversion, the actual Massa genesis timestamp is needed.
-    // For demonstration, let's use a placeholder genesis date and calculate based on periods.
-    // Example: Massa Testnet Genesis (approx. for calculation, replace with actual if known)
-    // This timestamp corresponds to some point in time from which Massa periods count.
-    // A period is 15 seconds.
-    const MASSA_GENESIS_TIMESTAMP_MS = new Date('2023-01-01T00:00:00Z').getTime(); // Placeholder
-    const creationTimestampMs = MASSA_GENESIS_TIMESTAMP_MS + (creationPeriod * 15 * 1000);
-
-    return new Date(creationTimestampMs);
+    return Number(argsReader.nextU64());
   } catch (error) {
-    console.error('Error fetching project creation date:', error);
+    console.error('Error fetching current Massa period:', error);
     throw error;
   }
+}
+
+export function getProjectCreationDate(creationPeriod: number): Date {
+  const MASSA_GENESIS_TIMESTAMP_MS = 1704289800000; // Wednesday, January 3, 2024 1:50:00 PM UTC (BuildNet)
+  const MASSA_PERIOD_DURATION_MS = 16 * 1000; // 16 seconds per period
+  const creationTimestampMs = MASSA_GENESIS_TIMESTAMP_MS + (creationPeriod * MASSA_PERIOD_DURATION_MS);
+
+  return new Date(creationTimestampMs);
 }
 

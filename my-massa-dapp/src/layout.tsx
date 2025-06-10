@@ -10,7 +10,7 @@ export default function Layout({ children }: LayoutProps) {
   return (
     <html lang="en" className="dark">
       <body>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+        <ThemeProvider defaultTheme="dark" enableSystem>
           {children}
         </ThemeProvider>
       </body>

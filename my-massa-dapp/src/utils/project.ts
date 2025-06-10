@@ -1,10 +1,15 @@
 import { Project } from "@/models/ContractModels";
 import { ProjectData } from "@/types";
 import { formatMas } from '@massalabs/massa-web3'
-import { getProjectSupportersCount } from "@/services/contract-service";
+import { getProjectSupportersCount, getProjectCreationDate } from "@/services/contract-service";
 
 export async function convertProjectToProjectData(project: Project): Promise<ProjectData> {
   const supportersCount = await getProjectSupportersCount(project.projectId);
+  const creationDate =  getProjectCreationDate(Number(project.creationPeriod));
+
+  console.log('Project ID:', project.projectId.toString());
+  console.log('Creation Period (from contract):', project.creationPeriod);
+  console.log('Calculated Creation Date:', creationDate.toISOString());
 
   return {
     id: project.projectId.toString(),
@@ -23,6 +28,7 @@ export async function convertProjectToProjectData(project: Project): Promise<Pro
     amountNeeded: Number(formatMas(project.fundingGoal - project.amountRaised)),
     supporters: supportersCount,
     deadline: "N/A", // This would ideally come from contract or be calculated dynamically
+    creationDate: creationDate.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }),
     // Removed updates and milestones as they are now fetched separately
     updates: [], // Initialize empty, will be populated by separate fetches
     milestones: [], // Initialize empty, will be populated by separate fetches

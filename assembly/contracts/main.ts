@@ -1104,3 +1104,7 @@ export function getProjectCreationDate(binArgs: StaticArray<u8>): StaticArray<u8
 
   return new Args().add(project.creationPeriod).serialize();
 }
+
+export function getCurrentMassaPeriod(_: StaticArray<u8>): StaticArray<u8> {
+  return new Args().add(Context.currentPeriod()).serialize();
+}

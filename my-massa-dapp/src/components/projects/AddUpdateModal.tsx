@@ -13,7 +13,8 @@ import { Textarea } from '../ui/textarea';
 import { Label } from '../ui/label';
 import { ProjectData } from '@/types';
 import { useProjects } from '@/context/project-context';
-import { ContractProjectUpdateData } from '@/services/contract-service';
+import { addUpdate, ContractProjectUpdateData } from '@/services/contract-service';
+import { useAccountStore } from '@massalabs/react-ui-kit';
 
 interface AddUpdateModalProps {
   project: ProjectData;
@@ -26,7 +27,8 @@ export default function AddUpdateModal({
   open,
   onClose,
 }: AddUpdateModalProps) {
-  const { addProjectUpdate } = useProjects();
+  const {  } = useProjects();
+  const { connectedAccount } = useAccountStore();
 
   const [formData, setFormData] = useState({
     title: '',
@@ -49,12 +51,16 @@ export default function AddUpdateModal({
     if (!formData.title.trim() || !formData.content.trim()) {
       return;
     }
+    if (!connectedAccount) {
+      console.error("Wallet not connected. Cannot add update.");
+      return;
+    }
     setIsSubmitting(true);
     try {
-      await addProjectUpdate(project.id, {
+      await addUpdate(connectedAccount, Number(project.id), {
         title: formData.title,
         content: formData.content,
-        author: formData.author || project.creator, // Default author to project creator if not provided
+        author: formData.author || project.creator,
         id: `temp-update-${Date.now()}`,
         date: formData.date,
       } as ContractProjectUpdateData);

@@ -24,8 +24,12 @@ const ProjectUpdates: React.FC<ProjectUpdatesProps> = ({ open, onClose, projectI
       setLoading(true);
       setError(null);
       try {
-        const fetchedUpdates = await getProjectUpdates(BigInt(projectId));
-        const fetchedMilestones = await getMilestones(BigInt(projectId));
+        const projectIdNum = Number(projectId);
+        if (isNaN(projectIdNum)) {
+          throw new Error('Invalid project ID');
+        }
+        const fetchedUpdates = await getProjectUpdates(projectIdNum);
+        const fetchedMilestones = await getMilestones(projectIdNum);
         setUpdates(fetchedUpdates);
         setMilestones(fetchedMilestones);
       } catch (err) {
