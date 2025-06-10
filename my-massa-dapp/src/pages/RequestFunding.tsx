@@ -53,6 +53,8 @@ export default function RequestFunding() {
   });
 
   useEffect(() => {
+          console.log(connectedAccount, "connectedAccount")
+
     if (connectedAccount) {
       setFormData((prev) => ({
         ...prev,
@@ -94,7 +96,6 @@ export default function RequestFunding() {
       if (!connectedAccount) {
         throw new Error('Please connect your wallet first');
       }
-
       const response = await createProject(connectedAccount, {
         title: formData.projectName,
         description: formData.description,

@@ -26,6 +26,7 @@ import ProgressBar from '@/components/ProgressBar';
 import { shortenAddress } from '@/utils/functions';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchProjectById } from '@/store/slices/projectSlice';
+import { Alert } from '@mui/material';
 
 export function FundPage() {
   const dispatch = useAppDispatch();
@@ -34,6 +35,7 @@ export function FundPage() {
   const { projectId } = useParams();
   const [amount, setAmount] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
   const { selected, loading } = useAppSelector((state) => state.projects);
 
   useEffect(() => {
@@ -42,24 +44,25 @@ export function FundPage() {
     }
   }, [dispatch, projectId]);
 
+  useEffect(() => {
+    console.log(selected.beneficiary, ".beneficiary")
+  },[selected])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!amount || Number.parseFloat(amount) <= 0) {
-      toast({
-        title: 'Invalid Amount',
-        description: 'Please enter a valid donation amount greater than 0.',
-        variant: 'destructive',
-      });
+    if (!amount || Number.parseFloat(amount) < 0.1 ) {
+      setError('Please enter a valid donation amount greater than 0.1')
+      return;
+    }
+
+    if (Number(amount) > Number(selected?.goalAmount) ) {
+            setError('Please enter a valid donation amount less than '+selected?.goalAmount)
       return;
     }
 
     if (!connectedAccount) {
-      toast({
-        title: 'Wallet Not Connected',
-        description: 'Please connect your wallet to make a donation.',
-        variant: 'destructive',
-      });
+                  setError('Please connect your wallet to make a donation.')
       return;
     }
     setIsSubmitting(true);
@@ -99,9 +102,9 @@ export function FundPage() {
   });
 
   if (loading) {
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
-      return <Loader />;
-    </div>;
+    return (<div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
+       <Loader />;
+    </div>);
   }
 
   if (!loading && !selected) {
@@ -246,6 +249,9 @@ export function FundPage() {
                   Minimum donation: 0.1 MAS
                 </p>
               </div>
+              {error && <Alert variant="filled" severity="error">
+  {error}
+</Alert>}
 
               {/* Connected Account Info */}
               {connectedAccount && (

@@ -20,6 +20,11 @@ const FAQSection = () => {
       answer:
         "Simply click on 'Request Funding' and fill out the project details, including your funding goal, vesting schedule, and project milestones. Once approved, your project will be listed on the platform.",
     },
+    {
+      question: 'How do I start a project?',
+      answer:
+        "Simply click on 'Request Funding' and fill out the project details, including your funding goal, vesting schedule, and project milestones. Once approved, your project will be listed on the platform.",
+    },
   ];
 
   return (

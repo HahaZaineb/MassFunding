@@ -31,6 +31,7 @@ const HeroSection = () => {
               onClick={() => navigate('/projects')}
               className="bg-[#00ff9d] hover:bg-[#00ff9d]/90 text-[#0f1629] font-medium px-8 py-6 text-lg"
             >
+              <HandCoins className="h-5 w-5" />
               Fund a Project <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <Button
@@ -38,6 +39,7 @@ const HeroSection = () => {
               variant="outline"
               className="border-[#00ff9d] text-[#00ff9d] hover:bg-[#00ff9d]/10 font-medium px-8 py-6 text-lg"
             >
+              <Rocket className="h-5 w-5" />
               Request Funding <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </div>

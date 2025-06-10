@@ -10,6 +10,7 @@ import {
   ListItem,
   ListItemButton,
   ListItemText,
+  ListItemIcon,
   Box,
   useMediaQuery,
   useTheme,
@@ -20,15 +21,17 @@ import {
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import PersonIcon from '@mui/icons-material/Person';
+import SwitchAccountIcon from '@mui/icons-material/SwitchAccount';
 import { useNavigate, useLocation } from 'react-router-dom';
 import WalletConnectModal from '../WalletConnectModal';
 import { useAccountStore } from '@massalabs/react-ui-kit';
 import { shortenAddress } from '@/utils/functions';
+import { ArrowRight, HandCoins, Rocket, Users, Home } from 'lucide-react';
 
 const navItems = [
-  { label: 'Home', path: '/' },
-  { label: 'Explore Projects', path: '/projects' },
-  { label: 'Request Funding', path: '/request-funding' },
+  { label: 'Home', path: '/', icon: <Home className='w-4' /> },
+  { label: 'Explore Projects', path: '/projects', icon: <Rocket className='w-4' /> },
+  { label: 'Request Funding', path: '/request-funding', icon: <HandCoins className='w-4' /> },
 ];
 
 export function Navbar() {
@@ -82,12 +85,12 @@ export function Navbar() {
                     key={item.path}
                     onClick={() => handleNavigate(item.path)}
                     sx={{
-                      color:
-                        location.pathname === item.path ? '#00ff9d' : '#fff',
+                      color: location.pathname === item.path ? '#00ff9d' : '#fff',
                       fontWeight: '500',
                       textTransform: 'none',
                       '&:hover': { color: '#00ff9d' },
                     }}
+                    startIcon={item.icon}
                   >
                     {item.label}
                   </Button>
@@ -151,7 +154,7 @@ export function Navbar() {
                         handleMenuClose();
                       }}
                     >
-                      🔄 Switch Wallet
+                      <SwitchAccountIcon sx={{ mr: 1 }} /> Switch Wallet
                     </MenuItem>
                   </Menu>
                 </>
@@ -221,6 +224,9 @@ export function Navbar() {
             {navItems.map((item) => (
               <ListItem key={item.path} disablePadding>
                 <ListItemButton onClick={() => handleNavigate(item.path)}>
+                  <ListItemIcon sx={{ color: '#00ff9d' }}>
+                    {item.icon}
+                  </ListItemIcon>
                   <ListItemText
                     primary={item.label}
                     primaryTypographyProps={{

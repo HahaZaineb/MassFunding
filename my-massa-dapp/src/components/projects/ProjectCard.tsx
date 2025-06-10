@@ -25,6 +25,7 @@ import ProjectUpdates from './ProjectUpdates';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCategoryColor } from '@/utils/functions';
+import { Chip } from '@mui/material';
 
 interface ProjectCardProps {
   project: ProjectData & { image?: string };
@@ -35,7 +36,52 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
   const percentFunded = (project.amountRaised / project.amountNeeded) * 100;
   const [openProjectUpdates, setOpenProjectUpdates] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'live':
+        return 'success';
+      case 'release':
+        return 'warning';
+      case 'vesting':
+        return 'info';
+      case 'completed':
+        return 'default';
+      default:
+        return 'default';
+    }
+  };
 
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'live':
+        return 'Live';
+      case 'release':
+        return 'In Release';
+      case 'vesting':
+        return 'Vesting';
+      case 'completed':
+        return 'Completed';
+      default:
+        return '';
+    }
+  };
+  function getProjectStatus(
+    project: ProjectData,
+  ): 'live' | 'release' | 'vesting' | 'completed' {
+    const now = Date.now();
+    const lockEnd = Date.now();
+    const vestingEnd = Date.now();
+
+    if (project.amountRaised < project.goalAmount) {
+      return 'live';
+    } else if (now < lockEnd) {
+      return 'release';
+    } else if (now < vestingEnd) {
+      return 'vesting';
+    } else {
+      return 'completed';
+    }
+  }
   return (
     <Card className="bg-slate-800/80 border-slate-600 text-white overflow-hidden hover:shadow-2xl transition-all duration-300 hover:scale-105 backdrop-blur-sm border-2 hover:border-emerald-500/50">
       {/* Project Image */}
@@ -44,6 +90,12 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
           src={project.image || '/placeholder.svg'}
           alt={project.name}
           className="w-full h-full object-cover"
+        />
+        <Chip
+          label={getStatusLabel(getProjectStatus(project))}
+          color={getStatusColor(getProjectStatus(project))}
+          size="small"
+          className="absolute top-4 left-4"
         />
         <div className="absolute top-4 right-4">
           <Badge
