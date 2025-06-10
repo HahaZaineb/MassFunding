@@ -57,7 +57,7 @@ const ProjectMiniCard = ({ project, showFundBtn = true }: ProjectMiniCardProps) 
             <span className="text-white">
               {project.amountRaised} / {project.amountNeeded} MAS
             </span>
-            <span className="text-[#ffffff]">{percentFunded.toFixed(0)}%</span>
+            <span className="text-[#ffffff]">{percentFunded.toFixed(2)}%</span>
           </div>
           <ProgressBar value={percentFunded}/>
         </div>

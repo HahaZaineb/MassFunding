@@ -125,7 +125,7 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
               {project.amountNeeded.toLocaleString()} MAS
             </span>
             <span className="font-bold text-emerald-400">
-              {percentFunded.toFixed(0)}%
+              {percentFunded.toFixed(2)}%
             </span>
           </div>
           <ProgressBar value={percentFunded} />
