@@ -448,3 +448,45 @@ export async function getTotalClaimedAmount(userAddress: string): Promise<number
   }
 }
 
+// Returns true if the vesting for the project is completed
+export async function isProjectVestingCompleted(projectId: number): Promise<boolean> {
+  try {
+    // 1. Fetch the project
+    const contract = new SmartContract(publicProvider, CONTRACT_ADDRESS);
+    const args = new Args().addU64(BigInt(projectId));
+    const response = await contract.read('getProject', args);
+
+    if (!response.value || response.value.length === 0) {
+      throw new Error('Project not found');
+    }
+
+    // Parse the project object
+    const [project] = bytesToSerializableObjectArray(response.value, Project);
+
+    // 2. Get the vestingScheduleId from the project
+    const vestingScheduleId = Number(project.vestingScheduleId);
+
+    // If vestingScheduleId is 0 or not set, vesting hasn't started
+    if (!vestingScheduleId) {
+      return false;
+    }
+
+    // 3. Fetch the vesting schedule
+    const vestingArgs = new Args().addU64(BigInt(vestingScheduleId));
+    const vestingResponse = await contract.read('getVestingSchedule', vestingArgs);
+
+    if (!vestingResponse.value || vestingResponse.value.length === 0) {
+      // If the vesting schedule does not exist, it is completed
+      return true;
+    }
+
+    // Parse the vesting schedule
+    const [schedule] = bytesToSerializableObjectArray(vestingResponse.value, VestingSchedule);
+
+    // 4. Check if all funds have been claimed
+    return Number(schedule.amountClaimed) >= Number(schedule.totalAmount);
+  } catch (error) {
+    // If any error occurs (e.g., vesting schedule not found), treat as completed
+    return true;
+  }
+}
