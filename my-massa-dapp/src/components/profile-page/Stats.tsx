@@ -6,7 +6,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useAccountStore } from '@massalabs/react-ui-kit';
 import { useProjects } from '@/context/project-context';
 
-
 export default function Stats() {
   const { projects } = useProjects();
   const { connectedAccount } = useAccountStore();
