@@ -221,41 +221,40 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
       </CardContent>
 
       <CardFooter className="flex flex-col gap-3">
-{getProjectStatus(project) === 'live' && (
-  <div className="w-full p-3 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-700 shadow-lg">
-    <div className="text-center space-y-2">
-      <div className="text-teal-400 text-xs font-semibold tracking-wider flex items-center justify-center">
-        <svg
-          className="w-3 h-3 mr-2"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-        LOCK PERIOD COUNTDOWN
-      </div>
-      <div className="flex justify-center space-x-2">
-        {timeLeft.split(':').map((unit, index) => (
-          <div key={index} className="flex flex-col items-center">
-            <div className="relative group">
-              <div className="absolute inset-0 bg-teal-500/20 blur-[3px] rounded-lg transition-all duration-300 group-hover:blur-[4px]"></div>
-              <div className="relative bg-gray-800 text-teal-300 font-mono font-bold text-sm px-3 py-2 rounded-lg border border-teal-500/30 hover:border-teal-400/50 transition-all duration-200">
-                {unit.padStart(2, '0')}
+        {getProjectStatus(project) === 'live' && (
+          <div className="w-full p-3 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-700 shadow-lg">
+            <div className="text-center space-y-2">
+              <div className="text-teal-400 text-xs font-semibold tracking-wider flex items-center justify-center">
+                <svg
+                  className="w-3 h-3 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                LOCK PERIOD COUNTDOWN
+              </div>
+              <div className="flex justify-center space-x-2">
+                {timeLeft.split(':').map((unit, index) => (
+                  <div key={index} className="flex flex-col items-center">
+                    <div className="relative group">
+                      <div className="absolute inset-0 bg-teal-500/20 blur-[3px] rounded-lg transition-all duration-300 group-hover:blur-[4px]"></div>
+                      <div className="relative bg-gray-800 text-teal-300 font-mono font-bold text-sm px-3 py-2 rounded-lg border border-teal-500/30 hover:border-teal-400/50 transition-all duration-200">
+                        {unit.padStart(2, '0')}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
-        ))}
-      </div>
-    
-    </div>
-  </div>
-)}
+        )}
         {getProjectStatus(project) === 'live' && (
           <Button
             onClick={() => navigate('/fund/' + project.id)}
