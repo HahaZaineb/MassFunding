@@ -154,7 +154,10 @@ const ProjectMiniCard = ({
         </div>
         <div className="flex flex-col gap-2 mt-2">
           {getProjectStatus(project) === 'live' && (
-            <div className="w-full p-3 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-700 shadow-lg">
+            <div
+              className="flex flex-col items-center justify-center w-full p-3 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-700 shadow-lg"
+              style={{ height: '90px' }}
+            >
               <div className="text-center space-y-2">
                 <div className="text-teal-400 text-xs font-semibold tracking-wider flex items-center justify-center">
                   <svg
@@ -187,6 +190,28 @@ const ProjectMiniCard = ({
               </div>
             </div>
           )}
+          {getProjectStatus(project) === 'release' && (
+            <div
+              className="flex flex-col items-center justify-center w-full p-3 rounded-xl border shadow-lg"
+              style={{
+                height: '90px',
+                background: 'linear-gradient(45deg, #ffd180, #ffab40)',
+                borderColor: '#ffab40',
+              }}
+            >
+              <div className="text-center space-y-2">
+                <div className="text-orange-900 text-xs font-semibold tracking-wider flex items-center justify-center">
+                  <Clock className="w-3 h-3 mr-2" />
+                  FUNDS BEING RELEASED
+                </div>
+                <div className="text-orange-800 text-sm">
+                  {project.releasePercentage}% released every{' '}
+                  {project.releaseInterval} days.
+                </div>
+              </div>
+            </div>
+          )}
+
           {showFundBtn && getProjectStatus(project) === 'live' && (
             <Button
               onClick={() => navigate('/fund/' + project.id)}
