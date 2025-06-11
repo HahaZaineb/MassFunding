@@ -36,13 +36,6 @@ const HeroSection = () => {
     fetchData();
   }, []);
 
-  const formattedTotalDonations = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'MAS',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(Number(formatMas(BigInt(totalDonations))));
-
   return (
     <section className="py-16 px-4 bg-[#0f1629]">
       <div className="container mx-auto">
@@ -87,7 +80,7 @@ const HeroSection = () => {
         >
           <div className="flex flex-col items-center">
             <HandCoins className="h-8 w-8 text-yellow-400 mb-2" />
-            <p className="text-3xl font-semibold text-yellow-400">{formattedTotalDonations}</p>
+            <p className="text-3xl font-semibold text-yellow-400">{Number(formatMas(BigInt(totalDonations)))} MAS</p>
             <p className="text-slate-400 mt-1">Total Donations</p>
           </div>
           <div className="flex flex-col items-center">
