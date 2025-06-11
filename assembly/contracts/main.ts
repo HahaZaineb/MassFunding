@@ -304,8 +304,8 @@ const description = args.nextString().expect('Missing project description');
 const fundingGoal = args.nextU64().expect('Missing funding goal');
 const beneficiaryAddress = args.nextString().expect('Missing beneficiary address');
 const category = args.nextString().expect('Missing project category');
-const lockPeriodInDays = args.nextU64().expect('Missing lock period');
-const releaseIntervalInDays = args.nextU64().expect('Missing release interval');
+const lockPeriodInPeriods = args.nextU64().expect('Missing lock period'); // Now expecting periods directly
+const releaseIntervalInPeriods = args.nextU64().expect('Missing release interval'); // Now expecting periods directly
 const releasePercentage = args.nextU64().expect('Missing release percentage');
 const image = args.nextString().expect('Missing image');
 
@@ -313,16 +313,14 @@ assert(fundingGoal > 0, "Funding goal must be greater than 0");
 assert(title.length > 0, "Title cannot be empty");
 assert(description.length > 0, "Description cannot be empty");
 assert(releasePercentage > 0 && releasePercentage <= 100, "Release percentage must be between 1 and 100");
-assert(releaseIntervalInDays > 0, "Release interval must be greater than 0");
+assert(releaseIntervalInPeriods > 0, "Release interval must be greater than 0"); // Assert on periods directly
 
 const projectId = getNextProjectId();
 const creator = Context.caller();
 const beneficiary = new Address(beneficiaryAddress);
 const creationPeriod = Context.currentPeriod();
 
-// Convert days to Massa periods
-const lockPeriodInPeriods = lockPeriodInDays * PERIODS_PER_DAY;
-const releaseIntervalInPeriods = releaseIntervalInDays * PERIODS_PER_DAY;
+// No conversion needed here anymore, as values are already in periods
 
 const newProject = new Project(
   projectId,
@@ -376,7 +374,7 @@ deferredCallRegister(
   0 // No coins sent with deferred call
 );
 
-generateEvent(`Initial vesting trigger scheduled for project ${projectId} at period ${triggerSlot.period}. Actual lock period: ${lockPeriodInDays} days.`);
+generateEvent(`Initial vesting trigger scheduled for project ${projectId} at period ${triggerSlot.period}. Actual lock period: ${lockPeriodInPeriods} periods.`);
 }
 
 export function getProject(binArgs: StaticArray<u8>): StaticArray<u8> {
@@ -588,7 +586,7 @@ assert(releaseInterval > 0, "Release interval must be greater than 0");
 
 const vestingId = getNextVestingId();
 // The start period for the first release is calculated here in the vesting logic
-const startPeriod = Context.currentPeriod() + lockPeriod;
+const startPeriod = Context.currentPeriod() + lockPeriod + 5; // Add 5 periods buffer
 
 const schedule = new vestingSchedule(
   vestingId,
@@ -618,7 +616,7 @@ const releaseArgs = new Args().add(vestingId).serialize();
 const releaseSlot = findCheapestSlot(
   startPeriod,
   startPeriod + 10, // Search window
-  30_000_000, // Gas
+  20_000_000, // Gas (changed from 30M to 20M)
   0 // No coins sent with the deferred call
 );
 
@@ -626,7 +624,7 @@ deferredCallRegister(
   Context.callee().toString(), // Call this contract (itself)
   'releaseVestedTokens', // Call the internal release function
   releaseSlot,
-  30_000_000, // Gas
+  20_000_000, // Gas (changed from 30M to 20M)
   releaseArgs,
   0 // No coins sent with deferred call
 );
@@ -643,7 +641,7 @@ export function releaseVestedTokens(binArgs: StaticArray<u8>): void {
 generateEvent('releaseVestedTokens function called internally');
 
 const args = new Args(binArgs);
-// Get the vesting schedule ID from the deferred call arguments
+// Get the vesting schedule ID from the new deferred call arguments
 const vestingId = args.nextU64().expect('Missing vesting schedule ID for release');
 
 const scheduleKey = getVestingScheduleKey(vestingId);
@@ -695,7 +693,7 @@ if (amountToRelease > 0) {
 // If there's still amount left to claim after this release
 if (schedule.amountClaimed < schedule.totalAmount) {
   // Schedule the next release based on the current period + interval
-  schedule.nextReleasePeriod = currentPeriod + schedule.releaseInterval;
+  schedule.nextReleasePeriod = currentPeriod + schedule.releaseInterval + 5; // Add 5 periods buffer
 
   const nextReleaseArgs = new Args().add(vestingId).serialize();
   const nextReleaseSlot = findCheapestSlot(

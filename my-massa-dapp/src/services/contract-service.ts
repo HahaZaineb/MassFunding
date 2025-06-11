@@ -5,6 +5,29 @@ import { readSmartContractPublic } from '@/utils/smartContract';
 import { CONTRACT_ADDRESS } from '@/constants';
 import { convertProjectToProjectData } from '@/utils/project';
 
+const PERIODS_PER_DAY = 5760; // 86400 seconds / 15 seconds per period
+const PERIODS_PER_SECOND = 1 / 15;
+const SECONDS_PER_DAY = 86400;
+
+// Helper function to format periods into human-readable time (days, hours, minutes, seconds)
+export const formatPeriodsToHumanReadable = (periods: number): string => {
+  const totalSeconds = periods * 15; // 1 Massa period = 15 seconds
+
+  if (totalSeconds < 60) {
+    return `${Math.round(totalSeconds)} seconds`;
+  } else if (totalSeconds < 3600) {
+    const minutes = Math.floor(totalSeconds / 60);
+    const remainingSeconds = Math.round(totalSeconds % 60);
+    return `${minutes} minutes` + (remainingSeconds > 0 ? ` ${remainingSeconds} seconds` : '');
+  } else if (totalSeconds < 86400) {
+    const hours = Math.floor(totalSeconds / 3600);
+    const remainingMinutes = Math.round((totalSeconds % 3600) / 60);
+    return `${hours} hours` + (remainingMinutes > 0 ? ` ${remainingMinutes} minutes` : '');
+  } else {
+    const days = Math.round(totalSeconds / 86400);
+    return `${days} days`;
+  }
+};
 
 // Create a public provider for read-only operations
 const publicProvider = JsonRpcProvider.buildnet();
@@ -60,16 +83,39 @@ export async function createProject(
     // Use connectedAccount's provider for write operations
     const contract = new SmartContract(connectedAccount, CONTRACT_ADDRESS);
 
+    let lockPeriodInPeriods: bigint;
+    const lockPeriodFloat = parseFloat(projectData.lockPeriod);
+    if (lockPeriodFloat < 1) { // Assuming fractional days means seconds
+        const lockPeriodSeconds = lockPeriodFloat * SECONDS_PER_DAY;
+        lockPeriodInPeriods = BigInt(Math.round(lockPeriodSeconds * PERIODS_PER_SECOND));
+    } else { // Assuming whole days
+        lockPeriodInPeriods = BigInt(Math.round(lockPeriodFloat * PERIODS_PER_DAY));
+    }
+
+    let releaseIntervalInPeriods: bigint;
+    const releaseIntervalFloat = parseFloat(projectData.releaseInterval);
+    if (releaseIntervalFloat < 1) { // Assuming fractional days means seconds
+        const releaseIntervalSeconds = releaseIntervalFloat * SECONDS_PER_DAY;
+        releaseIntervalInPeriods = BigInt(Math.round(releaseIntervalSeconds * PERIODS_PER_SECOND));
+    } else { // Assuming whole days
+        releaseIntervalInPeriods = BigInt(Math.round(releaseIntervalFloat * PERIODS_PER_DAY));
+    }
+
     const args = new Args()
       .addString(projectData.title)
       .addString(projectData.description)
-      .addU64(BigInt(parseFloat(projectData.fundingGoal) * 1e9)) // Convert to nanoMAS BigInt
+      .addU64(BigInt(Math.round(parseFloat(projectData.fundingGoal) * 1e9))) // Convert to nanoMAS BigInt and round
       .addString(projectData.beneficiaryAddress)
       .addString(projectData.category)
-      .addU64(BigInt(projectData.lockPeriod)) // Convert to BigInt
-      .addU64(BigInt(projectData.releaseInterval)) // Convert to BigInt
+      .addU64(lockPeriodInPeriods) // Pass periods as u64
+      .addU64(releaseIntervalInPeriods) // Pass periods as u64
       .addU64(BigInt(projectData.releasePercentage)) // Convert to BigInt
       .addString(projectData.image);
+
+    console.log(`Debug: projectData.lockPeriod (original string): ${projectData.lockPeriod}`);
+    console.log(`Debug: projectData.releaseInterval (original string): ${projectData.releaseInterval}`);
+    console.log(`Debug: lockPeriod (converted periods): ${lockPeriodInPeriods}`);
+    console.log(`Debug: releaseInterval (converted periods): ${releaseIntervalInPeriods}`);
 
     const response = await contract.call('createProject', args);
     return response;
@@ -226,14 +272,32 @@ export interface ContractVestingScheduleData {
   nextReleasePeriod: number; // u64 in contract
 }
 
-export async function getVestingSchedule(vestingId: number): Promise<ContractVestingScheduleData> {
+export async function getVestingSchedule(vestingId: number): Promise<ContractVestingScheduleData | null> {
   try {
     const contract = new SmartContract(publicProvider, CONTRACT_ADDRESS);
     const args = new Args().addU64(BigInt(vestingId));
     const response = await contract.read('getVestingSchedule', args);
 
-    // Use bytesToSerializableObjectArray to deserialize the response
-    const [schedule] = bytesToSerializableObjectArray(response.value, VestingSchedule);
+    // IMPORTANT: If the contract returns an empty array for a non-existent schedule (e.g., completed and removed),
+    // we should treat this as "not found".
+    if (!response.value || response.value.length === 0) {
+      console.log(`DEBUG: getVestingSchedule - Vesting schedule ${vestingId} not found (empty response.value).`);
+      return null;
+    }
+
+    const schedule = new VestingSchedule();
+    try {
+      schedule.deserialize(response.value, 0);
+      console.log(`DEBUG: getVestingSchedule - deserialized schedule for vestingId ${vestingId}:`, schedule);
+      // Check if deserialized schedule has valid ID after deserialization
+      if (Number(schedule.id) !== vestingId) {
+          console.warn(`WARNING: getVestingSchedule - Deserialized schedule ID mismatch. Expected ${vestingId}, got ${Number(schedule.id)}. Returning null.`);
+          return null; // Return null if deserialization seems to have failed or returned wrong ID
+      }
+    } catch (deserializeError) {
+      console.error(`ERROR: getVestingSchedule - Deserialization failed for vestingId ${vestingId}:`, deserializeError);
+      return null; // Return null if deserialization throws an error
+    }
 
     return {
       id: Number(schedule.id),
@@ -247,8 +311,8 @@ export async function getVestingSchedule(vestingId: number): Promise<ContractVes
     };
 
   } catch (error) {
-    console.error('Error fetching vesting schedule:', error);
-    throw error;
+    console.error(`ERROR: getVestingSchedule - Error fetching vesting schedule ${vestingId}:`, error);
+    return null; // Return null on any error during fetch or processing
   }
 }
 
@@ -364,7 +428,9 @@ export async function fetchUserDonations(userAddress: string): Promise<ContractV
 
     for (const id of vestingIds) {
       const schedule = await getVestingSchedule(id);
-      donationSchedules.push(schedule);
+      if (schedule) { // Only push if schedule is not null
+        donationSchedules.push(schedule);
+      }
     }
 
     return donationSchedules;
@@ -517,7 +583,9 @@ export async function getDetailedVestingInfo(projectId: number): Promise<Detaile
   try {
     const selectedProject = await getProject(projectId); // Reuse existing getProject
     
-    if (!selectedProject || !selectedProject.vestingScheduleId) {
+    // If no vesting schedule ID is associated with the project (e.g., property is null or undefined)
+    // then no vesting schedule exists for this project yet.
+    if (!selectedProject.vestingScheduleId) {
       return { ...initialInfo, loading: false, hasVestingSchedule: false };
     }
 
@@ -527,6 +595,24 @@ export async function getDetailedVestingInfo(projectId: number): Promise<Detaile
       getVestingSchedule(vestingScheduleIdNum),
       getCurrentMassaPeriod(),
     ]);
+
+    // If fetchedVestingSchedule is null, it means the schedule was not found (e.g., completed and removed)
+    if (!fetchedVestingSchedule) {
+      const isCompleted = await isProjectVestingCompleted(projectId);
+      if (isCompleted) {
+        return {
+          ...initialInfo,
+          vestingScheduleId: selectedProject.vestingScheduleId,
+          vestingStart: 'Completed',
+          nextRelease: 'Completed',
+          amountReceived: 'All claimed',
+          amountLeft: '0',
+          hasVestingSchedule: true,
+          loading: false,
+        };
+      }
+      return { ...initialInfo, loading: false, hasVestingSchedule: false };
+    }
 
     const formatPeriodDifference = (targetPeriod: number, currentPeriod: number | null): string => {
       if (currentPeriod === null) return 'Loading...';
@@ -569,8 +655,8 @@ export async function getDetailedVestingInfo(projectId: number): Promise<Detaile
       nextRelease: formatPeriodDifference(fetchedVestingSchedule.nextReleasePeriod, currentPeriod),
       amountReceived: (fetchedVestingSchedule.amountClaimed / 1e9).toLocaleString(),
       amountLeft: ((fetchedVestingSchedule.totalAmount - fetchedVestingSchedule.amountClaimed) / 1e9).toLocaleString(),
-      lockPeriod: selectedProject.lockPeriod,
-      releaseInterval: selectedProject.releaseInterval,
+      lockPeriod: formatPeriodsToHumanReadable(Number(selectedProject.lockPeriod)), // Format lock period
+      releaseInterval: formatPeriodsToHumanReadable(Number(selectedProject.releaseInterval)), // Format release interval
       releasePercentage: selectedProject.releasePercentage,
       beneficiary: selectedProject.beneficiary,
       hasVestingSchedule: true,

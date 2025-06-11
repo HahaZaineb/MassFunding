@@ -28,10 +28,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCategoryColor } from '@/utils/functions';
 import ProjectStatus from './ProjectStatus';
-import {
-  DetailedVestingInfo,
-  getDetailedVestingInfo,
-} from '@/services/contract-service';
+import { getDetailedVestingInfo, DetailedVestingInfo } from '@/services/contract-service';
+
 
 interface ProjectCardProps {
   project: ProjectData & { image?: string };
@@ -173,7 +171,7 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
           <div className="flex flex-col items-center p-3 bg-slate-700/50 rounded-lg">
             <Clock className="h-4 w-4 mb-1 text-yellow-400" />
             <span className="text-white font-bold text-sm text-center">
-              Every {project.releaseInterval} days
+              Every {project.releaseInterval}
             </span>
             <span className="text-slate-400 text-xs">Interval</span>
           </div>
@@ -207,13 +205,13 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
                 <div className="flex justify-between">
                   <span className="text-slate-300">Lock Period:</span>
                   <span className="text-white font-medium">
-                    {project.lockPeriod} days
+                    {project.lockPeriod}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-300">Release Interval:</span>
                   <span className="text-white font-medium">
-                    {project.releaseInterval} days
+                    {project.releaseInterval}
                   </span>
                 </div>
                 <div className="flex justify-between">
