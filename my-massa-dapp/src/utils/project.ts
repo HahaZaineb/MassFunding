@@ -1,7 +1,7 @@
 import { Project } from "@/models/ContractModels";
 import { ProjectData } from "@/types";
 import { formatMas } from '@massalabs/massa-web3'
-import { getProjectSupportersCount, getProjectCreationDate } from "@/services/contract-service";
+import { getProjectSupportersCount, getProjectCreationDate, formatPeriodsToHumanReadable } from "@/services/contract-service";
 
 export async function convertProjectToProjectData(project: Project): Promise<ProjectData> {
   const supportersCount = await getProjectSupportersCount(project.projectId);
@@ -20,10 +20,11 @@ export async function convertProjectToProjectData(project: Project): Promise<Pro
     amountRaised: Number(formatMas(project.amountRaised)),
     beneficiary: project.beneficiary,
     category: project.category,
-    lockPeriod: (Number(project.lockPeriod) / 5760).toString(),
-    releaseInterval: (Number(project.releaseInterval) / 5760).toString(),
+    lockPeriod: formatPeriodsToHumanReadable(Number(project.lockPeriod)),
+    releaseInterval: formatPeriodsToHumanReadable(Number(project.releaseInterval)),
     releasePercentage: Number(project.releasePercentage),
     image: project.image,
+    creationPeriod: Number(project.creationPeriod),
     // Default values for properties not directly from contract or not needed from contract
     amountNeeded: Number(formatMas(project.fundingGoal - project.amountRaised)),
     supporters: supportersCount,

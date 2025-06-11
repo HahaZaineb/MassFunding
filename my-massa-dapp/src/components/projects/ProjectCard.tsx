@@ -27,10 +27,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCategoryColor } from '@/utils/functions';
 import ProjectStatus from './ProjectStatus';
-import {
-  DetailedVestingInfo,
-  getDetailedVestingInfo,
-} from '@/services/contract-service';
+
 
 interface ProjectCardProps {
   project: ProjectData & { image?: string };
@@ -42,8 +39,8 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
   const [openProjectUpdates, setOpenProjectUpdates] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [timeLeft, setTimeLeft] = useState('');
-  const [vestionDetails, setVestingDetails] =
-    useState<DetailedVestingInfo | null>(null);
+  // const [vestionDetails, setVestingDetails] =
+  //   useState<DetailedVestingInfo | null>(null);
 
   function getProjectStatus(
     project: ProjectData,
@@ -103,15 +100,15 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
     return () => clearInterval(interval);
   }, [project]);
 
-  const getDetailedVestingInfoHandler = async () => {
-    const details = await getDetailedVestingInfo(Number(project.id));
-    console.log(details, 'details...');
-    setVestingDetails(details);
-  };
+  // const getDetailedVestingInfoHandler = async () => {
+  //   const details = await getDetailedVestingInfo(Number(project.id));
+  //   console.log(details, 'details...');
+  //   setVestingDetails(details);
+  // };
 
-  useEffect(() => {
-    getDetailedVestingInfoHandler();
-  }, [project]);
+  // useEffect(() => {
+  //   getDetailedVestingInfoHandler();
+  // }, [project]);
 
   return (
     <Card className="bg-slate-800/80 border-slate-600 text-white overflow-hidden hover:shadow-2xl transition-all duration-300 hover:scale-105 backdrop-blur-sm border-2 hover:border-emerald-500/50">
@@ -172,7 +169,7 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
           <div className="flex flex-col items-center p-3 bg-slate-700/50 rounded-lg">
             <Clock className="h-4 w-4 mb-1 text-yellow-400" />
             <span className="text-white font-bold text-sm text-center">
-              Every {project.releaseInterval} days
+              Every {project.releaseInterval}
             </span>
             <span className="text-slate-400 text-xs">Interval</span>
           </div>
@@ -206,13 +203,13 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
                 <div className="flex justify-between">
                   <span className="text-slate-300">Lock Period:</span>
                   <span className="text-white font-medium">
-                    {project.lockPeriod} days
+                    {project.lockPeriod}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-300">Release Interval:</span>
                   <span className="text-white font-medium">
-                    {project.releaseInterval} days
+                    {project.releaseInterval}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -287,7 +284,7 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
               </div>
               <div className="text-orange-800 text-sm">
                 {project.releasePercentage}% released every{' '}
-                {project.releaseInterval} days.
+                {project.releaseInterval}.
               </div>
             </div>
           </div>

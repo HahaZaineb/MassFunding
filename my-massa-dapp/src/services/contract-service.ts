@@ -5,6 +5,29 @@ import { readSmartContractPublic } from '@/utils/smartContract';
 import { CONTRACT_ADDRESS } from '@/constants';
 import { convertProjectToProjectData } from '@/utils/project';
 
+const PERIODS_PER_DAY = 5760; // 86400 seconds / 15 seconds per period
+const PERIODS_PER_SECOND = 1 / 15;
+const SECONDS_PER_DAY = 86400;
+
+// Helper function to format periods into human-readable time (days, hours, minutes, seconds)
+export const formatPeriodsToHumanReadable = (periods: number): string => {
+  const totalSeconds = periods * 15; // 1 Massa period = 15 seconds
+
+  if (totalSeconds < 60) {
+    return `${Math.round(totalSeconds)} seconds`;
+  } else if (totalSeconds < 3600) {
+    const minutes = Math.floor(totalSeconds / 60);
+    const remainingSeconds = Math.round(totalSeconds % 60);
+    return `${minutes} minutes` + (remainingSeconds > 0 ? ` ${remainingSeconds} seconds` : '');
+  } else if (totalSeconds < 86400) {
+    const hours = Math.floor(totalSeconds / 3600);
+    const remainingMinutes = Math.round((totalSeconds % 3600) / 60);
+    return `${hours} hours` + (remainingMinutes > 0 ? ` ${remainingMinutes} minutes` : '');
+  } else {
+    const days = Math.round(totalSeconds / 86400);
+    return `${days} days`;
+  }
+};
 
 // Create a public provider for read-only operations
 const publicProvider = JsonRpcProvider.buildnet();
@@ -60,16 +83,39 @@ export async function createProject(
     // Use connectedAccount's provider for write operations
     const contract = new SmartContract(connectedAccount, CONTRACT_ADDRESS);
 
+    let lockPeriodInPeriods: bigint;
+    const lockPeriodFloat = parseFloat(projectData.lockPeriod);
+    if (lockPeriodFloat < 1) { // Assuming fractional days means seconds
+        const lockPeriodSeconds = lockPeriodFloat * SECONDS_PER_DAY;
+        lockPeriodInPeriods = BigInt(Math.round(lockPeriodSeconds * PERIODS_PER_SECOND));
+    } else { // Assuming whole days
+        lockPeriodInPeriods = BigInt(Math.round(lockPeriodFloat * PERIODS_PER_DAY));
+    }
+
+    let releaseIntervalInPeriods: bigint;
+    const releaseIntervalFloat = parseFloat(projectData.releaseInterval);
+    if (releaseIntervalFloat < 1) { // Assuming fractional days means seconds
+        const releaseIntervalSeconds = releaseIntervalFloat * SECONDS_PER_DAY;
+        releaseIntervalInPeriods = BigInt(Math.round(releaseIntervalSeconds * PERIODS_PER_SECOND));
+    } else { // Assuming whole days
+        releaseIntervalInPeriods = BigInt(Math.round(releaseIntervalFloat * PERIODS_PER_DAY));
+    }
+
     const args = new Args()
       .addString(projectData.title)
       .addString(projectData.description)
-      .addU64(BigInt(parseFloat(projectData.fundingGoal) * 1e9)) // Convert to nanoMAS BigInt
+      .addU64(BigInt(Math.round(parseFloat(projectData.fundingGoal) * 1e9))) // Convert to nanoMAS BigInt and round
       .addString(projectData.beneficiaryAddress)
       .addString(projectData.category)
-      .addU64(BigInt(projectData.lockPeriod)) // Convert to BigInt
-      .addU64(BigInt(projectData.releaseInterval)) // Convert to BigInt
+      .addU64(lockPeriodInPeriods) // Pass periods as u64
+      .addU64(releaseIntervalInPeriods) // Pass periods as u64
       .addU64(BigInt(projectData.releasePercentage)) // Convert to BigInt
       .addString(projectData.image);
+
+    console.log(`Debug: projectData.lockPeriod (original string): ${projectData.lockPeriod}`);
+    console.log(`Debug: projectData.releaseInterval (original string): ${projectData.releaseInterval}`);
+    console.log(`Debug: lockPeriod (converted periods): ${lockPeriodInPeriods}`);
+    console.log(`Debug: releaseInterval (converted periods): ${releaseIntervalInPeriods}`);
 
     const response = await contract.call('createProject', args);
     return response;
@@ -569,8 +615,8 @@ export async function getDetailedVestingInfo(projectId: number): Promise<Detaile
       nextRelease: formatPeriodDifference(fetchedVestingSchedule.nextReleasePeriod, currentPeriod),
       amountReceived: (fetchedVestingSchedule.amountClaimed / 1e9).toLocaleString(),
       amountLeft: ((fetchedVestingSchedule.totalAmount - fetchedVestingSchedule.amountClaimed) / 1e9).toLocaleString(),
-      lockPeriod: selectedProject.lockPeriod,
-      releaseInterval: selectedProject.releaseInterval,
+      lockPeriod: formatPeriodsToHumanReadable(Number(selectedProject.lockPeriod)), // Format lock period
+      releaseInterval: formatPeriodsToHumanReadable(Number(selectedProject.releaseInterval)), // Format release interval
       releasePercentage: selectedProject.releasePercentage,
       beneficiary: selectedProject.beneficiary,
       hasVestingSchedule: true,

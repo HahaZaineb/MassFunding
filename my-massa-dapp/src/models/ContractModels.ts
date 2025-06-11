@@ -133,4 +133,25 @@ export class ProjectUpdate implements Serializable<ProjectUpdate> {
     this.image = args.nextString();
     return { instance: this, offset: args.getOffset() };
   }
+}
+
+export class ProjectUserDonation implements Serializable<ProjectUserDonation> {
+  constructor(
+    public projectId: bigint = 0n,
+    public amount: bigint = 0n
+  ) {}
+
+  serialize(): Uint8Array {
+    const args = new Args()
+      .addU64(this.projectId)
+      .addU64(this.amount);
+    return args.serialize();
+  }
+
+  deserialize(data: Uint8Array, offset: number): DeserializedResult<ProjectUserDonation> {
+    const args = new Args(data, offset);
+    this.projectId = args.nextU64();
+    this.amount = args.nextU64();
+    return { instance: this, offset: args.getOffset() };
+  }
 } 
