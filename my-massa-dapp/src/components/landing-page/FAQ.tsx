@@ -21,9 +21,9 @@ const FAQSection = () => {
         "Simply click on 'Request Funding' and fill out the project details, including your funding goal, vesting schedule, and project milestones. Once approved, your project will be listed on the platform.",
     },
     {
-      question: 'How do I start a project?',
+      question: 'How does crowdfunding work on Massa?',
       answer:
-        "Simply click on 'Request Funding' and fill out the project details, including your funding goal, vesting schedule, and project milestones. Once approved, your project will be listed on the platform.",
+        "Creators launch campaigns by deploying smart contracts on Massa. Backers contribute MAS tokens to fund the campaign. If funding goals are met, the creator receives the funds. If not, contributors can reclaim their MAS.",
     },
   ];
 
