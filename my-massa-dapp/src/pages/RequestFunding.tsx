@@ -38,6 +38,7 @@ import { useAccountStore } from '@massalabs/react-ui-kit/src/lib/ConnectMassaWal
 
 export default function RequestFunding() {
   const { toast } = useToast();
+  
   const { connectedAccount } = useAccountStore()
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
