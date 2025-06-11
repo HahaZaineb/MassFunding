@@ -1,10 +1,8 @@
 import { configureStore } from '@reduxjs/toolkit'
 import projectReducer from './slices/projectSlice'
-import accountReducer from './slices/accountSlice';
 
 export const store = configureStore({
   reducer: {
-    account: accountReducer,
     projects: projectReducer,
   }
 })

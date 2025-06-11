@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   AppBar,
   Toolbar,
@@ -27,17 +27,22 @@ import WalletConnectModal from '../WalletConnectModal';
 import { useAccountStore } from '@massalabs/react-ui-kit';
 import { shortenAddress } from '@/utils/functions';
 import { HandCoins, Rocket, Home } from 'lucide-react';
-import { useAppDispatch } from '@/store/hooks';
-import { setConnectedAccount } from '@/store/slices/accountSlice';
 
 const navItems = [
-  { label: 'Home', path: '/', icon: <Home className='w-4' /> },
-  { label: 'Explore Projects', path: '/projects', icon: <Rocket className='w-4' /> },
-  { label: 'Request Funding', path: '/request-funding', icon: <HandCoins className='w-4' /> },
+  { label: 'Home', path: '/', icon: <Home className="w-4" /> },
+  {
+    label: 'Explore Projects',
+    path: '/projects',
+    icon: <Rocket className="w-4" />,
+  },
+  {
+    label: 'Request Funding',
+    path: '/request-funding',
+    icon: <HandCoins className="w-4" />,
+  },
 ];
 
 export function Navbar() {
-  const dispatch = useAppDispatch();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -64,12 +69,6 @@ export function Navbar() {
 
   const menuOpen = Boolean(anchorEl);
 
-  useEffect(() => {
-    if(connectedAccount){
-      dispatch(setConnectedAccount(connectedAccount))
-    }
-  },[connectedAccount])
-
   return (
     <>
       <AppBar
@@ -94,7 +93,8 @@ export function Navbar() {
                     key={item.path}
                     onClick={() => handleNavigate(item.path)}
                     sx={{
-                      color: location.pathname === item.path ? '#00ff9d' : '#fff',
+                      color:
+                        location.pathname === item.path ? '#00ff9d' : '#fff',
                       fontWeight: '500',
                       textTransform: 'none',
                       '&:hover': { color: '#00ff9d' },

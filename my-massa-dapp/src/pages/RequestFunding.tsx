@@ -34,11 +34,11 @@ import {
 import { createProject } from '@/services/contract-service';
 import { CATEGORIES } from '@/constants';
 import { Slider } from '@mui/material';
-import { useAppSelector } from '@/store/hooks';
+import { useAccountStore } from '@massalabs/react-ui-kit/src/lib/ConnectMassaWallets';
 
 export default function RequestFunding() {
   const { toast } = useToast();
-  const { connectedAccount } = useAppSelector((state) => state.account);
+  const { connectedAccount } = useAccountStore()
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     projectName: '',
@@ -345,6 +345,7 @@ export default function RequestFunding() {
                           <SelectValue placeholder="Select release interval" />
                         </SelectTrigger>
                         <SelectContent className="bg-[#1a2340] border-[#00ff9d]/20 text-white">
+                          <SelectItem value="7">Weekly (7 days)</SelectItem>
                           <SelectItem value="7">Weekly (7 days)</SelectItem>
                           <SelectItem value="30">Monthly (30 days)</SelectItem>
                           <SelectItem value="90">
