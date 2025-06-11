@@ -15,7 +15,7 @@ interface ProjectMiniCardProps {
 
 const ProjectMiniCard = ({ project, showFundBtn = true }: ProjectMiniCardProps) => {
   const navigate = useNavigate();
-  const percentFunded = (project.amountRaised / project.amountNeeded) * 100;
+  const percentFunded = (project.amountRaised / project.goalAmount) * 100;
 
   return (
     <motion.div
@@ -55,7 +55,7 @@ const ProjectMiniCard = ({ project, showFundBtn = true }: ProjectMiniCardProps) 
         <div className="mb-4">
           <div className="flex justify-between text-sm mb-1">
             <span className="text-white">
-              {project.amountRaised} / {project.amountNeeded} MAS
+              {project.amountRaised} / {project.goalAmount} MAS
             </span>
             <span className="text-[#ffffff]">{percentFunded.toFixed(2)}%</span>
           </div>
