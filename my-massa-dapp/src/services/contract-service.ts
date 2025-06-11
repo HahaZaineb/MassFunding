@@ -476,3 +476,108 @@ export async function isProjectVestingCompleted(projectId: number): Promise<bool
     return true;
   }
 }
+
+// Interface for detailed vesting information to be displayed on the frontend.
+export interface DetailedVestingInfo {
+  vestingScheduleId: string | null;
+  vestingStart: string; // Formatted time since vesting started
+  nextRelease: string; // Formatted time until next release
+  amountReceived: string; // Formatted amount received (MAS)
+  amountLeft: string; // Formatted amount left (MAS)
+  lockPeriod: string; // Original lock period in days
+  releaseInterval: string; // Original release interval in days
+  releasePercentage: number; // Original release percentage
+  beneficiary: string; // Beneficiary address
+  hasVestingSchedule: boolean; // Indicates if a vesting schedule exists for the project
+  loading: boolean;
+}
+
+/**
+ * Fetches and formats detailed vesting schedule information for a given project.
+ * This function combines data from multiple contract getters and formats it for display.
+ *
+ * @param projectId The ID of the project to fetch vesting details for.
+ * @returns A promise that resolves to a DetailedVestingInfo object, or null if no vesting schedule exists.
+ */
+export async function getDetailedVestingInfo(projectId: number): Promise<DetailedVestingInfo> {
+  const initialInfo: DetailedVestingInfo = {
+    vestingScheduleId: null,
+    vestingStart: 'N/A',
+    nextRelease: 'N/A',
+    amountReceived: 'N/A',
+    amountLeft: 'N/A',
+    lockPeriod: 'N/A',
+    releaseInterval: 'N/A',
+    releasePercentage: 0,
+    beneficiary: 'N/A',
+    hasVestingSchedule: false,
+    loading: true,
+  };
+
+  try {
+    const selectedProject = await getProject(projectId); // Reuse existing getProject
+    
+    if (!selectedProject || !selectedProject.vestingScheduleId) {
+      return { ...initialInfo, loading: false, hasVestingSchedule: false };
+    }
+
+    const vestingScheduleIdNum = Number(selectedProject.vestingScheduleId);
+
+    const [fetchedVestingSchedule, currentPeriod] = await Promise.all([
+      getVestingSchedule(vestingScheduleIdNum),
+      getCurrentMassaPeriod(),
+    ]);
+
+    const formatPeriodDifference = (targetPeriod: number, currentPeriod: number | null): string => {
+      if (currentPeriod === null) return 'Loading...';
+
+      const diffPeriods = targetPeriod - currentPeriod;
+      const seconds = Math.abs(diffPeriods * 15); // 1 Massa period = 15 seconds
+
+      if (diffPeriods < 0) {
+        // Past
+        if (seconds < 60) {
+          return `${Math.floor(seconds)} seconds ago`;
+        } else if (seconds < 3600) {
+          return `${Math.floor(seconds / 60)} minutes ago`;
+        } else if (seconds < 86400) {
+          return `${Math.floor(seconds / 3600)} hours ago`;
+        } else {
+          return `${Math.floor(seconds / 86400)} days ago`;
+        }
+      } else if (diffPeriods > 0) {
+        // Future
+        if (seconds < 60) {
+          return `in ${Math.floor(seconds)} seconds`;
+        } else if (seconds < 3600) {
+          return `in ${Math.floor(seconds / 60)} minutes`;
+        } else if (seconds < 86400) {
+          return `in ${Math.floor(seconds / 3600)} hours`;
+        } else {
+          return `in ${Math.floor(seconds / 86400)} days`;
+        }
+      } else {
+        return 'now';
+      }
+    };
+
+    const vestingStartPeriod = selectedProject.creationPeriod + Number(selectedProject.lockPeriod);
+
+    return {
+      vestingScheduleId: selectedProject.vestingScheduleId,
+      vestingStart: formatPeriodDifference(vestingStartPeriod, currentPeriod),
+      nextRelease: formatPeriodDifference(fetchedVestingSchedule.nextReleasePeriod, currentPeriod),
+      amountReceived: (fetchedVestingSchedule.amountClaimed / 1e9).toLocaleString(),
+      amountLeft: ((fetchedVestingSchedule.totalAmount - fetchedVestingSchedule.amountClaimed) / 1e9).toLocaleString(),
+      lockPeriod: selectedProject.lockPeriod,
+      releaseInterval: selectedProject.releaseInterval,
+      releasePercentage: selectedProject.releasePercentage,
+      beneficiary: selectedProject.beneficiary,
+      hasVestingSchedule: true,
+      loading: false,
+    };
+  } catch (error) {
+    console.error('Error fetching detailed vesting info:', error);
+    return { ...initialInfo, loading: false };
+  }
+}

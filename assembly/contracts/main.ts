@@ -55,46 +55,7 @@ export const VESTING_SCHEDULE_COMPLETED_EVENT = 'VESTING_SCHEDULE_COMPLETED';
 export const TOKENS_RELEASED_EVENT = 'TOKENS_RELEASED';
 export const UPDATE_ADDED_EVENT = 'UPDATE_ADDED';
 
-// Add ProjectMilestone class back
-class ProjectMilestone implements Serializable {
-  public id: string;
-  public title: string;
-  public description: string;
-  public deadline: string;
-  public completed: bool;
-  public progress: u64;
 
-  constructor() {
-    this.id = '';
-    this.title = '';
-    this.description = '';
-    this.deadline = '';
-    this.completed = false;
-    this.progress = 0;
-  }
-
-  serialize(): StaticArray<u8> {
-    return new Args()
-      .add(this.id)
-      .add(this.title)
-      .add(this.description)
-      .add(this.deadline)
-      .add(this.completed)
-      .add(this.progress)
-      .serialize();
-  }
-
-  deserialize(data: StaticArray<u8>, offset: u64 = 0): Result<i32> {
-    const args = new Args(data, i32(offset));
-    this.id = args.nextString().expect('Failed to deserialize milestone ID');
-    this.title = args.nextString().expect('Failed to deserialize milestone title');
-    this.description = args.nextString().expect('Failed to deserialize milestone description');
-    this.deadline = args.nextString().expect('Failed to deserialize milestone deadline');
-    this.completed = args.nextBool().expect('Failed to deserialize milestone completed status');
-    this.progress = args.nextU64().expect('Failed to deserialize milestone progress');
-    return new Result(args.offset);
-  }
-}
 
 // Update ProjectUpdate class to add image field
 class ProjectUpdate implements Serializable {

@@ -29,6 +29,8 @@ export interface ProjectData {
   deadline?: string
   image?: string
   creationDate?: string
+  vestingScheduleId?: string | null;
+  creationPeriod: number;
 }
 
 export interface WalletInfo {
@@ -54,6 +56,7 @@ export interface ProjectUpdate {
   title: string
   content: string
   author: string
+  image?: string;
 }
 
 export interface ProjectMilestone {
