@@ -27,6 +27,10 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCategoryColor } from '@/utils/functions';
 import ProjectStatus from './ProjectStatus';
+import {
+  DetailedVestingInfo,
+  getDetailedVestingInfo,
+} from '@/services/contract-service';
 
 interface ProjectCardProps {
   project: ProjectData & { image?: string };
@@ -38,6 +42,8 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
   const [openProjectUpdates, setOpenProjectUpdates] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [timeLeft, setTimeLeft] = useState('');
+  const [vestionDetails, setVestingDetails] =
+    useState<DetailedVestingInfo | null>(null);
 
   function getProjectStatus(
     project: ProjectData,
@@ -95,6 +101,16 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
     const interval = setInterval(updateCountdown, 1000);
 
     return () => clearInterval(interval);
+  }, [project]);
+
+  const getDetailedVestingInfoHandler = async () => {
+    const details = await getDetailedVestingInfo(Number(project.id));
+    console.log(details, 'details...');
+    setVestingDetails(details);
+  };
+
+  useEffect(() => {
+    getDetailedVestingInfoHandler();
   }, [project]);
 
   return (
@@ -251,6 +267,46 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          </div>
+        )}
+        {getProjectStatus(project) === 'release' && (
+          <div
+            className="flex flex-col items-center justify-center w-full p-3 rounded-xl border shadow-lg"
+            style={{
+              height: '90px',
+              background: 'linear-gradient(45deg, #ffd180, #ffab40)',
+              borderColor: '#ffab40',
+            }}
+          >
+            <div className="text-center space-y-2">
+              <div className="text-orange-900 text-xs font-semibold tracking-wider flex items-center justify-center">
+                <Clock className="w-3 h-3 mr-2" />
+                FUNDS BEING RELEASED
+              </div>
+              <div className="text-orange-800 text-sm">
+                {project.releasePercentage}% released every{' '}
+                {project.releaseInterval} days.
+              </div>
+            </div>
+          </div>
+        )}
+
+        {getProjectStatus(project) === 'completed' && (
+          <div
+            className="w-full p-3 rounded-xl border shadow-lg"
+            style={{
+              background: 'linear-gradient(45deg, #607d8b, #90a4ae)',
+              borderColor: '#78909c', // approximate border color between the gradient colors
+            }}
+          >
+            <div className="text-center space-y-2">
+              <div className="text-gray-300 text-xs font-semibold tracking-wider">
+                PROJECT WRAPPED UP
+              </div>
+              <div className="text-white text-sm">
+                Total Funds Distributed: {12} MAS
               </div>
             </div>
           </div>

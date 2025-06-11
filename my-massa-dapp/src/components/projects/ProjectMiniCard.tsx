@@ -211,7 +211,24 @@ const ProjectMiniCard = ({
               </div>
             </div>
           )}
-
+          {getProjectStatus(project) === 'completed' && (
+            <div
+              className="w-full p-3 rounded-xl border shadow-lg"
+              style={{
+                background: 'linear-gradient(45deg, #607d8b, #90a4ae)',
+                borderColor: '#78909c', // approximate border color between the gradient colors
+              }}
+            >
+              <div className="text-center space-y-2">
+                <div className="text-gray-300 text-xs font-semibold tracking-wider">
+                  PROJECT WRAPPED UP
+                </div>
+                <div className="text-white text-sm">
+                  Total Funds Distributed: {12} MAS
+                </div>
+              </div>
+            </div>
+          )}
           {showFundBtn && getProjectStatus(project) === 'live' && (
             <Button
               onClick={() => navigate('/fund/' + project.id)}
