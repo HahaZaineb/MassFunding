@@ -26,7 +26,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import WalletConnectModal from '../WalletConnectModal';
 import { useAccountStore } from '@massalabs/react-ui-kit';
 import { shortenAddress } from '@/utils/functions';
-import { ArrowRight, HandCoins, Rocket, Users, Home } from 'lucide-react';
+import { HandCoins, Rocket, Home } from 'lucide-react';
 import { useAppDispatch } from '@/store/hooks';
 import { setConnectedAccount } from '@/store/slices/accountSlice';
 

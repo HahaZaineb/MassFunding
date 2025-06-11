@@ -9,7 +9,6 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { Navbar } from '@/components/layout/navbar';
 import { Footer } from '@/components/layout/footer';
 import Loader from '@/components/Loader';
-import { ProjectProvider } from '@/context/project-context';
 import { Provider } from 'react-redux';
 import { store } from '@/store';
 import LandingPage from '@/pages/Home';
@@ -20,6 +19,7 @@ import ProfilePage from './pages/Profile';
 import PrivateRoute from './components/PrivateRoute';
 import { FundPage } from './pages/Fund';
 import SwapPage from './pages/swap';
+import { ToastProvider } from './contexts/ToastProvider';
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
@@ -41,7 +41,7 @@ function App() {
   return (
     <ThemeProvider>
       <Provider store={store}>
-        <ProjectProvider>
+        <ToastProvider>
           <Router>
             <Navbar />
             <Routes>
@@ -63,7 +63,7 @@ function App() {
             </Routes>
             <Footer />
           </Router>
-        </ProjectProvider>
+        </ToastProvider>
       </Provider>
     </ThemeProvider>
   );

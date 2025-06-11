@@ -6,7 +6,7 @@ export const store = configureStore({
   reducer: {
     account: accountReducer,
     projects: projectReducer,
-  },
+  }
 })
 
 export type RootState = ReturnType<typeof store.getState>

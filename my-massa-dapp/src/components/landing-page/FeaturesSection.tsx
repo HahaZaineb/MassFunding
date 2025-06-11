@@ -11,6 +11,27 @@ const FeaturesSection = () => {
           How It Works
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Decentralized and Trustless Funding */}
+          <motion.div
+            className="bg-[#0f1629] p-6 rounded-lg border border-[#00ff9d]/20 flex flex-col items-center text-center"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            viewport={{ once: true }}
+          >
+            <div className="w-12 h-12 rounded-full flex items-center justify-center mb-4 bg-[#fbbf24]/20">
+              <Coins className="text-[#fbbf24] w-6 h-6" />
+            </div>
+            <h3 className="text-xl font-bold text-white mb-3">
+              Decentralized and Trustless Funding
+            </h3>
+            <p className="text-slate-300">
+              Projects launch fundraising campaigns directly on the Massa
+              blockchain, where smart contracts handle funds automatically. This
+              removes the need for intermediaries and ensures trustless,
+              transparent transactions.
+            </p>
+          </motion.div>
           {/* Secure Vesting */}
           <motion.div
             className="bg-[#0f1629] p-6 rounded-lg border border-[#00ff9d]/20 flex flex-col items-center text-center"
@@ -26,26 +47,9 @@ const FeaturesSection = () => {
               Secure Vesting
             </h3>
             <p className="text-slate-300">
-              Funds are released according to predefined vesting schedules,
-              ensuring project accountability.
-            </p>
-          </motion.div>
-
-          {/* NFT Receipts */}
-          <motion.div
-            className="bg-[#0f1629] p-6 rounded-lg border border-[#00ff9d]/20 flex flex-col items-center text-center"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            viewport={{ once: true }}
-          >
-            <div className="w-12 h-12 rounded-full flex items-center justify-center mb-4 bg-[#fbbf24]/20">
-              <Coins className="text-[#fbbf24] w-6 h-6" />
-            </div>
-            <h3 className="text-xl font-bold text-white mb-3">NFT Receipts</h3>
-            <p className="text-slate-300">
-              Receive unique NFTs as proof of contribution that can be used for
-              governance voting.
+              Funds are systematically released based on predefined vesting
+              schedules, providing transparency and ensuring the project remains
+              accountable throughout its development lifecycle.
             </p>
           </motion.div>
 
@@ -64,8 +68,9 @@ const FeaturesSection = () => {
               Milestone Tracking
             </h3>
             <p className="text-slate-300">
-              Track project progress through transparent milestones and regular
-              updates from project creators.
+              Monitor project progress effortlessly with transparent milestone
+              checkpoints and consistent updates directly from the creators,
+              ensuring full visibility and confidence every step of the way.
             </p>
           </motion.div>
         </div>
