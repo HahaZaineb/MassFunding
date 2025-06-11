@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Chip, styled } from '@mui/material';
 import { ProjectData } from '@/types';
+import { isProjectVestingCompleted } from '@/services/contract-service';
 
 const statusMap = {
   live: {
@@ -9,11 +10,11 @@ const statusMap = {
   },
   release: {
     label: 'In Release',
-    background: 'linear-gradient(45deg, #1e88e5, #42a5f5)',
+    background: 'linear-gradient(45deg, #ff9100, #ff6d00)',
   },
   completed: {
     label: 'Completed',
-    background: 'linear-gradient(45deg, #6d4c41, #a1887f)',
+    background: 'linear-gradient(45deg, #607d8b, #90a4ae)',
   },
 };
 
@@ -63,36 +64,49 @@ interface StatusChipProps {
 }
 
 const ProjectStatus: React.FC<StatusChipProps> = ({ project, sx }) => {
-  const status = getProjectStatus(project);
-  const { label, background } = statusMap[status] || statusMap.completed;
+  const [vestingCompleted, setVestingCompleted] = useState(false);
+  const [status, setStatus] = useState<'live' | 'release' | 'completed'>('completed');
 
-  function getProjectStatus(
-    project: ProjectData,
-  ): 'live' | 'release' | 'completed' {
-    let isLocked = true;
-    if (project?.creationDate) {
-      const createdAt = new Date(project.creationDate);
-      const lockDurationDays = 30;
-      const now = new Date();
-      const lockEndDate = new Date(
-        createdAt.getTime() + lockDurationDays * 24 * 60 * 60 * 1000,
-      );
-      isLocked = now < lockEndDate;
-    }
+  const checkIfLocked = (creationDate: string): boolean => {
+    const createdAt = new Date(creationDate);
+    const lockDurationDays = 30;
+    const now = new Date();
+    const lockEndDate = new Date(
+      createdAt.getTime() + lockDurationDays * 24 * 60 * 60 * 1000
+    );
+    return now < lockEndDate;
+  };
 
-    if (project.amountRaised < project.goalAmount && isLocked) return 'live';
-    else if (project.amountRaised === project.goalAmount) return 'release';
-    else if (!isLocked) return 'release';
-    else return 'completed';
-  }
+  const getProjectStatus = (): 'live' | 'release' | 'completed' => {
+    const isLocked = project.creationDate ? checkIfLocked(project.creationDate) : true;
+
+    if (vestingCompleted) return 'completed';
+    if (!isLocked) return 'release';
+    if (project.amountRaised >= project.goalAmount) return 'release';
+
+    return 'live';
+  };
+
+  useEffect(() => {
+    const fetchVestingStatus = async () => {
+      const res = await isProjectVestingCompleted(Number(project.id));
+      setVestingCompleted(res);
+    };
+    fetchVestingStatus();
+  }, [project.id]);
+
+  useEffect(() => {
+    const statusValue = getProjectStatus();
+    setStatus(statusValue);
+  }, [project, vestingCompleted]);
 
   return (
     <div className="absolute top-3 left-4">
       <StyledChip
-        label={label}
+        label={statusMap[status].label}
         icon={status === 'live' ? <PulseCircle /> : undefined}
         style={{
-          background,
+          background: statusMap[status].background,
           ...sx,
         }}
       />
