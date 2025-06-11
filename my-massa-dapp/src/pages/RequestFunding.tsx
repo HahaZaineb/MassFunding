@@ -74,7 +74,7 @@ export default function RequestFunding() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSliderChange = (e: any, value: number) => {
+  const handleSliderChange = (_: any, value: number) => {
     setFormData((prev) => ({ ...prev, releasePercentage: value }));
   };
 

@@ -6,7 +6,7 @@ import NoProjectFound from './NoProjectFound';
 import MyProjectCard from './MyProjectCard';
 
 export default function MyProjects() {
-  const { projects, getProject } = useProjects();
+  const { projects } = useProjects();
   const { connectedAccount } = useAccountStore();
 
   console.log('All projects:', projects);

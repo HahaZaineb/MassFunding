@@ -5,7 +5,6 @@ import { TrendingUp, Users, DollarSign } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAccountStore } from '@massalabs/react-ui-kit';
 import { useProjects } from '@/context/project-context';
-import { formatMas } from '@massalabs/massa-web3';
 
 export default function Stats() {
   const { projects } = useProjects();
