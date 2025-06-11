@@ -13,7 +13,7 @@ import { Textarea } from '../ui/textarea';
 import { Label } from '../ui/label';
 import { ProjectData } from '@/types';
 import { useProjects } from '@/context/project-context';
-import { addUpdate, ContractProjectUpdateData } from '@/services/contract-service';
+import { addUpdate } from '@/services/contract-service';
 import { useAccountStore } from '@massalabs/react-ui-kit';
 
 interface AddUpdateModalProps {

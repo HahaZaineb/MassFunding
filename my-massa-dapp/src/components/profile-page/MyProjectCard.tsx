@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, Calendar, Eye } from 'lucide-react';
+import { Calendar, Eye } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { ProjectData } from '@/types';
 import ProjectUpdates from '../projects/ProjectUpdates';
