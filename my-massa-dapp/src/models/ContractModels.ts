@@ -1,4 +1,4 @@
-import { Serializable, Args, DeserializedResult } from "@massalabs/massa-web3";
+import { Serializable, Args, DeserializedResult, Address } from "@massalabs/massa-web3";
 
 export class Project implements Serializable<Project> {
   constructor(

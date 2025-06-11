@@ -272,14 +272,32 @@ export interface ContractVestingScheduleData {
   nextReleasePeriod: number; // u64 in contract
 }
 
-export async function getVestingSchedule(vestingId: number): Promise<ContractVestingScheduleData> {
+export async function getVestingSchedule(vestingId: number): Promise<ContractVestingScheduleData | null> {
   try {
     const contract = new SmartContract(publicProvider, CONTRACT_ADDRESS);
     const args = new Args().addU64(BigInt(vestingId));
     const response = await contract.read('getVestingSchedule', args);
 
-    // Use bytesToSerializableObjectArray to deserialize the response
-    const [schedule] = bytesToSerializableObjectArray(response.value, VestingSchedule);
+    // IMPORTANT: If the contract returns an empty array for a non-existent schedule (e.g., completed and removed),
+    // we should treat this as "not found".
+    if (!response.value || response.value.length === 0) {
+      console.log(`DEBUG: getVestingSchedule - Vesting schedule ${vestingId} not found (empty response.value).`);
+      return null;
+    }
+
+    const schedule = new VestingSchedule();
+    try {
+      schedule.deserialize(response.value, 0);
+      console.log(`DEBUG: getVestingSchedule - deserialized schedule for vestingId ${vestingId}:`, schedule);
+      // Check if deserialized schedule has valid ID after deserialization
+      if (Number(schedule.id) !== vestingId) {
+          console.warn(`WARNING: getVestingSchedule - Deserialized schedule ID mismatch. Expected ${vestingId}, got ${Number(schedule.id)}. Returning null.`);
+          return null; // Return null if deserialization seems to have failed or returned wrong ID
+      }
+    } catch (deserializeError) {
+      console.error(`ERROR: getVestingSchedule - Deserialization failed for vestingId ${vestingId}:`, deserializeError);
+      return null; // Return null if deserialization throws an error
+    }
 
     return {
       id: Number(schedule.id),
@@ -293,8 +311,8 @@ export async function getVestingSchedule(vestingId: number): Promise<ContractVes
     };
 
   } catch (error) {
-    console.error('Error fetching vesting schedule:', error);
-    throw error;
+    console.error(`ERROR: getVestingSchedule - Error fetching vesting schedule ${vestingId}:`, error);
+    return null; // Return null on any error during fetch or processing
   }
 }
 
@@ -410,7 +428,9 @@ export async function fetchUserDonations(userAddress: string): Promise<ContractV
 
     for (const id of vestingIds) {
       const schedule = await getVestingSchedule(id);
-      donationSchedules.push(schedule);
+      if (schedule) { // Only push if schedule is not null
+        donationSchedules.push(schedule);
+      }
     }
 
     return donationSchedules;
@@ -563,7 +583,9 @@ export async function getDetailedVestingInfo(projectId: number): Promise<Detaile
   try {
     const selectedProject = await getProject(projectId); // Reuse existing getProject
     
-    if (!selectedProject || !selectedProject.vestingScheduleId) {
+    // If no vesting schedule ID is associated with the project (e.g., property is null or undefined)
+    // then no vesting schedule exists for this project yet.
+    if (!selectedProject.vestingScheduleId) {
       return { ...initialInfo, loading: false, hasVestingSchedule: false };
     }
 
@@ -573,6 +595,24 @@ export async function getDetailedVestingInfo(projectId: number): Promise<Detaile
       getVestingSchedule(vestingScheduleIdNum),
       getCurrentMassaPeriod(),
     ]);
+
+    // If fetchedVestingSchedule is null, it means the schedule was not found (e.g., completed and removed)
+    if (!fetchedVestingSchedule) {
+      const isCompleted = await isProjectVestingCompleted(projectId);
+      if (isCompleted) {
+        return {
+          ...initialInfo,
+          vestingScheduleId: selectedProject.vestingScheduleId,
+          vestingStart: 'Completed',
+          nextRelease: 'Completed',
+          amountReceived: 'All claimed',
+          amountLeft: '0',
+          hasVestingSchedule: true,
+          loading: false,
+        };
+      }
+      return { ...initialInfo, loading: false, hasVestingSchedule: false };
+    }
 
     const formatPeriodDifference = (targetPeriod: number, currentPeriod: number | null): string => {
       if (currentPeriod === null) return 'Loading...';

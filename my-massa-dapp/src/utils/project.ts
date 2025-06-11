@@ -25,6 +25,7 @@ export async function convertProjectToProjectData(project: Project): Promise<Pro
     releasePercentage: Number(project.releasePercentage),
     image: project.image,
     creationPeriod: Number(project.creationPeriod),
+    vestingScheduleId: project.vestingScheduleId.toString(),
     // Default values for properties not directly from contract or not needed from contract
     amountNeeded: Number(formatMas(project.fundingGoal - project.amountRaised)),
     supporters: supportersCount,

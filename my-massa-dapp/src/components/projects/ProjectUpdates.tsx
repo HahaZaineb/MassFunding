@@ -149,39 +149,39 @@ const ProjectUpdates: React.FC<ProjectUpdatesProps> = ({ open, onClose, projectI
           <div className="space-y-4 p-6">
             <div className="space-y-4">
               <div className="text-xl font-bold text-[#00ff9d] mb-2">Project Updates</div>
-              {updates.map((update) => (
-                <div
-                  key={update.id}
-                  className="bg-[#1a2340] border border-[#00ff9d]/10 rounded-lg p-4"
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <h4 className="font-semibold text-white text-sm">
-                      {update.title}
-                    </h4>
-                    <div className="flex items-center text-xs text-slate-400">
-                      <Calendar className="h-3 w-3 mr-1" />
+                  {updates.map((update) => (
+                    <div
+                      key={update.id}
+                      className="bg-[#1a2340] border border-[#00ff9d]/10 rounded-lg p-4"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <h4 className="font-semibold text-white text-sm">
+                          {update.title}
+                        </h4>
+                        <div className="flex items-center text-xs text-slate-400">
+                          <Calendar className="h-3 w-3 mr-1" />
                       {getTimeAgo(update.date)}
-                    </div>
-                  </div>
+                        </div>
+                      </div>
                   {update.image && (
                     <img src={update.image} alt="Update" className="mb-2 max-h-48 rounded-lg border border-[#00ff9d]/10" />
                   )}
-                  <p className="text-slate-300 text-xs leading-relaxed mb-2">
-                    {update.content}
-                  </p>
-                  <div className="text-xs text-slate-500">
-                    By {update.author}
-                  </div>
-                </div>
-              ))}
+                      <p className="text-slate-300 text-xs leading-relaxed mb-2">
+                        {update.content}
+                      </p>
+                      <div className="text-xs text-slate-500">
+                        By {update.author}
+                      </div>
+                    </div>
+                  ))}
 
-              {updates.length === 0 && (
-                <div className="text-center py-6">
-                  <p className="text-slate-400 text-sm">
-                    No updates posted yet.
-                  </p>
-                </div>
-              )}
+                  {updates.length === 0 && (
+                    <div className="text-center py-6">
+                      <p className="text-slate-400 text-sm">
+                        No updates posted yet.
+                      </p>
+                    </div>
+                  )}
             </div>
           </div>
         </motion.div>

@@ -21,8 +21,10 @@ import { FundPage } from './pages/Fund';
 import SwapPage from './pages/swap';
 import { ToastProvider } from './contexts/ToastProvider';
 import { ProjectProvider } from './context/project-context';
+import useAccountSync from './hooks/useAccountSync';
 
 function App() {
+  useAccountSync();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {

@@ -34,11 +34,11 @@ import {
 import { createProject } from '@/services/contract-service';
 import { CATEGORIES } from '@/constants';
 import { Slider } from '@mui/material';
-import { useAppSelector } from '@/store/hooks';
+import { useAccountStore } from '@massalabs/react-ui-kit/src/lib/ConnectMassaWallets';
 
 export default function RequestFunding() {
   const { toast } = useToast();
-  const { connectedAccount } = useAppSelector((state) => state.account);
+  const { connectedAccount } = useAccountStore()
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     projectName: '',

@@ -5,11 +5,22 @@ import { Button } from '@/components/ui/button';
 import { ProjectData } from '@/types';
 import { useNavigate } from 'react-router-dom';
 import ProgressBar from '../ProgressBar';
-import { Clock, Coins, History, ThumbsUp, Users } from 'lucide-react';
+import {
+  CheckCircle,
+  Clock,
+  Coins,
+  History,
+  ThumbsUp,
+  Users,
+} from 'lucide-react';
 import { getCategoryColor } from '@/utils/functions';
 import ProjectStatus from './ProjectStatus';
 import ProjectUpdates from './ProjectUpdates';
 import { useEffect, useState } from 'react';
+import {
+  DetailedVestingInfo,
+  getDetailedVestingInfo,
+} from '@/services/contract-service';
 
 interface ProjectMiniCardProps {
   project: ProjectData & { image?: string };
@@ -24,6 +35,8 @@ const ProjectMiniCard = ({
   const percentFunded = (project.amountRaised / project.goalAmount) * 100;
   const [openProjectUpdates, setOpenProjectUpdates] = useState(false);
   const [timeLeft, setTimeLeft] = useState('');
+  const [vestionDetails, setVestingDetails] =
+    useState<DetailedVestingInfo | null>(null);
 
   function getProjectStatus(
     project: ProjectData,
@@ -82,6 +95,16 @@ const ProjectMiniCard = ({
     const interval = setInterval(updateCountdown, 1000);
 
     return () => clearInterval(interval);
+  }, [project]);
+
+  const getDetailedVestingInfoHandler = async () => {
+    const details = await getDetailedVestingInfo(Number(project.id));
+    console.log(details, 'details...');
+    setVestingDetails(details);
+  };
+
+  useEffect(() => {
+    getDetailedVestingInfoHandler();
   }, [project]);
 
   return (
@@ -154,10 +177,7 @@ const ProjectMiniCard = ({
         </div>
         <div className="flex flex-col gap-2 mt-2">
           {getProjectStatus(project) === 'live' && (
-            <div
-              className="flex flex-col items-center justify-center w-full p-3 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-700 shadow-lg"
-              style={{ height: '90px' }}
-            >
+            <div className="w-full p-3 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-700 shadow-lg">
               <div className="text-center space-y-2">
                 <div className="text-teal-400 text-xs font-semibold tracking-wider flex items-center justify-center">
                   <svg
@@ -191,40 +211,46 @@ const ProjectMiniCard = ({
             </div>
           )}
           {getProjectStatus(project) === 'release' && (
-            <div
-              className="flex flex-col items-center justify-center w-full p-3 rounded-xl border shadow-lg"
-              style={{
-                height: '90px',
-                background: 'linear-gradient(45deg, #ffd180, #ffab40)',
-                borderColor: '#ffab40',
-              }}
-            >
+            <div className="w-full p-3 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-700 shadow-lg">
               <div className="text-center space-y-2">
-                <div className="text-orange-900 text-xs font-semibold tracking-wider flex items-center justify-center">
-                  <Clock className="w-3 h-3 mr-2" />
-                  FUNDS BEING RELEASED
+                <div className="text-[#ff9100] text-xs font-semibold tracking-wider flex items-center justify-center">
+                  <Clock
+                    className="w-3 h-3 mr-2"
+                    stroke="#ff9100"
+                    fill="none"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  NEXT RELEASE DATE
                 </div>
-                <div className="text-orange-800 text-sm">
-                  {project.releasePercentage}% released every{' '}
-                  {project.releaseInterval} days.
+                <div className="relative bg-gray-800 text-[#ff9100] font-mono font-bold text-sm px-4 py-2 rounded-lg border border-[#ff9100]/30 hover:border-[#ff9100]/50 transition-all duration-200 inline-block">
+                  {vestionDetails?.nextRelease
+                    ? new Date().toLocaleString(undefined, {
+                        weekday: 'short',
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true,
+                      })
+                    : 'N/A'}
                 </div>
               </div>
             </div>
           )}
+
           {getProjectStatus(project) === 'completed' && (
-            <div
-              className="w-full p-3 rounded-xl border shadow-lg"
-              style={{
-                background: 'linear-gradient(45deg, #607d8b, #90a4ae)',
-                borderColor: '#78909c', // approximate border color between the gradient colors
-              }}
-            >
+            <div className="w-full p-3 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-700 shadow-lg">
               <div className="text-center space-y-2">
-                <div className="text-gray-300 text-xs font-semibold tracking-wider">
-                  PROJECT WRAPPED UP
+                <div className="text-[#90a4ae] text-xs font-semibold tracking-wider flex items-center justify-center">
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  TOTAL FUNDS DISTRIBUTED
                 </div>
-                <div className="text-white text-sm">
-                  Total Funds Distributed: {12} MAS
+                <div className="relative bg-gray-800 text-[#90a4ae] font-mono font-bold text-sm px-4 py-2 rounded-lg border border-[#90a4ae]/30 hover:border-[#90a4ae]/50 transition-all duration-200 inline-block">
+                  {project.amountRaised != null ? project.amountRaised : 'N/A'}{' '}
+                  MAS
                 </div>
               </div>
             </div>
