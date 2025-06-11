@@ -20,6 +20,7 @@ import PrivateRoute from './components/PrivateRoute';
 import { FundPage } from './pages/Fund';
 import SwapPage from './pages/swap';
 import { ToastProvider } from './contexts/ToastProvider';
+import { ProjectProvider } from './context/project-context';
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
@@ -41,29 +42,31 @@ function App() {
   return (
     <ThemeProvider>
       <Provider store={store}>
-        <ToastProvider>
-          <Router>
-            <Navbar />
-            <Routes>
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/request-funding" element={<RequestFunding />} />
-              <Route path="/projects" element={<Projects />} />
-              <Route path="/about" element={<AboutPage />} />
-              <Route path="/fund/:projectId" element={<FundPage />} />
-              <Route path="swap" element={<SwapPage />} />
-              <Route
-                path="/profile"
-                element={
-                  <PrivateRoute>
-                    <ProfilePage />
-                  </PrivateRoute>
-                }
-              />
-              <Route path="*" element={<Navigate to="/" />} />
-            </Routes>
-            <Footer />
-          </Router>
-        </ToastProvider>
+        <ProjectProvider>
+          <ToastProvider>
+            <Router>
+              <Navbar />
+              <Routes>
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/request-funding" element={<RequestFunding />} />
+                <Route path="/projects" element={<Projects />} />
+                <Route path="/about" element={<AboutPage />} />
+                <Route path="/fund/:projectId" element={<FundPage />} />
+                <Route path="swap" element={<SwapPage />} />
+                <Route
+                  path="/profile"
+                  element={
+                    <PrivateRoute>
+                      <ProfilePage />
+                    </PrivateRoute>
+                  }
+                />
+                <Route path="*" element={<Navigate to="/" />} />
+              </Routes>
+              <Footer />
+            </Router>
+          </ToastProvider>
+        </ProjectProvider>
       </Provider>
     </ThemeProvider>
   );
