@@ -238,7 +238,7 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
                     d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                   />
                 </svg>
-                LOCK PERIOD COUNTDOWN
+                FUNDING CLOSES IN
               </div>
               <div className="flex justify-center space-x-2">
                 {timeLeft.split(':').map((unit, index) => (

@@ -5,15 +5,15 @@ import { ProjectData } from '@/types';
 const statusMap = {
   live: {
     label: 'Live',
-    background: 'linear-gradient(45deg, #00c853, #64dd17)', // fresh green gradient
+    background: 'linear-gradient(45deg, #00c853, #64dd17)',
   },
   release: {
     label: 'In Release',
-    background: 'linear-gradient(45deg, #1e88e5, #42a5f5)', // calm blue gradient
+    background: 'linear-gradient(45deg, #1e88e5, #42a5f5)',
   },
   completed: {
     label: 'Completed',
-    background: 'linear-gradient(45deg, #6d4c41, #a1887f)', // warm brown gradient
+    background: 'linear-gradient(45deg, #6d4c41, #a1887f)',
   },
 };
 
@@ -87,13 +87,7 @@ const ProjectStatus: React.FC<StatusChipProps> = ({ project, sx }) => {
   }
 
   return (
-    <div
-      style={{
-        position: 'absolute',
-        top: 16,
-        left: 16,
-      }}
-    >
+    <div className="absolute top-3 left-4">
       <StyledChip
         label={label}
         icon={status === 'live' ? <PulseCircle /> : undefined}

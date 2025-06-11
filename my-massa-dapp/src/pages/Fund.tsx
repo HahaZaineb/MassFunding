@@ -3,9 +3,8 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Info, Loader2 } from 'lucide-react';
-import { useAccountStore, ConnectMassaWallet } from '@massalabs/react-ui-kit';
+import { useAccountStore } from '@massalabs/react-ui-kit';
 import { fundProject } from '../services/contract-service';
-import { useToast } from '@/components/ui/use-toast';
 import {
   Card,
   CardContent,
@@ -27,11 +26,12 @@ import { shortenAddress } from '@/utils/functions';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchProjectById } from '@/store/slices/projectSlice';
 import { Alert } from '@mui/material';
+import { useToast } from '@/contexts/ToastProvider';
 
 export function FundPage() {
   const dispatch = useAppDispatch();
   const { connectedAccount } = useAccountStore();
-  const { toast } = useToast();
+  const { showToast } = useToast();
   const { projectId } = useParams();
   const [amount, setAmount] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -46,48 +46,38 @@ export function FundPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!amount || Number.parseFloat(amount) < 0.1 ) {
-      setError('Please enter a valid donation amount greater than 0.1')
-      return;
-    }
-
-    if (Number(amount) > Number(selected?.goalAmount) ) {
-            setError('Please enter a valid donation amount less than '+selected?.goalAmount)
-      return;
-    }
-
     if (!connectedAccount) {
-                  setError('Please connect your wallet to make a donation.')
+      showToast('Please connect your wallet to proceed.', 'error');
+      return;
+    }
+    if (!amount || Number.parseFloat(amount) < 0.1) {
+      setError('Please enter a valid donation amount greater than 0.1');
+      return;
+    }
+
+    if (Number(amount) > Number(selected?.goalAmount)) {
+      setError(
+        'Please enter a valid donation amount less than ' +
+          selected?.goalAmount,
+      );
       return;
     }
     setIsSubmitting(true);
-
     try {
       const projectIdNum = Number(selected?.id);
-      if (isNaN(projectIdNum)) {
-        throw new Error('Invalid project ID.');
-      }
       const amountInNanoMAS = BigInt(Math.round(parseFloat(amount) * 1e9));
       await fundProject(connectedAccount, projectIdNum, amountInNanoMAS);
-      toast({
-        title: 'Donation Successful!',
-        description: `Your donation of ${amount} MAS has been processed and the vesting schedule has been created.`,
-        variant: 'default',
-      });
+      showToast(
+        `Your donation of ${amount} MAS has been processed and the vesting schedule has been created.`,
+        'success',
+      );
     } catch (error) {
       console.error('Failed to donate:', error);
-
       let errorMessage = 'Failed to process donation. Please try again.';
       if (error instanceof Error) {
         errorMessage = error.message;
       }
-
-      toast({
-        title: 'Donation Failed',
-        description: errorMessage,
-        variant: 'destructive',
-      });
+      showToast(errorMessage, 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -98,9 +88,11 @@ export function FundPage() {
   });
 
   if (loading) {
-    return (<div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
-       <Loader />;
-    </div>);
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
+        <Loader />;
+      </div>
+    );
   }
 
   if (!loading && !selected) {
@@ -236,7 +228,6 @@ export function FundPage() {
                   placeholder="Enter amount (e.g., 100)"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  required
                   min="0.1"
                   step="0.1"
                   className="bg-[#0f1629] border-[#00ff9d]/20 text-white focus:border-[#00ff9d] focus:ring-[#00ff9d]/20"
@@ -245,9 +236,11 @@ export function FundPage() {
                   Minimum donation: 0.1 MAS
                 </p>
               </div>
-              {error && <Alert variant="filled" severity="error">
-  {error}
-</Alert>}
+              {error && (
+                <Alert variant="filled" severity="error">
+                  {error}
+                </Alert>
+              )}
 
               {/* Connected Account Info */}
               {connectedAccount && (
@@ -261,24 +254,20 @@ export function FundPage() {
 
               {/* Connect Wallet / Submit Button */}
               <div className="mt-6">
-                {!connectedAccount ? (
-                  <ConnectMassaWallet />
-                ) : (
-                  <Button
-                    type="submit"
-                    className="w-full bg-[#00ff9d] text-slate-900 hover:bg-[#00e68f] transition-colors"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Processing...
-                      </>
-                    ) : (
-                      'Donate Now'
-                    )}
-                  </Button>
-                )}
+                <Button
+                  type="submit"
+                  className="w-full bg-[#00ff9d] text-slate-900 hover:bg-[#00e68f] transition-colors"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    'Donate Now'
+                  )}
+                </Button>
               </div>
             </div>
           </form>
