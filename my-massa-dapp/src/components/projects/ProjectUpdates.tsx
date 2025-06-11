@@ -2,9 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, IconButton, Typography } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { motion } from 'framer-motion';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { CheckCircle2, Calendar, User, TrendingUp, Loader2 } from 'lucide-react';
-import { ContractProjectMilestoneData, ContractProjectUpdateData, getProjectUpdates, getMilestones } from '@/services/contract-service';
+import { Calendar,  Loader2 } from 'lucide-react';
+import { ContractProjectUpdateData, getProjectUpdates, getCurrentMassaPeriod } from '@/services/contract-service';
 
 interface ProjectUpdatesProps {
   open: boolean;
@@ -13,14 +12,13 @@ interface ProjectUpdatesProps {
 }
 
 const ProjectUpdates: React.FC<ProjectUpdatesProps> = ({ open, onClose, projectId }) => {
-  const [activeTab, setActiveTab] = useState('updates');
   const [updates, setUpdates] = useState<ContractProjectUpdateData[]>([]);
-  const [milestones, setMilestones] = useState<ContractProjectMilestoneData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentMassaPeriod, setCurrentMassaPeriod] = useState<number | null>(null);
 
   useEffect(() => {
-    const fetchProjectData = async () => {
+    const fetchData = async () => {
       setLoading(true);
       setError(null);
       try {
@@ -28,33 +26,48 @@ const ProjectUpdates: React.FC<ProjectUpdatesProps> = ({ open, onClose, projectI
         if (isNaN(projectIdNum)) {
           throw new Error('Invalid project ID');
         }
-        const fetchedUpdates = await getProjectUpdates(projectIdNum);
-        const fetchedMilestones = await getMilestones(projectIdNum);
+
+        const [fetchedUpdates, currentPeriod] = await Promise.all([
+          getProjectUpdates(projectIdNum),
+          getCurrentMassaPeriod()
+        ]);
+        
         setUpdates(fetchedUpdates);
-        setMilestones(fetchedMilestones);
+        setCurrentMassaPeriod(currentPeriod);
+        console.log('Fetched updates:', fetchedUpdates);
+        console.log('Current Massa Period:', currentPeriod);
+
       } catch (err) {
-        console.error('Error fetching project updates or milestones:', err);
-        setError('Failed to load updates or milestones.');
+        console.error('Error fetching project updates or current period:', err);
+        setError('Failed to load updates.');
       } finally {
         setLoading(false);
       }
     };
 
     if (open && projectId) {
-      fetchProjectData();
+      fetchData();
     }
   }, [open, projectId]);
 
-  const formatDate = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-      });
-    } catch (error) {
-      return dateString;
+  const getTimeAgo = (updatePeriod: string | number): string => {
+    if (currentMassaPeriod === null) return 'Loading...';
+    
+    const period = typeof updatePeriod === 'string' ? Number(updatePeriod) : updatePeriod;
+    const diffPeriods = currentMassaPeriod - period;
+
+    if (diffPeriods < 0) return 'In the future'; // Should not happen for updates
+
+    const seconds = diffPeriods * 15; // 1 Massa period = 15 seconds
+
+    if (seconds < 60) {
+      return `${Math.floor(seconds)} seconds ago`;
+    } else if (seconds < 3600) {
+      return `${Math.floor(seconds / 60)} minutes ago`;
+    } else if (seconds < 86400) {
+      return `${Math.floor(seconds / 3600)} hours ago`;
+    } else {
+      return `${Math.floor(seconds / 86400)} days ago`;
     }
   };
 
@@ -135,116 +148,40 @@ const ProjectUpdates: React.FC<ProjectUpdatesProps> = ({ open, onClose, projectI
         >
           <div className="space-y-4 p-6">
             <div className="space-y-4">
-              <Tabs
-                value={activeTab}
-                onValueChange={setActiveTab}
-                className="w-full"
-              >
-                <TabsList className="grid w-full grid-cols-2 bg-[#1a2340] border border-[#00ff9d]/20">
-                  <TabsTrigger
-                    value="updates"
-                    className="text-slate-300 data-[state=active]:bg-[#00ff9d] data-[state=active]:text-black"
-                  >
-                    <User className="h-4 w-4 mr-2" />
-                    Updates ({updates.length})
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="milestones"
-                    className="text-slate-300 data-[state=active]:bg-[#00ff9d] data-[state=active]:text-black"
-                  >
-                    <TrendingUp className="h-4 w-4 mr-2" />
-                    Milestones ({milestones.length})
-                  </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="updates" className="mt-4 space-y-3">
-                  {updates.map((update) => (
-                    <div
-                      key={update.id}
-                      className="bg-[#1a2340] border border-[#00ff9d]/10 rounded-lg p-4"
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-semibold text-white text-sm">
-                          {update.title}
-                        </h4>
-                        <div className="flex items-center text-xs text-slate-400">
-                          <Calendar className="h-3 w-3 mr-1" />
-                          {formatDate(update.date)}
-                        </div>
-                      </div>
-                      <p className="text-slate-300 text-xs leading-relaxed mb-2">
-                        {update.content}
-                      </p>
-                      <div className="text-xs text-slate-500">
-                        By {update.author}
-                      </div>
+              <div className="text-xl font-bold text-[#00ff9d] mb-2">Project Updates</div>
+              {updates.map((update) => (
+                <div
+                  key={update.id}
+                  className="bg-[#1a2340] border border-[#00ff9d]/10 rounded-lg p-4"
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <h4 className="font-semibold text-white text-sm">
+                      {update.title}
+                    </h4>
+                    <div className="flex items-center text-xs text-slate-400">
+                      <Calendar className="h-3 w-3 mr-1" />
+                      {getTimeAgo(update.date)}
                     </div>
-                  ))}
-
-                  {updates.length === 0 && (
-                    <div className="text-center py-6">
-                      <p className="text-slate-400 text-sm">
-                        No updates posted yet.
-                      </p>
-                    </div>
+                  </div>
+                  {update.image && (
+                    <img src={update.image} alt="Update" className="mb-2 max-h-48 rounded-lg border border-[#00ff9d]/10" />
                   )}
-                </TabsContent>
+                  <p className="text-slate-300 text-xs leading-relaxed mb-2">
+                    {update.content}
+                  </p>
+                  <div className="text-xs text-slate-500">
+                    By {update.author}
+                  </div>
+                </div>
+              ))}
 
-                <TabsContent value="milestones" className="mt-4 space-y-3">
-                  {milestones.map((milestone) => (
-                    <div
-                      key={milestone.id}
-                      className="bg-[#1a2340] border border-[#00ff9d]/10 rounded-lg p-4"
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="flex items-center">
-                          {milestone.completed && (
-                            <CheckCircle2 className="h-4 w-4 text-[#00ff9d] mr-2" />
-                          )}
-                          <h4 className="font-semibold text-white text-sm">
-                            {milestone.title}
-                          </h4>
-                        </div>
-                        <div className="flex items-center text-xs text-slate-400">
-                          <Calendar className="h-3 w-3 mr-1" />
-                          {formatDate(milestone.deadline)}
-                        </div>
-                      </div>
-
-                      <p className="text-slate-300 text-xs mb-3">
-                        {milestone.description}
-                      </p>
-
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-xs">
-                          <span className="text-slate-400">Progress</span>
-                          <span className="text-slate-400">
-                            {milestone.progress}%
-                          </span>
-                        </div>
-                        <div className="w-full bg-[#0f1629] rounded-full h-2">
-                          <div
-                            className={`h-2 rounded-full transition-all duration-300 ${
-                              milestone.completed
-                                ? 'bg-gradient-to-r from-[#00ff9d] to-[#00cc7d]'
-                                : 'bg-gradient-to-r from-red-500 to-orange-500'
-                            }`}
-                            style={{ width: `${milestone.progress}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-
-                  {milestones.length === 0 && (
-                    <div className="text-center py-6">
-                      <p className="text-slate-400 text-sm">
-                        No milestones defined yet.
-                      </p>
-                    </div>
-                  )}
-                </TabsContent>
-              </Tabs>
+              {updates.length === 0 && (
+                <div className="text-center py-6">
+                  <p className="text-slate-400 text-sm">
+                    No updates posted yet.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </motion.div>

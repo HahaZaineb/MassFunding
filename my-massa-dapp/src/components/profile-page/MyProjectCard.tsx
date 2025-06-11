@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Plus, Calendar, Eye } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { ProjectData } from '@/types';
-import AddMilestoneModal from '../projects/AddMilestoneModal';
 import ProjectUpdates from '../projects/ProjectUpdates';
 import AddUpdateModal from '../projects/AddUpdateModal';
 import { getProjectSupportersCount } from '@/services/contract-service';
@@ -16,7 +15,6 @@ interface MyProjectCardProps {
   project: ProjectData;
 }
 const MyProjectCard: React.FC<MyProjectCardProps> = ({ project }) => {
-  const [openAddMilestone, setOpenAddMilestone] = useState<boolean>(false);
   const [openUpdates, setOpenUpdates] = useState<boolean>(false);
   const [openAddUpdate, setOpenAddUpdate] = useState<boolean>(false);
   const [supportersCount, setSupportersCount] = useState<number>(0);
@@ -27,15 +25,12 @@ const MyProjectCard: React.FC<MyProjectCardProps> = ({ project }) => {
         const count = await getProjectSupportersCount(BigInt(project.id));
         setSupportersCount(count);
       } catch (error) {
-
         console.error(
           `Error fetching supporters for project ${project.id}:`,
           error,
         );
-
       }
     };
-
     fetchSupporters();
   }, [project.id]);
 
@@ -128,13 +123,6 @@ const MyProjectCard: React.FC<MyProjectCardProps> = ({ project }) => {
         <div className="p-6 border-b border-[#00ff9d]/10">
           <div className="flex flex-wrap gap-3">
             <Button
-              onClick={() => setOpenAddMilestone(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Milestone
-            </Button>
-            <Button
               onClick={() => setOpenAddUpdate(true)}
               variant="outline"
               className="border-[#00ff9d]/30 text-[#00ff9d] hover:bg-[#00ff9d]/10"
@@ -149,11 +137,6 @@ const MyProjectCard: React.FC<MyProjectCardProps> = ({ project }) => {
         open={openUpdates}
         onClose={() => setOpenUpdates(false)}
         projectId={project.id}
-      />
-      <AddMilestoneModal
-        open={openAddMilestone}
-        onClose={() => setOpenAddMilestone(false)}
-        project={project}
       />
       <AddUpdateModal
         open={openAddUpdate}

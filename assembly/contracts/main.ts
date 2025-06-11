@@ -26,7 +26,7 @@ registerCall,
 TASK_COUNT_KEY,
 processTask
 } from '../internals';
-import { u256 } from 'as-bignum/assembly';
+
 
 export const PERIODS_PER_DAY: u64 = 86400 / 15;
  
@@ -53,7 +53,6 @@ export const VESTING_SCHEDULE_CREATED_EVENT = 'VESTING_SCHEDULE_CREATED';
 export const VESTING_SCHEDULE_UPDATED_EVENT = 'VESTING_SCHEDULE_UPDATED';
 export const VESTING_SCHEDULE_COMPLETED_EVENT = 'VESTING_SCHEDULE_COMPLETED';
 export const TOKENS_RELEASED_EVENT = 'TOKENS_RELEASED';
-export const MILESTONE_ADDED_EVENT = 'MILESTONE_ADDED';
 export const UPDATE_ADDED_EVENT = 'UPDATE_ADDED';
 
 // Add ProjectMilestone class back
@@ -97,13 +96,14 @@ class ProjectMilestone implements Serializable {
   }
 }
 
-// Add ProjectUpdate class back
+// Update ProjectUpdate class to add image field
 class ProjectUpdate implements Serializable {
   public id: string;
   public date: string;
   public title: string;
   public content: string;
   public author: string;
+  public image: string; // New field
 
   constructor() {
     this.id = '';
@@ -111,6 +111,7 @@ class ProjectUpdate implements Serializable {
     this.title = '';
     this.content = '';
     this.author = '';
+    this.image = '';
   }
 
   serialize(): StaticArray<u8> {
@@ -120,6 +121,7 @@ class ProjectUpdate implements Serializable {
       .add(this.title)
       .add(this.content)
       .add(this.author)
+      .add(this.image) 
       .serialize();
   }
 
@@ -130,6 +132,7 @@ class ProjectUpdate implements Serializable {
     this.title = args.nextString().expect('Failed to deserialize update title');
     this.content = args.nextString().expect('Failed to deserialize update content');
     this.author = args.nextString().expect('Failed to deserialize update author');
+    this.image = args.nextString().expect('Failed to deserialize update image');
     return new Result(args.offset);
   }
 }
@@ -673,35 +676,6 @@ generateEvent(VESTING_SCHEDULE_CREATED_EVENT);
 return vestingId;
 }
 
-// Internal function to add funds to an existing vesting schedule
-function addToVestingScheduleInternal(
-  vestingId: u64,
-  amountToAdd: u64 // Amount sent with the fundProject call
-): void {
-
-const scheduleKey = getVestingScheduleKey(vestingId);
-
-// Check if the vesting schedule exists
-assert(Storage.has(scheduleKey), `Vesting schedule with ID ${vestingId} not found for topping up`);
-
-let schedule = new vestingSchedule();
-schedule.deserialize(Storage.get(scheduleKey));
-
-assert(amountToAdd > 0, "Amount to add to vesting schedule must be greater than 0");
-
-// Add the transferred coins to the total amount
-schedule.totalAmount += amountToAdd;
-
-// Save the updated schedule
-Storage.set(scheduleKey, schedule.serialize());
-// After creating the vesting schedule and getting vestingId:
-let donorVestingSchedules = loadDonorVestingSchedules(Context.caller());
-donorVestingSchedules.push(vestingId);
-storeDonorVestingSchedules(Context.caller(), donorVestingSchedules);
-
-generateEvent(`Added ${amountToAdd} MAS to vesting schedule ID ${vestingId}. New total: ${schedule.totalAmount}`);
-}
-
 // This function is called by the deferred call mechanism (internal call)
 export function releaseVestedTokens(binArgs: StaticArray<u8>): void {
 // Note: This function is called by a deferred call, Context.caller() will be the contract itself.
@@ -883,25 +857,6 @@ function loadProjectDonors(projectId: u64): string[] {
   return donors;
 }
 
-// Helper to get the next available milestone ID for a project
-function getNextMilestoneId(projectId: u64): u64 {
-  const key = new Args().add(PROJECT_MILESTONES_KEY_PREFIX).add(projectId).add(stringToBytes('next_id')).serialize();
-  let nextId: u64 = 0;
-  if (Storage.has(key)) {
-      const storedId = Storage.get(key);
-      nextId = new Args(storedId).nextU64().expect('Failed to deserialize next milestone ID');
-  }
-  return nextId;
-}
-
-// Helper to increment the next milestone ID for a project
-function incrementNextMilestoneId(projectId: u64): void {
-  const key = new Args().add(PROJECT_MILESTONES_KEY_PREFIX).add(projectId).add(stringToBytes('next_id')).serialize();
-  let nextId = getNextMilestoneId(projectId);
-  nextId++;
-  Storage.set(key, new Args().add(nextId).serialize());
-}
-
 // Helper to get the next available update ID for a project
 function getNextUpdateId(projectId: u64): u64 {
   const key = new Args().add(PROJECT_UPDATES_KEY_PREFIX).add(projectId).add(stringToBytes('next_id')).serialize();
@@ -921,67 +876,13 @@ function incrementNextUpdateId(projectId: u64): void {
   Storage.set(key, new Args().add(nextId).serialize());
 }
 
-// New function to add a milestone to a project (stored separately)
-export function addMilestone(binArgs: StaticArray<u8>): void {
-  const args = new Args(binArgs);
-  const projectId = args.nextU64().expect('Missing project ID');
-  const title = args.nextString().expect('Missing milestone title');
-  const description = args.nextString().expect('Missing milestone description');
-  const deadline = args.nextString().expect('Missing milestone deadline');
-  const progress = args.nextU64().expect('Missing milestone progress');
-
-  const projectKey = new Args().add(PROJECTS_KEY).add(projectId).serialize();
-  assert(Storage.has(projectKey), `Project with ID ${projectId} not found`);
-
-  let project = new Project();
-  project.deserialize(Storage.get(projectKey));
-
-  assert(Context.caller().toString() == project.creator.toString(), "Only project creator can add milestones");
-
-  const milestoneId = getNextMilestoneId(projectId);
-  const newMilestone = new ProjectMilestone();
-  newMilestone.id = milestoneId.toString(); // Convert u64 to string for ProjectMilestone ID
-  newMilestone.title = title;
-  newMilestone.description = description;
-  newMilestone.deadline = deadline;
-  newMilestone.progress = progress;
-  newMilestone.completed = false;
-
-  const milestoneKey = new Args().add(PROJECT_MILESTONES_KEY_PREFIX).add(projectId).add(milestoneId).serialize();
-  Storage.set(milestoneKey, newMilestone.serialize());
-  incrementNextMilestoneId(projectId);
-
-  generateEvent(MILESTONE_ADDED_EVENT);
-}
-
-// New function to get all milestones for a project (retrieved separately)
-export function getMilestones(binArgs: StaticArray<u8>): StaticArray<u8> {
-  const args = new Args(binArgs);
-  const projectId = args.nextU64().expect('Missing project ID');
-
-  const milestones: ProjectMilestone[] = [];
-  let currentMilestoneId: u64 = 0;
-  while (true) {
-    const milestoneKey = new Args().add(PROJECT_MILESTONES_KEY_PREFIX).add(projectId).add(currentMilestoneId).serialize();
-    if (Storage.has(milestoneKey)) {
-      let milestone = new ProjectMilestone();
-      milestone.deserialize(Storage.get(milestoneKey));
-      milestones.push(milestone);
-      currentMilestoneId++;
-    } else {
-      break;
-    }
-  }
-  args.addSerializableObjectArray(milestones);
-  return args.serialize();
-}
-
-// New function to add an update to a project (stored separately)
+// Update addProjectUpdate to accept image
 export function addProjectUpdate(binArgs: StaticArray<u8>): void {
   const args = new Args(binArgs);
   const projectId = args.nextU64().expect('Missing project ID');
   const title = args.nextString().expect('Missing update title');
   const content = args.nextString().expect('Missing update content');
+  const image = args.nextString().expect('Missing update image');
 
   const projectKey = new Args().add(PROJECTS_KEY).add(projectId).serialize();
   assert(Storage.has(projectKey), `Project with ID ${projectId} not found`);
@@ -998,6 +899,7 @@ export function addProjectUpdate(binArgs: StaticArray<u8>): void {
   newUpdate.title = title;
   newUpdate.content = content;
   newUpdate.author = Context.caller().toString(); // Author is the caller
+  newUpdate.image = image;
 
   const updateKey = new Args().add(PROJECT_UPDATES_KEY_PREFIX).add(projectId).add(updateId).serialize();
   Storage.set(updateKey, newUpdate.serialize());
@@ -1006,7 +908,7 @@ export function addProjectUpdate(binArgs: StaticArray<u8>): void {
   generateEvent(UPDATE_ADDED_EVENT);
 }
 
-// New function to get all updates for a project (retrieved separately)
+// getProjectUpdates already returns all fields, so no change needed
 export function getProjectUpdates(binArgs: StaticArray<u8>): StaticArray<u8> {
   const args = new Args(binArgs);
   const projectId = args.nextU64().expect('Missing project ID');
@@ -1025,8 +927,9 @@ export function getProjectUpdates(binArgs: StaticArray<u8>): StaticArray<u8> {
     }
   }
   
-  args.addSerializableObjectArray(updates);
-  return args.serialize();
+  const returnArgs = new Args();
+  returnArgs.addSerializableObjectArray(updates);
+  return returnArgs.serialize();
 }
 
 // New function to get the total amount of MAS donated across all projects

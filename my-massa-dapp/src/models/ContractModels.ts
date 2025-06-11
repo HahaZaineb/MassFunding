@@ -102,46 +102,14 @@ export class VestingSchedule implements Serializable<VestingSchedule> {
   }
 }
 
-export class ProjectMilestone implements Serializable<ProjectMilestone> {
-  constructor(
-    public id: string = "",
-    public title: string = "",
-    public description: string = "",
-    public deadline: string = "",
-    public completed: boolean = false,
-    public progress: bigint = 0n
-  ) {}
-
-  serialize(): Uint8Array {
-    const args = new Args()
-      .addString(this.id)
-      .addString(this.title)
-      .addString(this.description)
-      .addString(this.deadline)
-      .addBool(this.completed)
-      .addU64(this.progress);
-    return args.serialize();
-  }
-
-  deserialize(data: Uint8Array, offset: number): DeserializedResult<ProjectMilestone> {
-    const args = new Args(data, offset);
-    this.id = args.nextString();
-    this.title = args.nextString();
-    this.description = args.nextString();
-    this.deadline = args.nextString();
-    this.completed = args.nextBool();
-    this.progress = args.nextU64();
-    return { instance: this, offset: args.getOffset() };
-  }
-}
-
 export class ProjectUpdate implements Serializable<ProjectUpdate> {
   constructor(
     public id: string = "",
     public date: string = "",
     public title: string = "",
     public content: string = "",
-    public author: string = ""
+    public author: string = "",
+    public image: string = ""
   ) {}
 
   serialize(): Uint8Array {
@@ -150,7 +118,8 @@ export class ProjectUpdate implements Serializable<ProjectUpdate> {
       .addString(this.date)
       .addString(this.title)
       .addString(this.content)
-      .addString(this.author);
+      .addString(this.author)
+      .addString(this.image);
     return args.serialize();
   }
 
@@ -161,6 +130,7 @@ export class ProjectUpdate implements Serializable<ProjectUpdate> {
     this.title = args.nextString();
     this.content = args.nextString();
     this.author = args.nextString();
+    this.image = args.nextString();
     return { instance: this, offset: args.getOffset() };
   }
 } 

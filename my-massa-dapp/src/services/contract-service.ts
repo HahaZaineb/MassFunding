@@ -1,6 +1,6 @@
 import { Args, SmartContract, JsonRpcProvider, bytesToSerializableObjectArray} from '@massalabs/massa-web3';
 import { ProjectData } from '@/types';
-import { Project, VestingSchedule, ProjectMilestone, ProjectUpdate } from '@/models/ContractModels';
+import { Project, VestingSchedule, ProjectUpdate } from '@/models/ContractModels';
 import { readSmartContractPublic } from '@/utils/smartContract';
 import { CONTRACT_ADDRESS } from '@/constants';
 import { convertProjectToProjectData } from '@/utils/project';
@@ -32,12 +32,14 @@ export interface ContractProjectUpdateData {
   title: string;
   content: string;
   author: string;
+  image?: string;
 }
 
 export interface NewUpdateData {
   title: string;
   content: string;
   author: string;
+  image?: string;
 }
 
 export async function createProject(
@@ -159,30 +161,6 @@ export async function addMilestone(
   }
 }
 
-export async function getMilestones(projectId: number): Promise<ContractProjectMilestoneData[]> {
-  try {
-    const contract = new SmartContract(publicProvider, CONTRACT_ADDRESS);
-    const args = new Args().addU64(BigInt(projectId));
-    const response = await contract.read('getMilestones', args);
-
-    
-    const deserializedMilestones = bytesToSerializableObjectArray(response.value, ProjectMilestone);
-
-
-    return deserializedMilestones.map(milestone => ({
-      id: milestone.id.toString(),
-      title: milestone.title,
-      description: milestone.description,
-      deadline: milestone.deadline,
-      completed: milestone.completed,
-      progress: Number(milestone.progress),
-    }));
-
-  } catch (error) {
-    console.error('Error fetching project milestones:', error);
-    throw error;
-  }
-}
 
 export async function addUpdate(
   connectedAccount: any,
@@ -194,9 +172,10 @@ export async function addUpdate(
     const args = new Args()
       .addU64(BigInt(projectId))
       .addString(updateData.title)
-      .addString(updateData.content);
+      .addString(updateData.content)
+      .addString(updateData.image || '');
 
-    await contract.call('addProjectUpdate', args); // Assuming addProjectUpdate is the correct function name in contract
+    await contract.call('addProjectUpdate', args);
     console.log(`Successfully added update for project ${projectId}.`);
   } catch (error) {
     console.error('Error adding update:', error);
@@ -206,12 +185,18 @@ export async function addUpdate(
 
 export async function getProjectUpdates(projectId: number): Promise<ContractProjectUpdateData[]> {
   try {
-    const contract = new SmartContract(publicProvider, CONTRACT_ADDRESS);
-    const args = new Args().addU64(BigInt(projectId));
-    const response = await contract.read('getProjectUpdates', args);
-
     
-    const deserializedUpdates = bytesToSerializableObjectArray(response.value, ProjectUpdate);
+    const args = new Args().addU64(BigInt(projectId));
+    const response = await readSmartContractPublic(CONTRACT_ADDRESS, 'getProjectUpdates', args)
+    const result = response.value;
+    
+    if (!result || result.length === 0) {
+      console.log("No project data returned.", result);
+      return [];
+    }
+
+    const arrArgs = new Args(result);
+    const deserializedUpdates = arrArgs.nextSerializableObjectArray<ProjectUpdate>(ProjectUpdate);
 
 
     return deserializedUpdates.map(update => ({
@@ -220,6 +205,7 @@ export async function getProjectUpdates(projectId: number): Promise<ContractProj
       title: update.title,
       content: update.content,
       author: update.author,
+      image: update.image,
     }));
 
   } catch (error) {

@@ -30,12 +30,15 @@ export default function AddUpdateModal({
   const {  } = useProjects();
   const { connectedAccount } = useAccountStore();
 
-  const [formData, setFormData] = useState({
-    title: '',
-    content: '',
-    author: '',
-    date: new Date().toISOString().split('T')[0], // Default to today
-  });
+  const [formData, setFormData] = useState<{ title: string; content: string; author: string; date: string; image: string }>(
+    {
+      title: '',
+      content: '',
+      author: '',
+      date: new Date().toISOString().split('T')[0],
+      image: '',
+    }
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (
@@ -43,6 +46,19 @@ export default function AddUpdateModal({
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) {
+      setFormData((prev) => ({ ...prev, image: '' }));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setFormData((prev) => ({ ...prev, image: typeof reader.result === 'string' ? reader.result : '' }));
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -60,10 +76,9 @@ export default function AddUpdateModal({
       await addUpdate(connectedAccount, Number(project.id), {
         title: formData.title,
         content: formData.content,
-        author: formData.author || project.creator,
-        id: `temp-update-${Date.now()}`,
-        date: formData.date,
-      } as ContractProjectUpdateData);
+        author: formData.author || project.creator || 'Anonymous',
+        image: formData.image,
+      });
       onClose();
     } catch (error) {
       console.error('Failed to add update:', error);
@@ -133,6 +148,23 @@ export default function AddUpdateModal({
               min={new Date().toISOString().split('T')[0]} // Prevent scheduling in the past
               className="bg-slate-800 border border-slate-600 text-white mt-1"
             />
+          </div>
+
+          <div>
+            <Label htmlFor="image" className="text-[#e2e8f0]">
+              Update Image (optional)
+            </Label>
+            <Input
+              id="image"
+              name="image"
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              className="bg-slate-800 border border-slate-600 text-white mt-1"
+            />
+            {formData.image && formData.image.length > 0 && (
+              <img src={formData.image || ''} alt="Preview" className="mt-2 max-h-32 rounded border border-[#00ff9d]/20" />
+            )}
           </div>
 
           <div>
