@@ -44,8 +44,8 @@ export const PROJECT_DONORS_KEY_PREFIX = stringToBytes('project_donors_');
 export const PROJECT_MILESTONES_KEY_PREFIX = stringToBytes('project_milestones_');
 export const PROJECT_UPDATES_KEY_PREFIX = stringToBytes('project_updates_');
 export const USER_VESTING_SCHEDULES_KEY_PREFIX = stringToBytes('user_vesting_schedules_');
-
-
+export const PROJECT_DONOR_AMOUNTS_KEY_PREFIX = stringToBytes('project_donor_amounts_');
+export const PROJECT_VESTING_SCHEDULES_KEY_PREFIX = stringToBytes('project_vesting_schedules_');
 // Event names
 export const PROJECT_CREATED_EVENT = 'PROJECT_CREATED';
 export const PROJECT_FUNDED_EVENT = 'PROJECT_FUNDED';
@@ -520,6 +520,10 @@ export function fundProject(binArgs: StaticArray<u8>): void {
     storeProjectDonors(projectId, projectDonors);
   }
 
+  // Store/Update donor amount for this project
+  let prevAmount = loadProjectDonorAmount(projectId, Context.caller());
+  storeProjectDonorAmount(projectId, Context.caller(), prevAmount + amountSent);
+
   generateEvent(PROJECT_FUNDED_EVENT);
 
   // The initial vesting trigger is already scheduled in createProject, it will handle vesting logic
@@ -585,6 +589,7 @@ export function triggerInitialVesting(binArgs: StaticArray<u8>): void {
   // Call createVestingSchedule internally
   // Need to pass beneficiary, amountToVest, lockPeriod (0), releaseInterval, releasePercentage
   const vestingScheduleId = createVestingScheduleInternal(
+      projectId,
       project.beneficiary,
       amountToVest,
       0 as u64, // Initial lock period is already handled by deferred calls
@@ -605,6 +610,7 @@ export function triggerInitialVesting(binArgs: StaticArray<u8>): void {
 // Internal function to create a new vesting schedule
 // Returns the new vesting ID
 function createVestingScheduleInternal(
+  projectId: u64,
   beneficiary: Address,
   totalAmount: u64,
   lockPeriod: u64, // In periods
@@ -638,6 +644,10 @@ Storage.set(getVestingScheduleKey(vestingId), schedule.serialize());
 let userVestingSchedules = loadUserVestingSchedules(beneficiary);
 userVestingSchedules.push(vestingId);
 storeUserVestingSchedules(beneficiary, userVestingSchedules);
+// Update project-specific vesting schedules mapping
+let projectVestingSchedules = loadProjectVestingSchedules(projectId);
+projectVestingSchedules.push(vestingId);
+storeProjectVestingSchedules(projectId, projectVestingSchedules);
 
 // Schedule the first release call for this specific schedule
 const releaseArgs = new Args().add(vestingId).serialize();
@@ -684,6 +694,10 @@ schedule.totalAmount += amountToAdd;
 
 // Save the updated schedule
 Storage.set(scheduleKey, schedule.serialize());
+// After creating the vesting schedule and getting vestingId:
+let donorVestingSchedules = loadDonorVestingSchedules(Context.caller());
+donorVestingSchedules.push(vestingId);
+storeDonorVestingSchedules(Context.caller(), donorVestingSchedules);
 
 generateEvent(`Added ${amountToAdd} MAS to vesting schedule ID ${vestingId}. New total: ${schedule.totalAmount}`);
 }
@@ -1107,4 +1121,82 @@ export function getProjectCreationDate(binArgs: StaticArray<u8>): StaticArray<u8
 
 export function getCurrentMassaPeriod(_: StaticArray<u8>): StaticArray<u8> {
   return new Args().add(Context.currentPeriod()).serialize();
+}
+
+function loadProjectVestingSchedules(projectId: u64): u64[] {
+  const key = new Args().add(PROJECT_VESTING_SCHEDULES_KEY_PREFIX).add(projectId).serialize();
+  if (!Storage.has(key)) return [];
+  const data = Storage.get(key);
+  const args = new Args(data);
+  const length = args.nextU64().expect('Failed to deserialize length');
+  const vestingIds: u64[] = [];
+  for (let i: u64 = 0; i < length; i++) {
+    vestingIds.push(args.nextU64().expect('Failed to deserialize vesting ID'));
+  }
+  return vestingIds;
+}
+
+function storeProjectVestingSchedules(projectId: u64, vestingIds: u64[]): void {
+  const key = new Args().add(PROJECT_VESTING_SCHEDULES_KEY_PREFIX).add(projectId).serialize();
+  const args = new Args();
+  args.add<u64>(vestingIds.length as u64);
+  for (let i: u64 = 0; i < (vestingIds.length as u64); i++) {
+    args.add<u64>(vestingIds[i as i32]);
+  }
+  Storage.set(key, args.serialize());
+}
+
+// New function to get all vesting schedules for a project
+export function getProjectVestingSchedules(binArgs: StaticArray<u8>): StaticArray<u8> {
+  const args = new Args(binArgs);
+  const projectId = args.nextU64().expect('Missing project ID');
+  const vestingIds = loadProjectVestingSchedules(projectId);
+  const returnArgs = new Args();
+  returnArgs.add<u64>(vestingIds.length as u64);
+  for (let i: u64 = 0; i < (vestingIds.length as u64); i++) {
+    returnArgs.add<u64>(vestingIds[i as i32]);
+  }
+  return returnArgs.serialize();
+}
+
+// Helper to store donor amount for a project
+function storeProjectDonorAmount(projectId: u64, donor: Address, amount: u64): void {
+  const key = new Args().add(PROJECT_DONOR_AMOUNTS_KEY_PREFIX).add(projectId).add(donor as Serializable).serialize();
+  Storage.set(key, new Args().add(amount).serialize());
+}
+
+// Helper to load donor amount for a project
+function loadProjectDonorAmount(projectId: u64, donor: Address): u64 {
+  const key = new Args().add(PROJECT_DONOR_AMOUNTS_KEY_PREFIX).add(projectId).add(donor as Serializable).serialize();
+  if (!Storage.has(key)) return 0;
+  return new Args(Storage.get(key)).nextU64().expect('Failed to deserialize donor amount');
+}
+
+// Helper to get all project IDs a user has donated to
+function getAllProjectsUserDonatedTo(user: Address): u64[] {
+  let donatedProjectIds: u64[] = [];
+  let projectCount = getNextProjectId();
+  for (let i: u64 = 0; i < projectCount; i++) {
+    const amount = loadProjectDonorAmount(i, user);
+    if (amount > 0) {
+      donatedProjectIds.push(i);
+    }
+  }
+  return donatedProjectIds;
+}
+
+// New getter: getUserDonations(address) -> returns array of {projectId, amount}
+export function getUserDonations(binArgs: StaticArray<u8>): StaticArray<u8> {
+  const args = new Args(binArgs);
+  const userAddress = new Address(args.nextString().expect('Missing user address'));
+  const donatedProjectIds = getAllProjectsUserDonatedTo(userAddress);
+  const returnArgs = new Args();
+  returnArgs.add<u64>(donatedProjectIds.length as u64);
+  for (let i: u64 = 0; i < (donatedProjectIds.length as u64); i++) {
+    const pid = donatedProjectIds[i as i32];
+    const amount = loadProjectDonorAmount(pid, userAddress);
+    returnArgs.add<u64>(pid);
+    returnArgs.add<u64>(amount);
+  }
+  return returnArgs.serialize();
 }
