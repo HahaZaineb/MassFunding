@@ -22,6 +22,7 @@ import SwapPage from './pages/swap';
 import { ToastProvider } from './contexts/ToastProvider';
 import { ProjectProvider } from './context/project-context';
 import useAccountSync from './hooks/useAccountSync';
+import BridgePage from './pages/Bridge';
 
 function App() {
   useAccountSync();
@@ -55,6 +56,7 @@ function App() {
                 <Route path="/about" element={<AboutPage />} />
                 <Route path="/fund/:projectId" element={<FundPage />} />
                 <Route path="swap" element={<SwapPage />} />
+                <Route path="/bridge" element={<BridgePage />} />
                 <Route
                   path="/profile"
                   element={

@@ -27,6 +27,8 @@ import WalletConnectModal from '../WalletConnectModal';
 import { useAccountStore } from '@massalabs/react-ui-kit';
 import { shortenAddress } from '@/utils/functions';
 import { HandCoins, Rocket, Home } from 'lucide-react';
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
+import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 
 const navItems = [
   { label: 'Home', path: '/', icon: <Home className="w-4" /> },
@@ -156,6 +158,22 @@ export function Navbar() {
                       }}
                     >
                       <PersonIcon sx={{ mr: 1 }} /> My Profile
+                    </MenuItem>
+                    <MenuItem
+                      onClick={() => {
+                        handleNavigate('/swap');
+                        handleMenuClose();
+                      }}
+                    >
+                      <SwapHorizIcon sx={{ mr: 1 }} /> Swap
+                    </MenuItem>
+                    <MenuItem
+                      onClick={() => {
+                        handleNavigate('/bridge');
+                        handleMenuClose();
+                      }}
+                    >
+                      <AccountBalanceIcon sx={{ mr: 1 }} /> Bridge
                     </MenuItem>
                     <MenuItem
                       onClick={() => {
