@@ -9,7 +9,8 @@ export class VestingSchedule implements Serializable<VestingSchedule> {
     public lockPeriod: bigint = 0n,
     public releaseInterval: bigint = 0n,
     public releasePercentage: bigint = 0n,
-    public nextReleasePeriod: bigint = 0n
+    public nextReleasePeriod: bigint = 0n,
+    public isCompleted: boolean = false
   ) {}
 
   serialize(): Uint8Array {
@@ -21,7 +22,8 @@ export class VestingSchedule implements Serializable<VestingSchedule> {
       .addU64(this.lockPeriod)
       .addU64(this.releaseInterval)
       .addU64(this.releasePercentage)
-      .addU64(this.nextReleasePeriod);
+      .addU64(this.nextReleasePeriod)
+      .addBool(this.isCompleted);
     return args.serialize();
   }
 
@@ -35,6 +37,7 @@ export class VestingSchedule implements Serializable<VestingSchedule> {
     this.releaseInterval = args.nextU64();
     this.releasePercentage = args.nextU64();
     this.nextReleasePeriod = args.nextU64();
+    this.isCompleted = args.nextBool();
     return { instance: this, offset: args.getOffset() };
   }
 }
