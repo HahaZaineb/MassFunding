@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 import { CATEGORIES } from '@/constants';
 import ProjectCard from '@/components/projects/ProjectCard';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { fetchProjects } from '@/store/slices/projectSlice';
+import { filterProjectsByAsyncStatus } from '@/store/slices/projectSlice';
 import Loader from '@/components/Loader';
 import {
   Select,
@@ -27,21 +27,14 @@ export default function Projects() {
   >('all');
 
   useEffect(() => {
-    dispatch(fetchProjects());
-  }, [dispatch]);
-
-  //Filter projects based on search query and category
-  const filteredProjects = useMemo(() => {
-    return list.filter((project) => {
-      const matchesSearch =
-        project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        project.description.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory =
-        selectedCategory === 'All' || project.category === selectedCategory;
-      const matchesStatus = status === 'all' || project.status === status;
-      return matchesSearch && matchesCategory && matchesStatus;
-    });
-  }, [list, searchQuery, selectedCategory]);
+    dispatch(
+      filterProjectsByAsyncStatus({
+        status,
+        search: searchQuery,
+        category: selectedCategory,
+      }),
+    );
+  }, [dispatch, status, searchQuery, selectedCategory]);
 
   if (loading) {
     return (
@@ -150,7 +143,7 @@ export default function Projects() {
 
           {/* Projects Grid */}
           <div className="max-w-7xl mx-auto">
-            {filteredProjects.length === 0 ? (
+            {list.length === 0 ? (
               <div className="text-center py-16">
                 <div className="text-slate-400 text-xl mb-2">
                   No projects found

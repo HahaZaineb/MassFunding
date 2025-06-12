@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { Chip, styled } from '@mui/material';
 import { ProjectData } from '@/types/project';
-import { isProjectVestingCompleted } from '@/services/projectService';
 
 const statusMap = {
   live: {
@@ -71,7 +70,6 @@ const ProjectStatus: React.FC<StatusChipProps> = ({
   setStatus,
   sx,
 }) => {
-  const [vestingCompleted, setVestingCompleted] = useState(false);
 
   const checkIfLocked = (creationDate: string): boolean => {
     const createdAt = new Date(creationDate);
@@ -88,7 +86,7 @@ const ProjectStatus: React.FC<StatusChipProps> = ({
       ? checkIfLocked(project.creationDate)
       : true;
 
-    if (vestingCompleted) return 'completed';
+    if (status === 'completed') return 'completed';
     if (!isLocked) return 'release';
     if (project.amountRaised >= project.goalAmount) return 'release';
 
@@ -96,18 +94,9 @@ const ProjectStatus: React.FC<StatusChipProps> = ({
   };
 
   useEffect(() => {
-    const fetchVestingStatus = async () => {
-      const res = await isProjectVestingCompleted(Number(project.id));
-      // console.log(res,project, 'isProjectVestingCompleted')
-      setVestingCompleted(res);
-    };
-    fetchVestingStatus();
-  }, [project.id]);
-
-  useEffect(() => {
     const statusValue = getProjectStatus();
     setStatus(statusValue);
-  }, [project, vestingCompleted]);
+  }, [project]);
 
   return (
     <div className="absolute top-3 left-4">

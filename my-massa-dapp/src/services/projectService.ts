@@ -14,6 +14,7 @@ import {
   MAX_GAS_CALL,
   parseMas,
 } from '@massalabs/massa-web3';
+import { getVestingSchedule } from './vestingScheduleService';
 
 export async function createProject(
   connectedAccount: any,
@@ -215,9 +216,8 @@ export const getProjectStatus = async (
     ? checkIfLocked(project)
     : true;
 
-  const vestingCompleted = await isProjectVestingCompleted(Number(project.id))
-
-  if (vestingCompleted) return 'completed';
+  const vesting = await getVestingSchedule(Number(project.vestingScheduleId))
+  if (vesting?.isCompleted) return 'completed';
   if (!isLocked) return 'release';
   if (project.amountRaised >= project.goalAmount) return 'release';
 

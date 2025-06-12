@@ -31,10 +31,11 @@ import {
   shortenAddress,
 } from '@/utils/functions';
 import ProjectStatus from './ProjectStatus';
-import { getDetailedVestingInfo } from '@/services/vestingScheduleService';
-import { DetailedVestingInfo } from '@/types/vestingSchedule';
+import { getVestingSchedule } from '@/services/vestingScheduleService';
+import { VestingScheduleData } from '@/types/vestingSchedule';
 import { updateProjectStatus } from '@/store/slices/projectSlice';
 import { useAppDispatch } from '@/store/hooks';
+import { formatMas } from '@massalabs/massa-web3';
 
 interface ProjectCardProps {
   project: ProjectData & { image?: string };
@@ -49,15 +50,15 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [timeLeft, setTimeLeft] = useState('');
   const [vestingDetails, setVestingDetails] =
-    useState<DetailedVestingInfo | null>(null);
+    useState<VestingScheduleData | null>(null);
   const [projectStatus, setProjectStatus] = useState<
     'live' | 'release' | 'completed'
-  >('completed');
+  >('live');
   const [nextReleaseDate, setNextReleaseDate] = useState<Date | null>(null);
 
   useEffect(() => {
-    if (vestingDetails?.vestingScheduleId && vestingDetails?.nextRelease) {
-      setNextReleaseDate(new Date(vestingDetails?.nextRelease));
+    if (vestingDetails?.id && vestingDetails?.nextReleasePeriod) {
+      setNextReleaseDate(new Date(new Date().getTime() + vestingDetails?.nextReleasePeriod));
     } else {
       const createdAt = new Date(project.creationDate || '');
       const lockPeriodInSeconds = Number(project.lockPeriod) * 15; // Convert periods to seconds
@@ -96,16 +97,18 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
       setTimeLeft(`${days}d ${hours}h ${minutes}m ${seconds}s`);
     };
 
-    updateCountdown(); // Initial call
+    updateCountdown();
     const interval = setInterval(updateCountdown, 1000);
 
     return () => clearInterval(interval);
   }, [project, projectStatus]);
 
   const getDetailedVestingInfoHandler = async () => {
-    const details = await getDetailedVestingInfo(Number(project.id));
-    console.log(project.id, details, 'getDetailedVestingInfo');
+    const details = await getVestingSchedule(Number(project.vestingScheduleId));
     setVestingDetails(details);
+    if(details?.isCompleted){
+       setProjectStatus('completed')
+    }
   };
 
   useEffect(() => {
@@ -217,29 +220,34 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
                     Number(project.releaseInterval),
                   )}
                 </p>
-                {vestingDetails && vestingDetails.vestingScheduleId ? (
+                {vestingDetails && vestingDetails.id && projectStatus === 'release' ? (
                   <div className="text-white text-sm space-y-2">
                     <p>
-                      <span className="font-semibold">Vesting Start:</span>{' '}
-                      {vestingDetails.vestingStart}
+                      <span className="font-semibold">Amount Claimed:</span>{' '}
+                      {formatMas(BigInt(vestingDetails.amountClaimed))} MAS
                     </p>
                     <p>
                       <span className="font-semibold">Next Release:</span>{' '}
-                      {vestingDetails.nextRelease}
+                      {nextReleaseDate
+                  ? nextReleaseDate.toLocaleString(undefined, {
+                      weekday: 'short',
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: true,
+                    })
+                  : 'N/A'}
                     </p>
                     <p>
-                      <span className="font-semibold">Amount Received:</span>{' '}
-                      {vestingDetails.amountReceived} MAS
-                    </p>
-                    <p>
-                      <span className="font-semibold">Amount Left:</span>{' '}
-                      {vestingDetails.amountLeft} MAS
+                      <span className="font-semibold">Total Amount:</span>{' '}
+                      {formatMas(BigInt(vestingDetails.totalAmount))} MAS
                     </p>
                   </div>
                 ) : (
-                  <p className="text-slate-400 text-sm">
-                    No vesting schedule details available yet.
-                  </p>
+                  <>
+                  </>
                 )}
               </div>
 
@@ -325,7 +333,7 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
                 TOTAL FUNDS DISTRIBUTED
               </div>
               <div className="relative bg-gray-800 text-[#90a4ae] font-mono font-bold text-sm px-4 py-2 rounded-lg border border-[#90a4ae]/30 hover:border-[#90a4ae]/50 transition-all duration-200 inline-block">
-                {project.amountRaised != null ? project.amountRaised : 'N/A'}{' '}
+                {vestingDetails?.id != null ? formatMas(BigInt(vestingDetails.amountClaimed)) : 'N/A'}{' '}
                 MAS
               </div>
             </div>
