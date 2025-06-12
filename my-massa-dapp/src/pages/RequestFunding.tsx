@@ -76,23 +76,22 @@ export default function RequestFunding() {
     setFormData((prev) => ({ ...prev, releasePercentage: value }));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files && e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData((prev) => ({ ...prev, image: reader.result as string }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
       if (!connectedAccount) {
         throw new Error('Please connect your wallet first');
+      }
+      if (formData.projectName.length > 50) {
+        showToast('Project name must be 50 characters or less.', 'error');
+        setIsSubmitting(false);
+        return;
+      }
+      if (formData.description.length > 500) {
+        showToast('Description must be 500 characters or less.', 'error');
+        setIsSubmitting(false);
+        return;
       }
       await createProject(connectedAccount, {
         title: formData.projectName,
@@ -208,26 +207,9 @@ export default function RequestFunding() {
                     onChange={handleChange}
                     type="url"
                   />
-                  <div className="flex items-center gap-2 mt-2">
-                    <input
-                      id="imageFile"
-                      name="imageFile"
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileChange}
-                      className="text-white text-sm"
-                    />
-                    {formData.image && formData.image.startsWith('data:') && (
-                      <img
-                        src={formData.image || '/placeholder.svg'}
-                        alt="Preview"
-                        className="h-12 w-12 object-cover rounded border border-[#00ff9d]/20"
-                      />
-                    )}
-                  </div>
+
                   <span className="text-xs text-slate-400">
-                    This image will be shown on your project card. You can paste
-                    a URL or upload a file.
+                    This image will be shown on your project card.
                   </span>
                 </div>
 

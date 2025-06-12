@@ -2,19 +2,15 @@
 
 import type React from 'react';
 import { useState } from 'react';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-} from '@mui/material';
+import { Dialog, DialogTitle, DialogContent } from '@mui/material';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { Label } from '../ui/label';
 import { ProjectData } from '@/types/project';
-import { useProjects } from '@/context/project-context';
 import { useAccountStore } from '@massalabs/react-ui-kit';
 import { addUpdate } from '@/services/projectUpdateService';
+import { useToast } from '@/contexts/ToastProvider';
 
 interface AddUpdateModalProps {
   project: ProjectData;
@@ -27,18 +23,22 @@ export default function AddUpdateModal({
   open,
   onClose,
 }: AddUpdateModalProps) {
-  const {  } = useProjects();
+  const { showToast } = useToast();
   const { connectedAccount } = useAccountStore();
 
-  const [formData, setFormData] = useState<{ title: string; content: string; author: string; date: string; image: string }>(
-    {
-      title: '',
-      content: '',
-      author: '',
-      date: new Date().toISOString().split('T')[0],
-      image: '',
-    }
-  );
+  const [formData, setFormData] = useState<{
+    title: string;
+    content: string;
+    author: string;
+    date: string;
+    image: string;
+  }>({
+    title: '',
+    content: '',
+    author: '',
+    date: new Date().toISOString().split('T')[0],
+    image: '',
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (
@@ -48,19 +48,6 @@ export default function AddUpdateModal({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) {
-      setFormData((prev) => ({ ...prev, image: '' }));
-      return;
-    }
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setFormData((prev) => ({ ...prev, image: typeof reader.result === 'string' ? reader.result : '' }));
-    };
-    reader.readAsDataURL(file);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -68,7 +55,7 @@ export default function AddUpdateModal({
       return;
     }
     if (!connectedAccount) {
-      console.error("Wallet not connected. Cannot add update.");
+      console.error('Wallet not connected. Cannot add update.');
       return;
     }
     setIsSubmitting(true);
@@ -79,13 +66,23 @@ export default function AddUpdateModal({
         author: formData.author || project.creator || 'Anonymous',
         image: formData.image,
       });
+      showToast('Project update added successfully!', 'success');
       onClose();
     } catch (error) {
       console.error('Failed to add update:', error);
+      showToast(
+        error instanceof Error
+          ? error.message
+          : 'Failed to add project update. Please try again.',
+        'error',
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const inputClass =
+    'bg-[#0f1629] border-[#00ff9d]/20 text-white focus:border-[#00ff9d] focus:ring-[#00ff9d]/20 mt-1';
 
   return (
     <Dialog
@@ -101,7 +98,7 @@ export default function AddUpdateModal({
       }}
     >
       <form onSubmit={handleSubmit}>
-        <DialogTitle sx={{ color: '#00ff9d' }}>Schedule Project Update</DialogTitle>
+        <DialogTitle sx={{ color: '#00ff9d' }}>Add Project Update</DialogTitle>
 
         <DialogContent dividers className="space-y-4">
           <div>
@@ -115,7 +112,7 @@ export default function AddUpdateModal({
               value={formData.title}
               onChange={handleChange}
               required
-              className="bg-slate-800 border border-slate-600 text-white mt-1"
+              className={inputClass}
             />
           </div>
 
@@ -130,23 +127,7 @@ export default function AddUpdateModal({
               value={formData.content}
               onChange={handleChange}
               required
-              className="min-h-[120px] bg-slate-800 border border-slate-600 text-white mt-1"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="date" className="text-[#e2e8f0]">
-              Schedule Date
-            </Label>
-            <Input
-              id="date"
-              name="date"
-              type="date"
-              value={formData.date}
-              onChange={handleChange}
-              required
-              min={new Date().toISOString().split('T')[0]} // Prevent scheduling in the past
-              className="bg-slate-800 border border-slate-600 text-white mt-1"
+              className={`${inputClass} min-h-[120px]`}
             />
           </div>
 
@@ -157,13 +138,18 @@ export default function AddUpdateModal({
             <Input
               id="image"
               name="image"
-              type="file"
-              accept="image/*"
-              onChange={handleImageChange}
-              className="bg-slate-800 border border-slate-600 text-white mt-1"
+              placeholder="Paste an image URL (e.g. https://...)"
+              className={inputClass}
+              value={formData.image}
+              onChange={handleChange}
+              type="url"
             />
             {formData.image && formData.image.length > 0 && (
-              <img src={formData.image || ''} alt="Preview" className="mt-2 max-h-32 rounded border border-[#00ff9d]/20" />
+              <img
+                src={formData.image || ''}
+                alt="Preview"
+                className="mt-2 max-h-32 rounded border border-[#00ff9d]/20"
+              />
             )}
           </div>
 
@@ -177,7 +163,7 @@ export default function AddUpdateModal({
               placeholder="e.g., John Doe or Project Team"
               value={formData.author}
               onChange={handleChange}
-              className="bg-slate-800 border border-slate-600 text-white mt-1"
+              className={inputClass}
             />
           </div>
 
@@ -195,11 +181,11 @@ export default function AddUpdateModal({
               className="bg-[#2563eb] hover:bg-[#1e40af] text-white"
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Scheduling...' : 'Schedule Update'}
+              {isSubmitting ? 'Processing...' : 'Add Update'}
             </Button>
           </div>
         </DialogContent>
       </form>
     </Dialog>
   );
-} 
+}

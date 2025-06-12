@@ -4,19 +4,22 @@ import { motion } from 'framer-motion';
 import { FilePlus2, HandHeart, DollarSign } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAccountStore } from '@massalabs/react-ui-kit';
-import { useProjects } from '@/context/project-context';
 import { useState, useEffect } from 'react';
 import { Divider, styled } from '@mui/material';
 import SectionHeader from '../SectionHeader';
 import TimelineIcon from '@mui/icons-material/Timeline';
 import { getUserDonations } from '@/services/statsService';
+import { ProjectData } from '@/types/project';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { fetchProjects } from '@/store/slices/projectSlice';
 
 export default function UserActivity() {
-  const { projects } = useProjects();
+  const dispatch = useAppDispatch();
   const { connectedAccount } = useAccountStore();
   const [totalDonations, setTotalDonations] = useState(0);
   const [totalAmountDonated, setTotalAmountDonated] = useState(0);
   const [loading, setLoading] = useState(true);
+  const { list } = useAppSelector((state) => state.projects);
 
   useEffect(() => {
     const fetchUserStats = async () => {
@@ -43,10 +46,11 @@ export default function UserActivity() {
       }
     };
     fetchUserStats();
+        dispatch(fetchProjects());
   }, [connectedAccount]);
 
   const myProjects = connectedAccount
-    ? projects.filter((p) => {
+    ? list.filter((p: ProjectData) => {
         const creatorAddress = p.creator?.toLowerCase() || '';
         const connectedAddress = connectedAccount.address
           .toString()

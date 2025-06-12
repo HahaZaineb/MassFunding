@@ -22,13 +22,15 @@ export default function Projects() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const { list, loading } = useAppSelector((state) => state.projects);
-  const [status, setStatus] = useState('');
+  const [status, setStatus] = useState<
+    'live' | 'release' | 'completed' | 'all'
+  >('all');
 
   useEffect(() => {
     dispatch(fetchProjects());
   }, [dispatch]);
 
-  // Filter projects based on search query and category
+  //Filter projects based on search query and category
   const filteredProjects = useMemo(() => {
     return list.filter((project) => {
       const matchesSearch =
@@ -36,7 +38,8 @@ export default function Projects() {
         project.description.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory =
         selectedCategory === 'All' || project.category === selectedCategory;
-      return matchesSearch && matchesCategory;
+      const matchesStatus = status === 'all' || project.status === status;
+      return matchesSearch && matchesCategory && matchesStatus;
     });
   }, [list, searchQuery, selectedCategory]);
 
@@ -95,13 +98,15 @@ export default function Projects() {
             <div className="space-y-2 min-w-[300px] ">
               <Select
                 value={status}
-                onValueChange={(value) => setStatus(value)}
+                onValueChange={(
+                  value: 'live' | 'release' | 'completed' | 'all',
+                ) => setStatus(value)}
               >
                 <SelectTrigger className="bg-slate-800/60 border-[#00ff9d]/20 text-white focus:border-[#00ff9d] focus:ring-[#00ff9d]/20 border-2 border-emerald-500/50 text-white placeholder-slate-400 rounded-xl backdrop-blur-sm focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400/80 shadow-lg shadow-emerald-500/20 h-[50px]">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent className="bg-[#1a2340] border-[#00ff9d]/20 text-white max-h-[300px] overflow-y-auto">
-                  <SelectItem value="All">All Statuses</SelectItem>
+                  <SelectItem value="all">All Statuses</SelectItem>
                   <SelectItem value="live">Live (Ongoing Projects)</SelectItem>
                   <SelectItem value="release">
                     Released (Recently Deployed)
@@ -158,7 +163,7 @@ export default function Projects() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {filteredProjects.map((project, index) => (
+                {list.map((project, index) => (
                   <motion.div
                     key={project.id}
                     initial={{ opacity: 0, y: 20 }}
