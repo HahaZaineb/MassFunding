@@ -6,7 +6,8 @@ export interface VestingScheduleData {
   lockPeriod: number; // u64 in contract
   releaseInterval: number; // u64 in contract
   releasePercentage: number; // u64 in contract
-  nextReleasePeriod: number; // u64 in contract
+  nextReleasePeriod: number;
+  isCompleted: boolean; // u64 in contract
 }
 
 // Interface for detailed vesting information to be displayed on the frontend.

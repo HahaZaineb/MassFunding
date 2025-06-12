@@ -44,6 +44,7 @@ export async function getVestingSchedule(
       releaseInterval: Number(schedule.releaseInterval),
       releasePercentage: Number(schedule.releasePercentage),
       nextReleasePeriod: Number(schedule.nextReleasePeriod),
+      isCompleted: schedule.isCompleted
     };
   } catch (error) {
     return null; // Return null on any error during fetch or processing
