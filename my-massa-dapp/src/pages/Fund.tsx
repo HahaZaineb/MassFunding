@@ -27,6 +27,7 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchProjectById } from '@/store/slices/projectSlice';
 import { Alert } from '@mui/material';
 import { useToast } from '@/contexts/ToastProvider';
+import { formatPeriodsToHumanReadable } from '@/services/contract-service';
 
 export function FundPage() {
   const dispatch = useAppDispatch();
@@ -223,13 +224,13 @@ export function FundPage() {
                   <div>
                     <span className="text-slate-400">Lock Period:</span>
                     <div className="text-white font-medium">
-                      {selected?.lockPeriod} days
+                      {formatPeriodsToHumanReadable(Number(selected?.lockPeriod))}
                     </div>
                   </div>
                   <div>
                     <span className="text-slate-400">Release Interval:</span>
                     <div className="text-white font-medium">
-                      {selected?.releaseInterval} days
+                      {formatPeriodsToHumanReadable(Number(selected?.releaseInterval))}
                     </div>
                   </div>
                   <div>
@@ -247,9 +248,9 @@ export function FundPage() {
                   </div>
                 </div>
                 <div className="mt-3 text-xs text-slate-400">
-                  Your funds will be locked for {selected?.lockPeriod} days,
+                  Your funds will be locked for {formatPeriodsToHumanReadable(Number(selected?.lockPeriod))},
                   then released {selected?.releasePercentage}% every{' '}
-                  {selected?.releaseInterval} days.
+                  {formatPeriodsToHumanReadable(Number(selected?.releaseInterval))}.
                 </div>
               </div>
 

@@ -151,14 +151,16 @@ function getNextVestingId(): u64 {
       const storedId = Storage.get(NEXT_VESTING_ID_KEY);
       nextId = new Args(storedId).nextU64().expect('Failed to deserialize next vesting ID');
   }
+  generateEvent(`getNextVestingId: Returning ${nextId}`);
   return nextId;
 }
 
 // Helper to increment the next vesting ID
 function incrementNextVestingId(): void {
-  let nextId = getNextVestingId();
+  let nextId = getNextVestingId(); // This will log the current ID
   nextId++;
   Storage.set(NEXT_VESTING_ID_KEY, new Args().add(nextId).serialize());
+  generateEvent(`incrementNextVestingId: Set NEXT_VESTING_ID_KEY to ${nextId}`);
 }
 
 class Project implements Serializable {
@@ -304,8 +306,8 @@ const description = args.nextString().expect('Missing project description');
 const fundingGoal = args.nextU64().expect('Missing funding goal');
 const beneficiaryAddress = args.nextString().expect('Missing beneficiary address');
 const category = args.nextString().expect('Missing project category');
-const lockPeriodInPeriods = args.nextU64().expect('Missing lock period'); // Now expecting periods directly
-const releaseIntervalInPeriods = args.nextU64().expect('Missing release interval'); // Now expecting periods directly
+const lockPeriodInPeriods = args.nextU64().expect('Missing lock period'); // Changed to periods
+const releaseIntervalInPeriods = args.nextU64().expect('Missing release interval'); // Changed to periods
 const releasePercentage = args.nextU64().expect('Missing release percentage');
 const image = args.nextString().expect('Missing image');
 
@@ -320,7 +322,7 @@ const creator = Context.caller();
 const beneficiary = new Address(beneficiaryAddress);
 const creationPeriod = Context.currentPeriod();
 
-// No conversion needed here anymore, as values are already in periods
+// No conversion needed here, as inputs are already in periods
 
 const newProject = new Project(
   projectId,
@@ -374,7 +376,7 @@ deferredCallRegister(
   0 // No coins sent with deferred call
 );
 
-generateEvent(`Initial vesting trigger scheduled for project ${projectId} at period ${triggerSlot.period}. Actual lock period: ${lockPeriodInPeriods} periods.`);
+generateEvent(`Initial vesting trigger scheduled for project ${projectId} at period ${triggerSlot.period}. Actual lock period: ${lockPeriodInPeriods} periods.`); // Updated message
 }
 
 export function getProject(binArgs: StaticArray<u8>): StaticArray<u8> {
@@ -548,23 +550,22 @@ export function triggerInitialVesting(binArgs: StaticArray<u8>): void {
       return;
   }
 
-  // Call createVestingSchedule internally
-  // Need to pass beneficiary, amountToVest, lockPeriod (0), releaseInterval, releasePercentage
-  const vestingScheduleId = createVestingScheduleInternal(
-      projectId,
-      project.beneficiary,
-      amountToVest,
-      0 as u64, // Initial lock period is already handled by deferred calls
-      project.releaseInterval, // Already in periods
-      project.releasePercentage
+  // Create the vesting schedule
+  const vestingId = createVestingScheduleInternal(
+    projectId,
+    project.beneficiary,
+    amountToVest,
+    project.lockPeriod,
+    project.releaseInterval,
+    project.releasePercentage
   );
 
-  // Store the vesting ID and mark initial vesting as triggered
-  project.vestingScheduleId = vestingScheduleId;
+  // Update the project with the new vesting schedule ID and initialVestingTriggered flag
+  project.vestingScheduleId = vestingId;
   project.initialVestingTriggered = true;
   Storage.set(projectKey, project.serialize());
 
-  generateEvent(`Initial vesting triggered for project ${projectId}. Schedule ID: ${vestingScheduleId}. Amount: ${amountToVest}`);
+  generateEvent(`Initial vesting triggered for project ${projectId}. Schedule ID: ${vestingId}. Amount: ${amountToVest}`);
 }
 
 // --- Vesting Functions (Internal) ---
@@ -585,8 +586,11 @@ assert(releasePercentage > 0 && releasePercentage <= 100, "Release percentage mu
 assert(releaseInterval > 0, "Release interval must be greater than 0");
 
 const vestingId = getNextVestingId();
+// Increment the next vesting ID right after getting it
+incrementNextVestingId();
+
 // The start period for the first release is calculated here in the vesting logic
-const startPeriod = Context.currentPeriod() + lockPeriod + 5; // Add 5 periods buffer
+const startPeriod = Context.currentPeriod() + lockPeriod;
 
 const schedule = new vestingSchedule(
   vestingId,
@@ -616,7 +620,7 @@ const releaseArgs = new Args().add(vestingId).serialize();
 const releaseSlot = findCheapestSlot(
   startPeriod,
   startPeriod + 10, // Search window
-  20_000_000, // Gas (changed from 30M to 20M)
+  30_000_000, // Gas
   0 // No coins sent with the deferred call
 );
 
@@ -624,7 +628,7 @@ deferredCallRegister(
   Context.callee().toString(), // Call this contract (itself)
   'releaseVestedTokens', // Call the internal release function
   releaseSlot,
-  20_000_000, // Gas (changed from 30M to 20M)
+  30_000_000, // Gas
   releaseArgs,
   0 // No coins sent with deferred call
 );
@@ -641,7 +645,7 @@ export function releaseVestedTokens(binArgs: StaticArray<u8>): void {
 generateEvent('releaseVestedTokens function called internally');
 
 const args = new Args(binArgs);
-// Get the vesting schedule ID from the new deferred call arguments
+// Get the vesting schedule ID from the deferred call arguments
 const vestingId = args.nextU64().expect('Missing vesting schedule ID for release');
 
 const scheduleKey = getVestingScheduleKey(vestingId);
@@ -693,7 +697,7 @@ if (amountToRelease > 0) {
 // If there's still amount left to claim after this release
 if (schedule.amountClaimed < schedule.totalAmount) {
   // Schedule the next release based on the current period + interval
-  schedule.nextReleasePeriod = currentPeriod + schedule.releaseInterval + 5; // Add 5 periods buffer
+  schedule.nextReleasePeriod = currentPeriod + schedule.releaseInterval;
 
   const nextReleaseArgs = new Args().add(vestingId).serialize();
   const nextReleaseSlot = findCheapestSlot(

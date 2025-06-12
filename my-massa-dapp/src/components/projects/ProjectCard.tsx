@@ -29,6 +29,7 @@ import { useNavigate } from 'react-router-dom';
 import { getCategoryColor } from '@/utils/functions';
 import ProjectStatus from './ProjectStatus';
 import { getDetailedVestingInfo, DetailedVestingInfo } from '@/services/contract-service';
+import { formatPeriodsToHumanReadable } from '@/services/contract-service';
 
 
 interface ProjectCardProps {
@@ -50,14 +51,24 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
     let isLocked = true;
     if (project?.creationDate) {
       const createdAt = new Date(project?.creationDate);
-      const lockDurationDays = 30;
+      const lockPeriodInMilliseconds = Number(project.lockPeriod) * 15 * 1000;
       const now = new Date();
 
       const lockEndDate = new Date(
-        createdAt.getTime() + lockDurationDays * 24 * 60 * 60 * 1000,
+        createdAt.getTime() + lockPeriodInMilliseconds,
       );
 
+      console.log('--- getProjectStatus Debug ---');
+      console.log('Project ID:', project.id);
+      console.log('Raw creationDate:', project.creationDate);
+      console.log('Raw lockPeriod (periods):', project.lockPeriod);
+      console.log('Calculated lockPeriodInMilliseconds:', lockPeriodInMilliseconds);
+      console.log('createdAt Date:', createdAt.toISOString());
+      console.log('lockEndDate Date:', lockEndDate.toISOString());
+      console.log('Current Date (now):', now.toISOString());
+
       isLocked = now < lockEndDate;
+      console.log('Is Locked (now < lockEndDate):', isLocked);
     }
     if (project.amountRaised < project.goalAmount && isLocked) {
       return 'live';
@@ -75,8 +86,9 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
     if (getProjectStatus(project) !== 'live') return;
 
     const createdAt = new Date(project.creationDate || '');
+    const lockPeriodInSeconds = Number(project.lockPeriod) * 15; // Convert periods to seconds
     const lockEnd = new Date(
-      createdAt.getTime() + Number(project.lockPeriod) * 24 * 60 * 60 * 1000,
+      createdAt.getTime() + lockPeriodInSeconds * 1000,
     );
 
     const updateCountdown = () => {
@@ -110,6 +122,12 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
 
   useEffect(() => {
     getDetailedVestingInfoHandler();
+
+    console.log('Project ID:', project.id);
+    console.log('Raw Lock Period:', project.lockPeriod);
+    console.log('Raw Release Interval:', project.releaseInterval);
+    console.log('Formatted Lock Period:', formatPeriodsToHumanReadable(Number(project.lockPeriod)));
+    console.log('Formatted Release Interval:', formatPeriodsToHumanReadable(Number(project.releaseInterval)));
   }, [project]);
 
   return (
@@ -171,7 +189,7 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
           <div className="flex flex-col items-center p-3 bg-slate-700/50 rounded-lg">
             <Clock className="h-4 w-4 mb-1 text-yellow-400" />
             <span className="text-white font-bold text-sm text-center">
-              Every {project.releaseInterval}
+              Every {formatPeriodsToHumanReadable(Number(project.releaseInterval))}
             </span>
             <span className="text-slate-400 text-xs">Interval</span>
           </div>
@@ -191,35 +209,43 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
-              className="space-y-4"
+              transition={{ duration: 0.3, ease: 'easeInOut' }}
+              className="overflow-hidden space-y-4"
             >
-              <div className="bg-slate-700/50 p-4 rounded-lg space-y-3 text-sm">
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-300">Beneficiary:</span>
-                  <span className="font-mono text-xs text-white bg-slate-600 px-2 py-1 rounded">
-                    {project.beneficiary.slice(0, 8)}...
-                    {project.beneficiary.slice(-6)}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-300">Lock Period:</span>
-                  <span className="text-white font-medium">
-                    {project.lockPeriod}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-300">Release Interval:</span>
-                  <span className="text-white font-medium">
-                    {project.releaseInterval}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-300">Release Percentage:</span>
-                  <span className="text-white font-medium">
-                    {project.releasePercentage}%
-                  </span>
-                </div>
+              {/* More Details about the project */}
+              <div className="bg-slate-700/50 p-4 rounded-lg space-y-2">
+                <p className="text-white text-sm">
+                  <span className="font-semibold">Lock Period:</span>{' '}
+                  {formatPeriodsToHumanReadable(Number(project.lockPeriod))}
+                </p>
+                <p className="text-white text-sm">
+                  <span className="font-semibold">Release Interval:</span>{' '}
+                  {formatPeriodsToHumanReadable(Number(project.releaseInterval))}
+                </p>
+                {vestionDetails && vestionDetails.vestingScheduleId ? (
+                  <div className="text-white text-sm space-y-2">
+                    <p>
+                      <span className="font-semibold">Vesting Start:</span>{' '}
+                      {vestionDetails.vestingStart}
+                    </p>
+                    <p>
+                      <span className="font-semibold">Next Release:</span>{' '}
+                      {vestionDetails.nextRelease}
+                    </p>
+                    <p>
+                      <span className="font-semibold">Amount Received:</span>{' '}
+                      {vestionDetails.amountReceived} MAS
+                    </p>
+                    <p>
+                      <span className="font-semibold">Amount Left:</span>{' '}
+                      {vestionDetails.amountLeft} MAS
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-slate-400 text-sm">
+                    No vesting schedule details available yet.
+                  </p>
+                )}
               </div>
 
               <Button
@@ -316,16 +342,14 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
 </div>
 
         )}
-        {getProjectStatus(project) === 'live' && (
+        {getProjectStatus(project) === 'live' ? (
           <Button
-            onClick={() => navigate('/fund/' + project.id)}
-            className="w-full bg-gradient-to-r from-emerald-500 via-green-500 to-teal-600 hover:from-emerald-600 hover:via-green-600 hover:to-teal-700 text-white font-bold py-3 text-lg shadow-lg hover:shadow-emerald-500/25 transition-all duration-300"
+            onClick={() => navigate(`/fund/${project.id}`)}
+            className="w-full bg-[#00ff9d] text-slate-900 hover:bg-[#00e68d] transition-colors flex items-center justify-center"
           >
-            <ThumbsUp className="h-4 w-4 mr-2" />
-            Fund This Project
+            <Coins className="h-4 w-4 mr-2" /> Fund This Project
           </Button>
-        )}
-        {getProjectStatus(project) !== 'live' && (
+        ) : (
           <Button
             onClick={() => setOpenProjectUpdates(true)}
             className="w-full bg-gradient-to-r from-emerald-500 via-green-500 to-teal-600 hover:from-emerald-600 hover:via-green-600 hover:to-teal-700 text-white font-bold py-3 text-lg shadow-lg hover:shadow-emerald-500/25 transition-all duration-300"

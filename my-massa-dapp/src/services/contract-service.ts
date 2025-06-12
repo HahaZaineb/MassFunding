@@ -29,6 +29,48 @@ export const formatPeriodsToHumanReadable = (periods: number): string => {
   }
 };
 
+// Helper function to parse human-readable time (days, hours, minutes, seconds) into periods
+export const parseDurationToPeriods = (durationString: string): bigint => {
+  const parts = durationString.trim().split(' ');
+  if (parts.length < 2) {
+    // If no unit is specified, assume days as a default or throw an error based on expected input
+    const value = parseFloat(durationString);
+    if (isNaN(value)) throw new Error('Invalid duration string: No unit specified or invalid number.');
+    // Default to days if no unit is provided
+    return BigInt(Math.round(value * PERIODS_PER_DAY));
+  }
+
+  const value = parseFloat(parts[0]);
+  if (isNaN(value)) throw new Error('Invalid duration value in string.');
+
+  const unit = parts[1].toLowerCase();
+
+  let periods: number;
+
+  switch (unit) {
+    case 'second':
+    case 'seconds':
+      periods = value * PERIODS_PER_SECOND;
+      break;
+    case 'minute':
+    case 'minutes':
+      periods = value * 60 * PERIODS_PER_SECOND;
+      break;
+    case 'hour':
+    case 'hours':
+      periods = value * 3600 * PERIODS_PER_SECOND;
+      break;
+    case 'day':
+    case 'days':
+      periods = value * 86400 * PERIODS_PER_SECOND;
+      break;
+    default:
+      throw new Error(`Unsupported time unit: ${unit}`);
+  }
+
+  return BigInt(Math.round(periods));
+};
+
 // Create a public provider for read-only operations
 const publicProvider = JsonRpcProvider.buildnet();
 
@@ -83,23 +125,12 @@ export async function createProject(
     // Use connectedAccount's provider for write operations
     const contract = new SmartContract(connectedAccount, CONTRACT_ADDRESS);
 
-    let lockPeriodInPeriods: bigint;
-    const lockPeriodFloat = parseFloat(projectData.lockPeriod);
-    if (lockPeriodFloat < 1) { // Assuming fractional days means seconds
-        const lockPeriodSeconds = lockPeriodFloat * SECONDS_PER_DAY;
-        lockPeriodInPeriods = BigInt(Math.round(lockPeriodSeconds * PERIODS_PER_SECOND));
-    } else { // Assuming whole days
-        lockPeriodInPeriods = BigInt(Math.round(lockPeriodFloat * PERIODS_PER_DAY));
-    }
+    // Convert human-readable durations to periods
+    const lockPeriodInPeriods = parseDurationToPeriods(projectData.lockPeriod);
+    const releaseIntervalInPeriods = parseDurationToPeriods(projectData.releaseInterval);
 
-    let releaseIntervalInPeriods: bigint;
-    const releaseIntervalFloat = parseFloat(projectData.releaseInterval);
-    if (releaseIntervalFloat < 1) { // Assuming fractional days means seconds
-        const releaseIntervalSeconds = releaseIntervalFloat * SECONDS_PER_DAY;
-        releaseIntervalInPeriods = BigInt(Math.round(releaseIntervalSeconds * PERIODS_PER_SECOND));
-    } else { // Assuming whole days
-        releaseIntervalInPeriods = BigInt(Math.round(releaseIntervalFloat * PERIODS_PER_DAY));
-    }
+    console.log('Lock period in periods:', lockPeriodInPeriods.toString());
+    console.log('Release interval in periods:', releaseIntervalInPeriods.toString());
 
     const args = new Args()
       .addString(projectData.title)
@@ -111,11 +142,6 @@ export async function createProject(
       .addU64(releaseIntervalInPeriods) // Pass periods as u64
       .addU64(BigInt(projectData.releasePercentage)) // Convert to BigInt
       .addString(projectData.image);
-
-    console.log(`Debug: projectData.lockPeriod (original string): ${projectData.lockPeriod}`);
-    console.log(`Debug: projectData.releaseInterval (original string): ${projectData.releaseInterval}`);
-    console.log(`Debug: lockPeriod (converted periods): ${lockPeriodInPeriods}`);
-    console.log(`Debug: releaseInterval (converted periods): ${releaseIntervalInPeriods}`);
 
     const response = await contract.call('createProject', args);
     return response;
@@ -281,21 +307,17 @@ export async function getVestingSchedule(vestingId: number): Promise<ContractVes
     // IMPORTANT: If the contract returns an empty array for a non-existent schedule (e.g., completed and removed),
     // we should treat this as "not found".
     if (!response.value || response.value.length === 0) {
-      console.log(`DEBUG: getVestingSchedule - Vesting schedule ${vestingId} not found (empty response.value).`);
       return null;
     }
 
     const schedule = new VestingSchedule();
     try {
       schedule.deserialize(response.value, 0);
-      console.log(`DEBUG: getVestingSchedule - deserialized schedule for vestingId ${vestingId}:`, schedule);
       // Check if deserialized schedule has valid ID after deserialization
       if (Number(schedule.id) !== vestingId) {
-          console.warn(`WARNING: getVestingSchedule - Deserialized schedule ID mismatch. Expected ${vestingId}, got ${Number(schedule.id)}. Returning null.`);
           return null; // Return null if deserialization seems to have failed or returned wrong ID
       }
     } catch (deserializeError) {
-      console.error(`ERROR: getVestingSchedule - Deserialization failed for vestingId ${vestingId}:`, deserializeError);
       return null; // Return null if deserialization throws an error
     }
 
@@ -311,7 +333,6 @@ export async function getVestingSchedule(vestingId: number): Promise<ContractVes
     };
 
   } catch (error) {
-    console.error(`ERROR: getVestingSchedule - Error fetching vesting schedule ${vestingId}:`, error);
     return null; // Return null on any error during fetch or processing
   }
 }
@@ -581,10 +602,10 @@ export async function getDetailedVestingInfo(projectId: number): Promise<Detaile
   };
 
   try {
-    const selectedProject = await getProject(projectId); // Reuse existing getProject
+    const selectedProject = await getProject(projectId);
     
-    // If no vesting schedule ID is associated with the project (e.g., property is null or undefined)
-    // then no vesting schedule exists for this project yet.
+    // If no vesting schedule ID is associated with the project, it means it was never created or is 0.
+    // We will still attempt to fetch it, as 0 could be a valid ID for a re-used schedule.
     if (!selectedProject.vestingScheduleId) {
       return { ...initialInfo, loading: false, hasVestingSchedule: false };
     }
@@ -598,20 +619,21 @@ export async function getDetailedVestingInfo(projectId: number): Promise<Detaile
 
     // If fetchedVestingSchedule is null, it means the schedule was not found (e.g., completed and removed)
     if (!fetchedVestingSchedule) {
-      const isCompleted = await isProjectVestingCompleted(projectId);
-      if (isCompleted) {
-        return {
-          ...initialInfo,
-          vestingScheduleId: selectedProject.vestingScheduleId,
-          vestingStart: 'Completed',
-          nextRelease: 'Completed',
-          amountReceived: 'All claimed',
-          amountLeft: '0',
-          hasVestingSchedule: true,
-          loading: false,
-        };
-      }
-      return { ...initialInfo, loading: false, hasVestingSchedule: false };
+      // If vesting is completed, amountReceived should be totalAmountRaisedAtLockEnd and amountLeft should be 0
+      const totalAmount = Number(selectedProject.totalAmountRaisedAtLockEnd) / 1e9;
+      return {
+        ...initialInfo,
+        loading: false,
+        hasVestingSchedule: false,
+        vestingStart: "Vesting completed", // More precise message
+        nextRelease: "N/A",
+        amountReceived: totalAmount.toLocaleString(), // Display the total amount received
+        amountLeft: "0", // Amount left is 0
+        lockPeriod: formatPeriodsToHumanReadable(Number(selectedProject.lockPeriod)),
+        releaseInterval: formatPeriodsToHumanReadable(Number(selectedProject.releaseInterval)),
+        releasePercentage: selectedProject.releasePercentage,
+        beneficiary: selectedProject.beneficiary,
+      };
     }
 
     const formatPeriodDifference = (targetPeriod: number, currentPeriod: number | null): string => {
@@ -663,7 +685,7 @@ export async function getDetailedVestingInfo(projectId: number): Promise<Detaile
       loading: false,
     };
   } catch (error) {
-    console.error('Error fetching detailed vesting info:', error);
+    console.error('Error getting detailed vesting info:', error);
     return { ...initialInfo, loading: false };
   }
 }
