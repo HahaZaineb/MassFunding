@@ -12,6 +12,8 @@ import {
   History,
   ThumbsUp,
   Users,
+  ChevronUp,
+  ChevronDown,
 } from 'lucide-react';
 import { getCategoryColor } from '@/utils/functions';
 import ProjectStatus from './ProjectStatus';
@@ -38,6 +40,7 @@ const ProjectMiniCard = ({
   const [timeLeft, setTimeLeft] = useState('');
   const [vestionDetails, setVestingDetails] =
     useState<DetailedVestingInfo | null>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   function getProjectStatus(
     project: ProjectData,
@@ -71,8 +74,9 @@ const ProjectMiniCard = ({
     if (getProjectStatus(project) !== 'live') return;
 
     const createdAt = new Date(project.creationDate || '');
+    const lockPeriodInSeconds = Number(project.lockPeriod) * 15; // Convert periods to seconds
     const lockEnd = new Date(
-      createdAt.getTime() + Number(project.lockPeriod) * 24 * 60 * 60 * 1000,
+      createdAt.getTime() + lockPeriodInSeconds * 1000,
     );
 
     const updateCountdown = () => {
@@ -183,95 +187,15 @@ const ProjectMiniCard = ({
           </div>
         </div>
         <div className="flex flex-col gap-2 mt-2">
-          {getProjectStatus(project) === 'live' && (
-            <div className="w-full p-3 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-700 shadow-lg">
-              <div className="text-center space-y-2">
-                <div className="text-teal-400 text-xs font-semibold tracking-wider flex items-center justify-center">
-                  <svg
-                    className="w-3 h-3 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                  FUNDING CLOSES IN
-                </div>
-                <div className="flex justify-center space-x-2">
-                  {timeLeft.split(':').map((unit, index) => (
-                    <div key={index} className="flex flex-col items-center">
-                      <div className="relative group">
-                        <div className="absolute inset-0 bg-teal-500/20 blur-[3px] rounded-lg transition-all duration-300 group-hover:blur-[4px]"></div>
-                        <div className="relative bg-gray-800 text-teal-300 font-mono font-bold text-sm px-3 py-2 rounded-lg border border-teal-500/30 hover:border-teal-400/50 transition-all duration-200">
-                          {unit.padStart(2, '0')}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-          {getProjectStatus(project) === 'release' && (
-            <div className="w-full p-3 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-700 shadow-lg">
-              <div className="text-center space-y-2">
-                <div className="text-[#ff9100] text-xs font-semibold tracking-wider flex items-center justify-center">
-                  <Clock
-                    className="w-3 h-3 mr-2"
-                    stroke="#ff9100"
-                    fill="none"
-                    strokeWidth={2}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  NEXT RELEASE DATE
-                </div>
-                <div className="relative bg-gray-800 text-[#ff9100] font-mono font-bold text-sm px-4 py-2 rounded-lg border border-[#ff9100]/30 hover:border-[#ff9100]/50 transition-all duration-200 inline-block">
-                  {vestionDetails?.nextRelease
-                    ? new Date().toLocaleString(undefined, {
-                        weekday: 'short',
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        hour12: true,
-                      })
-                    : 'N/A'}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {getProjectStatus(project) === 'completed' && (
-            <div className="w-full p-3 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-700 shadow-lg">
-              <div className="text-center space-y-2">
-                <div className="text-[#90a4ae] text-xs font-semibold tracking-wider flex items-center justify-center">
-                  <CheckCircle className="w-4 h-4 mr-2" />
-                  TOTAL FUNDS DISTRIBUTED
-                </div>
-                <div className="relative bg-gray-800 text-[#90a4ae] font-mono font-bold text-sm px-4 py-2 rounded-lg border border-[#90a4ae]/30 hover:border-[#90a4ae]/50 transition-all duration-200 inline-block">
-                  {project.amountRaised != null ? project.amountRaised : 'N/A'}{' '}
-                  MAS
-                </div>
-              </div>
-            </div>
-          )}
-          {showFundBtn && getProjectStatus(project) === 'live' && (
+          {/* Conditional Fund or View Updates Button */}
+          {getProjectStatus(project) === 'live' ? (
             <Button
-              onClick={() => navigate('/fund/' + project.id)}
-              className="w-full bg-gradient-to-r from-emerald-500 via-green-500 to-teal-600 hover:from-emerald-600 hover:via-green-600 hover:to-teal-700 text-white font-bold py-3 text-lg shadow-lg hover:shadow-emerald-500/25 transition-all duration-300"
+              onClick={() => navigate(`/fund/${project.id}`)}
+              className="w-full bg-[#00ff9d] text-slate-900 hover:bg-[#00e68d] transition-colors flex items-center justify-center py-3 text-base font-semibold"
             >
-              <ThumbsUp className="h-4 w-4 mr-2" />
-              Fund This Project
+              <Coins className="h-5 w-5 mr-2" /> Fund This Project
             </Button>
-          )}
-          {getProjectStatus(project) !== 'live' && (
+          ) : (
             <Button
               onClick={() => setOpenProjectUpdates(true)}
               className="w-full bg-gradient-to-r from-emerald-500 via-green-500 to-teal-600 hover:from-emerald-600 hover:via-green-600 hover:to-teal-700 text-white font-bold py-3 text-lg shadow-lg hover:shadow-emerald-500/25 transition-all duration-300"
@@ -280,6 +204,23 @@ const ProjectMiniCard = ({
               View Updates
             </Button>
           )}
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="w-full text-white border-slate-600 hover:bg-slate-600 flex items-center justify-center"
+          >
+            {isExpanded ? (
+              <>
+                <ChevronUp className="h-4 w-4 mr-2" /> Hide Details
+              </>
+            ) : (
+              <>
+                <ChevronDown className="h-4 w-4 mr-2" /> Show More Details
+              </>
+            )}
+          </Button>
         </div>
       </div>
       <ProjectUpdates

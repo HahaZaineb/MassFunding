@@ -1,7 +1,7 @@
 import { Project } from "@/models/ContractModels";
 import { ProjectData } from "@/types";
 import { formatMas } from '@massalabs/massa-web3'
-import { getProjectSupportersCount, getProjectCreationDate } from "@/services/contract-service";
+import { getProjectSupportersCount, getProjectCreationDate, formatPeriodsToHumanReadable } from "@/services/contract-service";
 
 export async function convertProjectToProjectData(project: Project): Promise<ProjectData> {
   const supportersCount = await getProjectSupportersCount(project.projectId);
@@ -20,17 +20,21 @@ export async function convertProjectToProjectData(project: Project): Promise<Pro
     amountRaised: Number(formatMas(project.amountRaised)),
     beneficiary: project.beneficiary,
     category: project.category,
-    lockPeriod: (Number(project.lockPeriod) / 5760).toString(),
-    releaseInterval: (Number(project.releaseInterval) / 5760).toString(),
+    lockPeriod: Number(project.lockPeriod),
+    releaseInterval: Number(project.releaseInterval),
     releasePercentage: Number(project.releasePercentage),
     image: project.image,
+    creationPeriod: Number(project.creationPeriod),
+    vestingScheduleId: project.vestingScheduleId.toString(),
+    initialVestingTriggered: project.initialVestingTriggered,
     // Default values for properties not directly from contract or not needed from contract
     amountNeeded: Number(formatMas(project.fundingGoal - project.amountRaised)),
     supporters: supportersCount,
     deadline: "N/A", // This would ideally come from contract or be calculated dynamically
-    creationDate: creationDate.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }),
+    creationDate: creationDate.toISOString(), // Store as ISO string to preserve time
     // Removed updates and milestones as they are now fetched separately
     updates: [], // Initialize empty, will be populated by separate fetches
     milestones: [], // Initialize empty, will be populated by separate fetches
-  };
+    totalAmountRaisedAtLockEnd: Number(project.totalAmountRaisedAtLockEnd),
+  } as ProjectData;
 }

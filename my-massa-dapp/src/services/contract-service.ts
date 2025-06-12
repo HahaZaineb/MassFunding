@@ -5,6 +5,71 @@ import { readSmartContractPublic } from '@/utils/smartContract';
 import { CONTRACT_ADDRESS } from '@/constants';
 import { convertProjectToProjectData } from '@/utils/project';
 
+const PERIODS_PER_DAY = 5760; // 86400 seconds / 15 seconds per period
+const PERIODS_PER_SECOND = 1 / 15;
+const SECONDS_PER_DAY = 86400;
+
+// Helper function to format periods into human-readable time (days, hours, minutes, seconds)
+export const formatPeriodsToHumanReadable = (periods: number): string => {
+  const totalSeconds = periods * 15; // 1 Massa period = 15 seconds
+
+  if (totalSeconds < 60) {
+    return `${Math.round(totalSeconds)} seconds`;
+  } else if (totalSeconds < 3600) {
+    const minutes = Math.floor(totalSeconds / 60);
+    const remainingSeconds = Math.round(totalSeconds % 60);
+    return `${minutes} minutes` + (remainingSeconds > 0 ? ` ${remainingSeconds} seconds` : '');
+  } else if (totalSeconds < 86400) {
+    const hours = Math.floor(totalSeconds / 3600);
+    const remainingMinutes = Math.round((totalSeconds % 3600) / 60);
+    return `${hours} hours` + (remainingMinutes > 0 ? ` ${remainingMinutes} minutes` : '');
+  } else {
+    const days = Math.round(totalSeconds / 86400);
+    return `${days} days`;
+  }
+};
+
+// Helper function to parse human-readable time (days, hours, minutes, seconds) into periods
+export const parseDurationToPeriods = (durationString: string): bigint => {
+  const parts = durationString.trim().split(' ');
+  if (parts.length < 2) {
+    // If no unit is specified, assume days as a default or throw an error based on expected input
+    const value = parseFloat(durationString);
+    if (isNaN(value)) throw new Error('Invalid duration string: No unit specified or invalid number.');
+    // Default to days if no unit is provided
+    return BigInt(Math.round(value * PERIODS_PER_DAY));
+  }
+
+  const value = parseFloat(parts[0]);
+  if (isNaN(value)) throw new Error('Invalid duration value in string.');
+
+  const unit = parts[1].toLowerCase();
+
+  let periods: number;
+
+  switch (unit) {
+    case 'second':
+    case 'seconds':
+      periods = value * PERIODS_PER_SECOND;
+      break;
+    case 'minute':
+    case 'minutes':
+      periods = value * 60 * PERIODS_PER_SECOND;
+      break;
+    case 'hour':
+    case 'hours':
+      periods = value * 3600 * PERIODS_PER_SECOND;
+      break;
+    case 'day':
+    case 'days':
+      periods = value * 86400 * PERIODS_PER_SECOND;
+      break;
+    default:
+      throw new Error(`Unsupported time unit: ${unit}`);
+  }
+
+  return BigInt(Math.round(periods));
+};
 
 // Create a public provider for read-only operations
 const publicProvider = JsonRpcProvider.buildnet();
@@ -60,14 +125,21 @@ export async function createProject(
     // Use connectedAccount's provider for write operations
     const contract = new SmartContract(connectedAccount, CONTRACT_ADDRESS);
 
+    // Convert human-readable durations to periods
+    const lockPeriodInPeriods = parseDurationToPeriods(projectData.lockPeriod);
+    const releaseIntervalInPeriods = parseDurationToPeriods(projectData.releaseInterval);
+
+    console.log('Lock period in periods:', lockPeriodInPeriods.toString());
+    console.log('Release interval in periods:', releaseIntervalInPeriods.toString());
+
     const args = new Args()
       .addString(projectData.title)
       .addString(projectData.description)
-      .addU64(BigInt(parseFloat(projectData.fundingGoal) * 1e9)) // Convert to nanoMAS BigInt
+      .addU64(BigInt(Math.round(parseFloat(projectData.fundingGoal) * 1e9))) // Convert to nanoMAS BigInt and round
       .addString(projectData.beneficiaryAddress)
       .addString(projectData.category)
-      .addU64(BigInt(projectData.lockPeriod)) // Convert to BigInt
-      .addU64(BigInt(projectData.releaseInterval)) // Convert to BigInt
+      .addU64(lockPeriodInPeriods) // Pass periods as u64
+      .addU64(releaseIntervalInPeriods) // Pass periods as u64
       .addU64(BigInt(projectData.releasePercentage)) // Convert to BigInt
       .addString(projectData.image);
 
@@ -226,14 +298,28 @@ export interface ContractVestingScheduleData {
   nextReleasePeriod: number; // u64 in contract
 }
 
-export async function getVestingSchedule(vestingId: number): Promise<ContractVestingScheduleData> {
+export async function getVestingSchedule(vestingId: number): Promise<ContractVestingScheduleData | null> {
   try {
     const contract = new SmartContract(publicProvider, CONTRACT_ADDRESS);
     const args = new Args().addU64(BigInt(vestingId));
     const response = await contract.read('getVestingSchedule', args);
 
-    // Use bytesToSerializableObjectArray to deserialize the response
-    const [schedule] = bytesToSerializableObjectArray(response.value, VestingSchedule);
+    // IMPORTANT: If the contract returns an empty array for a non-existent schedule (e.g., completed and removed),
+    // we should treat this as "not found".
+    if (!response.value || response.value.length === 0) {
+      return null;
+    }
+
+    const schedule = new VestingSchedule();
+    try {
+      schedule.deserialize(response.value, 0);
+      // Check if deserialized schedule has valid ID after deserialization
+      if (Number(schedule.id) !== vestingId) {
+          return null; // Return null if deserialization seems to have failed or returned wrong ID
+      }
+    } catch (deserializeError) {
+      return null; // Return null if deserialization throws an error
+    }
 
     return {
       id: Number(schedule.id),
@@ -247,8 +333,7 @@ export async function getVestingSchedule(vestingId: number): Promise<ContractVes
     };
 
   } catch (error) {
-    console.error('Error fetching vesting schedule:', error);
-    throw error;
+    return null; // Return null on any error during fetch or processing
   }
 }
 
@@ -364,7 +449,9 @@ export async function fetchUserDonations(userAddress: string): Promise<ContractV
 
     for (const id of vestingIds) {
       const schedule = await getVestingSchedule(id);
-      donationSchedules.push(schedule);
+      if (schedule) { // Only push if schedule is not null
+        donationSchedules.push(schedule);
+      }
     }
 
     return donationSchedules;
@@ -515,9 +602,11 @@ export async function getDetailedVestingInfo(projectId: number): Promise<Detaile
   };
 
   try {
-    const selectedProject = await getProject(projectId); // Reuse existing getProject
+    const selectedProject = await getProject(projectId);
     
-    if (!selectedProject || !selectedProject.vestingScheduleId) {
+    // If no vesting schedule ID is associated with the project, it means it was never created or is 0.
+    // We will still attempt to fetch it, as 0 could be a valid ID for a re-used schedule.
+    if (!selectedProject.vestingScheduleId) {
       return { ...initialInfo, loading: false, hasVestingSchedule: false };
     }
 
@@ -527,6 +616,25 @@ export async function getDetailedVestingInfo(projectId: number): Promise<Detaile
       getVestingSchedule(vestingScheduleIdNum),
       getCurrentMassaPeriod(),
     ]);
+
+    // If fetchedVestingSchedule is null, it means the schedule was not found (e.g., completed and removed)
+    if (!fetchedVestingSchedule) {
+      // If vesting is completed, amountReceived should be totalAmountRaisedAtLockEnd and amountLeft should be 0
+      const totalAmount = Number(selectedProject.totalAmountRaisedAtLockEnd) / 1e9;
+      return {
+        ...initialInfo,
+        loading: false,
+        hasVestingSchedule: false,
+        vestingStart: "Vesting completed", // More precise message
+        nextRelease: "N/A",
+        amountReceived: totalAmount.toLocaleString(), // Display the total amount received
+        amountLeft: "0", // Amount left is 0
+        lockPeriod: formatPeriodsToHumanReadable(Number(selectedProject.lockPeriod)),
+        releaseInterval: formatPeriodsToHumanReadable(Number(selectedProject.releaseInterval)),
+        releasePercentage: selectedProject.releasePercentage,
+        beneficiary: selectedProject.beneficiary,
+      };
+    }
 
     const formatPeriodDifference = (targetPeriod: number, currentPeriod: number | null): string => {
       if (currentPeriod === null) return 'Loading...';
@@ -569,15 +677,15 @@ export async function getDetailedVestingInfo(projectId: number): Promise<Detaile
       nextRelease: formatPeriodDifference(fetchedVestingSchedule.nextReleasePeriod, currentPeriod),
       amountReceived: (fetchedVestingSchedule.amountClaimed / 1e9).toLocaleString(),
       amountLeft: ((fetchedVestingSchedule.totalAmount - fetchedVestingSchedule.amountClaimed) / 1e9).toLocaleString(),
-      lockPeriod: selectedProject.lockPeriod,
-      releaseInterval: selectedProject.releaseInterval,
+      lockPeriod: formatPeriodsToHumanReadable(Number(selectedProject.lockPeriod)), // Format lock period
+      releaseInterval: formatPeriodsToHumanReadable(Number(selectedProject.releaseInterval)), // Format release interval
       releasePercentage: selectedProject.releasePercentage,
       beneficiary: selectedProject.beneficiary,
       hasVestingSchedule: true,
       loading: false,
     };
   } catch (error) {
-    console.error('Error fetching detailed vesting info:', error);
+    console.error('Error getting detailed vesting info:', error);
     return { ...initialInfo, loading: false };
   }
 }

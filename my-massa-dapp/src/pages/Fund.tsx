@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Info, Loader2 } from 'lucide-react';
 import { useAccountStore } from '@massalabs/react-ui-kit';
-import { fundProject, getVestingSchedule, getCurrentMassaPeriod, ContractVestingScheduleData } from '../services/contract-service';
+import { fundProject} from '../services/contract-service';
 import {
   Card,
   CardContent,
@@ -27,6 +27,7 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchProjectById } from '@/store/slices/projectSlice';
 import { Alert } from '@mui/material';
 import { useToast } from '@/contexts/ToastProvider';
+import { formatPeriodsToHumanReadable } from '@/services/contract-service';
 
 export function FundPage() {
   const dispatch = useAppDispatch();
@@ -37,9 +38,9 @@ export function FundPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const { selected, loading } = useAppSelector((state) => state.projects);
-  const [vestingSchedule, setVestingSchedule] = useState<ContractVestingScheduleData | null>(null);
-  const [currentMassaPeriod, setCurrentMassaPeriod] = useState<number | null>(null);
-  const [vestingLoading, setVestingLoading] = useState(false);
+  // const [vestingSchedule, setVestingSchedule] = useState<ContractVestingScheduleData | null>(null);
+  // const [currentMassaPeriod, setCurrentMassaPeriod] = useState<number | null>(null);
+  // const [vestingLoading, setVestingLoading] = useState(false);
 
   useEffect(() => {
     if (projectId) {
@@ -50,18 +51,18 @@ export function FundPage() {
   useEffect(() => {
     const fetchVestingDetails = async () => {
       if (selected && selected.vestingScheduleId) {
-        setVestingLoading(true);
+        // setVestingLoading(true);
         try {
-          const [fetchedVestingSchedule, fetchedCurrentPeriod] = await Promise.all([
-            getVestingSchedule(Number(selected.vestingScheduleId)),
-            getCurrentMassaPeriod(),
-          ]);
-          setVestingSchedule(fetchedVestingSchedule);
-          setCurrentMassaPeriod(fetchedCurrentPeriod);
+          // const [fetchedVestingSchedule, fetchedCurrentPeriod] = await Promise.all([
+          //   getVestingSchedule(Number(selected.vestingScheduleId)),
+          //   getCurrentMassaPeriod(),
+          // ]);
+          // setVestingSchedule(fetchedVestingSchedule);
+          // setCurrentMassaPeriod(fetchedCurrentPeriod);
         } catch (err) {
           console.error('Error fetching vesting details:', err);
         } finally {
-          setVestingLoading(false);
+          // setVestingLoading(false);
         }
       }
     };
@@ -69,38 +70,38 @@ export function FundPage() {
     fetchVestingDetails();
   }, [selected]);
 
-  const formatPeriodDifference = (targetPeriod: number, currentPeriod: number | null): string => {
-    if (currentMassaPeriod === null || currentPeriod === null) return 'Loading...';
+  // const formatPeriodDifference = (targetPeriod: number, currentPeriod: number | null): string => {
+  //   if (currentMassaPeriod === null || currentPeriod === null) return 'Loading...';
 
-    const diffPeriods = targetPeriod - currentPeriod;
-    const seconds = Math.abs(diffPeriods * 15); // 1 Massa period = 15 seconds
+  //   const diffPeriods = targetPeriod - currentPeriod;
+  //   const seconds = Math.abs(diffPeriods * 15); // 1 Massa period = 15 seconds
 
-    if (diffPeriods < 0) {
-      // Past
-      if (seconds < 60) {
-        return `${Math.floor(seconds)} seconds ago`;
-      } else if (seconds < 3600) {
-        return `${Math.floor(seconds / 60)} minutes ago`;
-      } else if (seconds < 86400) {
-        return `${Math.floor(seconds / 3600)} hours ago`;
-      } else {
-        return `${Math.floor(seconds / 86400)} days ago`;
-      }
-    } else if (diffPeriods > 0) {
-      // Future
-      if (seconds < 60) {
-        return `in ${Math.floor(seconds)} seconds`;
-      } else if (seconds < 3600) {
-        return `in ${Math.floor(seconds / 60)} minutes`;
-      } else if (seconds < 86400) {
-        return `in ${Math.floor(seconds / 3600)} hours`;
-      } else {
-        return `in ${Math.floor(seconds / 86400)} days`;
-      }
-    } else {
-      return 'now';
-    }
-  };
+  //   if (diffPeriods < 0) {
+  //     // Past
+  //     if (seconds < 60) {
+  //       return `${Math.floor(seconds)} seconds ago`;
+  //     } else if (seconds < 3600) {
+  //       return `${Math.floor(seconds / 60)} minutes ago`;
+  //     } else if (seconds < 86400) {
+  //       return `${Math.floor(seconds / 3600)} hours ago`;
+  //     } else {
+  //       return `${Math.floor(seconds / 86400)} days ago`;
+  //     }
+  //   } else if (diffPeriods > 0) {
+  //     // Future
+  //     if (seconds < 60) {
+  //       return `in ${Math.floor(seconds)} seconds`;
+  //     } else if (seconds < 3600) {
+  //       return `in ${Math.floor(seconds / 60)} minutes`;
+  //     } else if (seconds < 86400) {
+  //       return `in ${Math.floor(seconds / 3600)} hours`;
+  //     } else {
+  //       return `in ${Math.floor(seconds / 86400)} days`;
+  //     }
+  //   } else {
+  //     return 'now';
+  //   }
+  // };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -223,13 +224,13 @@ export function FundPage() {
                   <div>
                     <span className="text-slate-400">Lock Period:</span>
                     <div className="text-white font-medium">
-                      {selected?.lockPeriod} days
+                      {formatPeriodsToHumanReadable(Number(selected?.lockPeriod))}
                     </div>
                   </div>
                   <div>
                     <span className="text-slate-400">Release Interval:</span>
                     <div className="text-white font-medium">
-                      {selected?.releaseInterval} days
+                      {formatPeriodsToHumanReadable(Number(selected?.releaseInterval))}
                     </div>
                   </div>
                   <div>
@@ -247,9 +248,9 @@ export function FundPage() {
                   </div>
                 </div>
                 <div className="mt-3 text-xs text-slate-400">
-                  Your funds will be locked for {selected?.lockPeriod} days,
+                  Your funds will be locked for {formatPeriodsToHumanReadable(Number(selected?.lockPeriod))},
                   then released {selected?.releasePercentage}% every{' '}
-                  {selected?.releaseInterval} days.
+                  {formatPeriodsToHumanReadable(Number(selected?.releaseInterval))}.
                 </div>
               </div>
 

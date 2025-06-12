@@ -17,8 +17,8 @@ export interface ProjectData {
   goalAmount: number
   amountRaised: number
   beneficiary: string
-  lockPeriod: string // In days
-  releaseInterval: string // In days
+  lockPeriod: number // In periods
+  releaseInterval: number // In periods
   releasePercentage: number
   supporters: number
   category: string 
@@ -31,6 +31,8 @@ export interface ProjectData {
   creationDate?: string
   vestingScheduleId?: string | null;
   creationPeriod: number;
+  initialVestingTriggered: boolean;
+  totalAmountRaisedAtLockEnd: number;
 }
 
 export interface WalletInfo {

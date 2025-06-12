@@ -323,7 +323,8 @@ export default function RequestFunding() {
                           <SelectValue placeholder="Select lock period" />
                         </SelectTrigger>
                         <SelectContent className="bg-[#1a2340] border-[#00ff9d]/20 text-white">
-                          <SelectItem value="0">No lock period</SelectItem>
+                          <SelectItem value="0.001388888">2 minutes</SelectItem>
+                          <SelectItem value="0.000694444">1 minute</SelectItem>
                           <SelectItem value="30">30 days</SelectItem>
                           <SelectItem value="60">60 days</SelectItem>
                           <SelectItem value="90">90 days</SelectItem>
@@ -346,12 +347,11 @@ export default function RequestFunding() {
                           <SelectValue placeholder="Select release interval" />
                         </SelectTrigger>
                         <SelectContent className="bg-[#1a2340] border-[#00ff9d]/20 text-white">
-                          <SelectItem value="7">Weekly (7 days)</SelectItem>
-                          <SelectItem value="7">Weekly (7 days)</SelectItem>
+                          <SelectItem value="0.001388888">2 minutes</SelectItem>
+                          <SelectItem value="0.000694444">1 minute</SelectItem>
+                           <SelectItem value="7">Weekly (7 days)</SelectItem>
                           <SelectItem value="30">Monthly (30 days)</SelectItem>
-                          <SelectItem value="90">
-                            Quarterly (90 days)
-                          </SelectItem>
+                          <SelectItem value="90">Quarterly (90 days)</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
