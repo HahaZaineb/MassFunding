@@ -129,7 +129,7 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
           status={projectStatus}
           setStatus={setProjectStatus}
         />
-        <div className="absolute top-4 right-4">
+        <div className="absolute top-3 right-4">
           <Badge
             className={`text-white border-0`}
             style={{
