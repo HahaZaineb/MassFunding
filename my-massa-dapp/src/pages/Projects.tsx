@@ -9,12 +9,20 @@ import ProjectCard from '@/components/projects/ProjectCard';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchProjects } from '@/store/slices/projectSlice';
 import Loader from '@/components/Loader';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export default function Projects() {
   const dispatch = useAppDispatch();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const { list, loading } = useAppSelector((state) => state.projects);
+  const [status, setStatus] = useState('');
 
   useEffect(() => {
     dispatch(fetchProjects());
@@ -35,7 +43,7 @@ export default function Projects() {
   if (loading) {
     return (
       <div className="w-full min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
-        <Loader/>
+        <Loader />
       </div>
     );
   }
@@ -70,19 +78,42 @@ export default function Projects() {
               Discover and support innovative projects that make a difference
             </p>
           </div>
-
-          {/* Enhanced Search Bar */}
-          <div className="max-w-2xl mx-auto">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-emerald-400 h-5 w-5" />
-              <Input
-                placeholder="Search for projects..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-12 h-12 text-lg bg-slate-800/60 border-2 border-emerald-500/50 text-white placeholder-slate-400 rounded-xl backdrop-blur-sm focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400/80 shadow-lg shadow-emerald-500/20"
-              />
+          <div className="flex flex-row flex-wrap gap-3">
+            {' '}
+            {/* Enhanced Search Bar */}
+            <div className="flex-grow">
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-emerald-400 h-5 w-5" />
+                <Input
+                  placeholder="Search for projects..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-12 h-12 text-lg bg-slate-800/60 border-2 border-emerald-500/50 text-white placeholder-slate-400 rounded-xl backdrop-blur-sm focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400/80 shadow-lg shadow-emerald-500/20"
+                />
+              </div>
+            </div>{' '}
+            <div className="space-y-2 min-w-[300px] ">
+              <Select
+                value={status}
+                onValueChange={(value) => setStatus(value)}
+              >
+                <SelectTrigger className="bg-slate-800/60 border-[#00ff9d]/20 text-white focus:border-[#00ff9d] focus:ring-[#00ff9d]/20 border-2 border-emerald-500/50 text-white placeholder-slate-400 rounded-xl backdrop-blur-sm focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400/80 shadow-lg shadow-emerald-500/20 h-[50px]">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#1a2340] border-[#00ff9d]/20 text-white max-h-[300px] overflow-y-auto">
+                  <SelectItem value="All">All Statuses</SelectItem>
+                  <SelectItem value="live">Live (Ongoing Projects)</SelectItem>
+                  <SelectItem value="release">
+                    Released (Recently Deployed)
+                  </SelectItem>
+                  <SelectItem value="completed">
+                    Completed (Wrapped Up)
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
+
           {/* Enhanced Category Buttons */}
           <div className="flex flex-wrap justify-center gap-2">
             {[{ name: 'All', color: '#00ff9d' }, ...CATEGORIES].map(

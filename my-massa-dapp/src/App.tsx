@@ -5,7 +5,7 @@ import {
   Route,
   Navigate,
 } from 'react-router-dom';
-import { ThemeProvider } from '@/components/theme-provider';
+import { ThemeProvider } from '@/contexts/ThemeProvider';
 import { Navbar } from '@/components/layout/navbar';
 import { Footer } from '@/components/layout/footer';
 import Loader from '@/components/Loader';
@@ -22,6 +22,7 @@ import SwapPage from './pages/swap';
 import { ToastProvider } from './contexts/ToastProvider';
 import { ProjectProvider } from './context/project-context';
 import useAccountSync from './hooks/useAccountSync';
+import BridgePage from './pages/Bridge';
 
 function App() {
   useAccountSync();
@@ -55,6 +56,7 @@ function App() {
                 <Route path="/about" element={<AboutPage />} />
                 <Route path="/fund/:projectId" element={<FundPage />} />
                 <Route path="swap" element={<SwapPage />} />
+                <Route path="/bridge" element={<BridgePage />} />
                 <Route
                   path="/profile"
                   element={

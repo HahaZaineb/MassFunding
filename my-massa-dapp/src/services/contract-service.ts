@@ -2,13 +2,11 @@ import { Args, SmartContract, JsonRpcProvider, bytesToSerializableObjectArray} f
 import { ProjectData } from '@/types';
 import { Project, VestingSchedule, ProjectUpdate } from '@/models/ContractModels';
 import { readSmartContractPublic } from '@/utils/smartContract';
-import { CONTRACT_ADDRESS } from '@/constants';
 import { convertProjectToProjectData } from '@/utils/project';
-import { formatMas } from '@massalabs/massa-web3';
+import { CONTRACT_ADDRESS } from '@/configs/massa';
 
 const PERIODS_PER_DAY = 5760; // 86400 seconds / 15 seconds per period
 const PERIODS_PER_SECOND = 1 / 15;
-
 
 // Helper function to format periods into human-readable time (days, hours, minutes, seconds)
 export const formatPeriodsToHumanReadable = (periods: number): string => {
@@ -129,10 +127,6 @@ export async function createProject(
     // Convert human-readable durations to periods
     const lockPeriodInPeriods = parseDurationToPeriods(projectData.lockPeriod);
     const releaseIntervalInPeriods = parseDurationToPeriods(projectData.releaseInterval);
-
-    console.log('Lock period in periods:', lockPeriodInPeriods.toString());
-    console.log('Release interval in periods:', releaseIntervalInPeriods.toString());
-
     const args = new Args()
       .addString(projectData.title)
       .addString(projectData.description)
@@ -540,20 +534,14 @@ export async function isProjectVestingCompleted(projectId: number): Promise<bool
     // 2. Get the vestingScheduleId from the project
     const vestingScheduleId = Number(project.vestingScheduleId);
 
-    // If vestingScheduleId is 0 or not set, check if all funds have been raised and accounted for.
-    // This indicates vesting is implicitly completed.
+    // If vestingScheduleId is 0 or not set, vesting hasn't started
     if (!vestingScheduleId) {
-      if (project.amountRaised >= project.fundingGoal &&
-          project.amountRaised === project.totalAmountRaisedAtLockEnd) {
-        return true; // Vesting completed implicitly
-      }
-      return false; // Vesting not started or not completed yet
+      return false;
     }
 
     // 3. Fetch the vesting schedule
     const vestingArgs = new Args().addU64(BigInt(vestingScheduleId));
     const vestingResponse = await contract.read('getVestingSchedule', vestingArgs);
-
     if (!vestingResponse.value || vestingResponse.value.length === 0) {
       // If the vesting schedule does not exist, it is completed
       return true;
@@ -593,158 +581,105 @@ export interface DetailedVestingInfo {
  * @returns A promise that resolves to a DetailedVestingInfo object, or null if no vesting schedule exists.
  */
 export async function getDetailedVestingInfo(projectId: number): Promise<DetailedVestingInfo> {
+  const initialInfo: DetailedVestingInfo = {
+    vestingScheduleId: null,
+    vestingStart: 'N/A',
+    nextRelease: 'N/A',
+    amountReceived: 'N/A',
+    amountLeft: 'N/A',
+    lockPeriod: 'N/A',
+    releaseInterval: 'N/A',
+    releasePercentage: 0,
+    beneficiary: 'N/A',
+    hasVestingSchedule: false,
+    loading: true,
+  };
+
   try {
-    const project = await getProject(projectId);
+    const selectedProject = await getProject(projectId);
+    
+    // If no vesting schedule ID is associated with the project, it means it was never created or is 0.
+    // We will still attempt to fetch it, as 0 could be a valid ID for a re-used schedule.
+    if (!selectedProject.vestingScheduleId) {
+      return { ...initialInfo, loading: false, hasVestingSchedule: false };
+    }
 
-    if (!project) {
-      console.log(`Project ${projectId} not found.`);
+    const vestingScheduleIdNum = Number(selectedProject.vestingScheduleId);
+
+    const [fetchedVestingSchedule, currentPeriod] = await Promise.all([
+      getVestingSchedule(vestingScheduleIdNum),
+      getCurrentMassaPeriod(),
+    ]);
+
+    // If fetchedVestingSchedule is null, it means the schedule was not found (e.g., completed and removed)
+    if (!fetchedVestingSchedule) {
+      // If vesting is completed, amountReceived should be totalAmountRaisedAtLockEnd and amountLeft should be 0
+      const totalAmount = Number(selectedProject.totalAmountRaisedAtLockEnd) / 1e9;
       return {
-        vestingScheduleId: null,
-        vestingStart: 'N/A',
-        nextRelease: 'N/A',
-        amountReceived: 'N/A',
-        amountLeft: 'N/A',
-        lockPeriod: 'N/A',
-        releaseInterval: 'N/A',
-        releasePercentage: 0,
-        beneficiary: 'N/A',
+        ...initialInfo,
+        loading: false,
         hasVestingSchedule: false,
-        loading: false,
+        vestingStart: "Vesting completed", // More precise message
+        nextRelease: "N/A",
+        amountReceived: totalAmount.toLocaleString(), // Display the total amount received
+        amountLeft: "0", // Amount left is 0
+        lockPeriod: formatPeriodsToHumanReadable(Number(selectedProject.lockPeriod)),
+        releaseInterval: formatPeriodsToHumanReadable(Number(selectedProject.releaseInterval)),
+        releasePercentage: selectedProject.releasePercentage,
+        beneficiary: selectedProject.beneficiary,
       };
     }
 
-    // Case 1: No vesting schedule ID set or ID is 0
-    if (project.vestingScheduleId === undefined || project.vestingScheduleId === null || Number(project.vestingScheduleId) === 0) {
-      console.log(`No vesting schedule ID found for project ${projectId} or ID is 0.`);
+    const formatPeriodDifference = (targetPeriod: number, currentPeriod: number | null): string => {
+      if (currentPeriod === null) return 'Loading...';
 
-      // Check if vesting is implicitly completed based on amounts
-      if (project.amountRaised >= project.goalAmount &&
-          project.amountRaised === project.totalAmountRaisedAtLockEnd) {
-        return {
-          vestingScheduleId: '0', // Indicates completion via zero ID
-          vestingStart: 'Vesting completed',
-          nextRelease: 'N/A', // No next release for completed vesting
-          amountReceived: formatMas(BigInt(project.totalAmountRaisedAtLockEnd)),
-          amountLeft: '0',
-          lockPeriod: formatPeriodsToHumanReadable(Number(project.lockPeriod)),
-          releaseInterval: formatPeriodsToHumanReadable(Number(project.releaseInterval)),
-          releasePercentage: Number(project.releasePercentage),
-          beneficiary: project.beneficiary,
-          hasVestingSchedule: true, // Treat as having a "completed" schedule
-          loading: false,
-        };
+      const diffPeriods = targetPeriod - currentPeriod;
+      const seconds = Math.abs(diffPeriods * 15); // 1 Massa period = 15 seconds
+
+      if (diffPeriods < 0) {
+        // Past
+        if (seconds < 60) {
+          return `${Math.floor(seconds)} seconds ago`;
+        } else if (seconds < 3600) {
+          return `${Math.floor(seconds / 60)} minutes ago`;
+        } else if (seconds < 86400) {
+          return `${Math.floor(seconds / 3600)} hours ago`;
+        } else {
+          return `${Math.floor(seconds / 86400)} days ago`;
+        }
+      } else if (diffPeriods > 0) {
+        // Future
+        if (seconds < 60) {
+          return `in ${Math.floor(seconds)} seconds`;
+        } else if (seconds < 3600) {
+          return `in ${Math.floor(seconds / 60)} minutes`;
+        } else if (seconds < 86400) {
+          return `in ${Math.floor(seconds / 3600)} hours`;
+        } else {
+          return `in ${Math.floor(seconds / 86400)} days`;
+        }
       } else {
-        // Not completed, no schedule exists yet or not applicable
-        return {
-          vestingScheduleId: null,
-          vestingStart: 'N/A',
-          nextRelease: 'N/A',
-          amountReceived: 'N/A',
-          amountLeft: 'N/A',
-          lockPeriod: 'N/A',
-          releaseInterval: 'N/A',
-          releasePercentage: 0,
-          beneficiary: 'N/A',
-          hasVestingSchedule: false,
-          loading: false,
-        };
+        return 'now';
       }
-    }
+    };
 
-    // Case 2: Vesting schedule ID exists, try to fetch the actual schedule
-    const vestingScheduleId = Number(project.vestingScheduleId);
-    const vestingSchedule = await getVestingSchedule(vestingScheduleId);
-
-    // If vesting schedule not found even with an ID (e.g., removed after completion on contract)
-    if (!vestingSchedule) {
-      console.log(`Vesting schedule ${vestingScheduleId} not found.`);
-      // If the schedule is gone, it means it's completed
-      return {
-        vestingScheduleId: project.vestingScheduleId,
-        vestingStart: 'Vesting completed',
-        nextRelease: 'N/A', // No next release for completed vesting
-        amountReceived: formatMas(BigInt(project.totalAmountRaisedAtLockEnd)), // Convert to BigInt for formatMas
-        amountLeft: '0',
-        lockPeriod: formatPeriodsToHumanReadable(Number(project.lockPeriod)),
-        releaseInterval: formatPeriodsToHumanReadable(Number(project.releaseInterval)),
-        releasePercentage: Number(project.releasePercentage),
-        beneficiary: project.beneficiary,
-        hasVestingSchedule: true, // Treat as having a "completed" schedule
-        loading: false,
-      };
-    }
-
-    // Case 3: Vesting schedule found, calculate details
-    const currentMassaPeriod = await getCurrentMassaPeriod();
-    const vestingStartPeriod = Number(project.creationPeriod); // Assuming creationPeriod is the vesting start
-    const nextReleasePeriod = Number(vestingSchedule.nextReleasePeriod);
-
-    const vestingStartFormatted = formatPeriodDifference(vestingStartPeriod, currentMassaPeriod) + ' ago';
-    const nextReleaseFormatted = nextReleasePeriod > currentMassaPeriod ? formatPeriodDifference(nextReleasePeriod, currentMassaPeriod) : 'Already released';
-
-    const amountReceived = formatMas(BigInt(vestingSchedule.amountClaimed));
-    const amountLeft = formatMas(BigInt(vestingSchedule.totalAmount - vestingSchedule.amountClaimed));
+    const vestingStartPeriod = selectedProject.creationPeriod + Number(selectedProject.lockPeriod);
 
     return {
-      vestingScheduleId: project.vestingScheduleId,
-      vestingStart: vestingStartFormatted,
-      nextRelease: nextReleaseFormatted,
-      amountReceived: amountReceived,
-      amountLeft: amountLeft,
-      lockPeriod: formatPeriodsToHumanReadable(Number(vestingSchedule.lockPeriod)),
-      releaseInterval: formatPeriodsToHumanReadable(Number(vestingSchedule.releaseInterval)),
-      releasePercentage: Number(vestingSchedule.releasePercentage),
-      beneficiary: vestingSchedule.beneficiary,
+      vestingScheduleId: selectedProject.vestingScheduleId,
+      vestingStart: formatPeriodDifference(vestingStartPeriod, currentPeriod),
+      nextRelease: formatPeriodDifference(fetchedVestingSchedule.nextReleasePeriod, currentPeriod),
+      amountReceived: (fetchedVestingSchedule.amountClaimed / 1e9).toLocaleString(),
+      amountLeft: ((fetchedVestingSchedule.totalAmount - fetchedVestingSchedule.amountClaimed) / 1e9).toLocaleString(),
+      lockPeriod: formatPeriodsToHumanReadable(Number(selectedProject.lockPeriod)), // Format lock period
+      releaseInterval: formatPeriodsToHumanReadable(Number(selectedProject.releaseInterval)), // Format release interval
+      releasePercentage: selectedProject.releasePercentage,
+      beneficiary: selectedProject.beneficiary,
       hasVestingSchedule: true,
       loading: false,
     };
   } catch (error) {
-    console.error('Error fetching detailed vesting info:', error);
-    return {
-      vestingScheduleId: null,
-      vestingStart: 'N/A',
-      nextRelease: 'N/A',
-      amountReceived: 'N/A',
-      amountLeft: 'N/A',
-      lockPeriod: 'N/A',
-      releaseInterval: 'N/A',
-      releasePercentage: 0,
-      beneficiary: 'N/A',
-      hasVestingSchedule: false,
-      loading: false,
-    };
+    console.error('Error getting detailed vesting info:', error);
+    return { ...initialInfo, loading: false };
   }
 }
-
-const formatPeriodDifference = (targetPeriod: number, currentPeriod: number | null): string => {
-  if (currentPeriod === null) return 'Loading...';
-
-  const diffPeriods = targetPeriod - currentPeriod;
-  const seconds = Math.abs(diffPeriods * 15); // 1 Massa period = 15 seconds
-
-  if (diffPeriods < 0) {
-    // Past
-    if (seconds < 60) {
-      return `${Math.floor(seconds)} seconds ago`;
-    } else if (seconds < 3600) {
-      return `${Math.floor(seconds / 60)} minutes ago`;
-    } else if (seconds < 86400) {
-      return `${Math.floor(seconds / 3600)} hours ago`;
-    } else {
-      return `${Math.floor(seconds / 86400)} days ago`;
-    }
-  } else if (diffPeriods > 0) {
-    // Future
-    if (seconds < 60) {
-      return `in ${Math.floor(seconds)} seconds`;
-    } else if (seconds < 3600) {
-      return `in ${Math.floor(seconds / 60)} minutes`;
-    } else if (seconds < 86400) {
-      return `in ${Math.floor(seconds / 3600)} hours`;
-    } else {
-      return `in ${Math.floor(seconds / 86400)} days`;
-    }
-  } else {
-    return 'now';
-  }
-};

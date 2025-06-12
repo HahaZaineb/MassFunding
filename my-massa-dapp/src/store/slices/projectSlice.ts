@@ -7,7 +7,7 @@ export const fetchProjects = createAsyncThunk<ProjectData[]>(
   'projects/fetchAll',
   async () => {
     const response = await getAllProjects()
-    return response
+    return response.reverse()
   }
 )
 
@@ -16,7 +16,6 @@ export const fetchProjectById = createAsyncThunk<ProjectData, string>(
   'projects/fetchById',
   async (id: string) => {
     const response = await getProject(Number(id))
-    console.log(response, "response ffff")
     return response
   }
 )

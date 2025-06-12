@@ -34,9 +34,6 @@ const ProjectUpdates: React.FC<ProjectUpdatesProps> = ({ open, onClose, projectI
         
         setUpdates(fetchedUpdates);
         setCurrentMassaPeriod(currentPeriod);
-        console.log('Fetched updates:', fetchedUpdates);
-        console.log('Current Massa Period:', currentPeriod);
-
       } catch (err) {
         console.error('Error fetching project updates or current period:', err);
         setError('Failed to load updates.');
