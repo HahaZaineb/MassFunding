@@ -25,16 +25,21 @@ import ProgressBar from '../ProgressBar';
 import ProjectUpdates from './ProjectUpdates';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { formatPeriodsToHumanReadable, getCategoryColor, shortenAddress } from '@/utils/functions';
+import {
+  formatPeriodsToHumanReadable,
+  getCategoryColor,
+  shortenAddress,
+} from '@/utils/functions';
 import ProjectStatus from './ProjectStatus';
 import { getDetailedVestingInfo } from '@/services/vestingScheduleService';
 import { DetailedVestingInfo } from '@/types/vestingSchedule';
 
 interface ProjectCardProps {
   project: ProjectData & { image?: string };
+  showDetails?: boolean;
 }
 
-const ProjectCard = ({ project }: ProjectCardProps) => {
+const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
   const navigate = useNavigate();
   const percentFunded = (project.amountRaised / project.goalAmount) * 100;
   const [openProjectUpdates, setOpenProjectUpdates] = useState(false);
@@ -92,7 +97,7 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
 
   const getDetailedVestingInfoHandler = async () => {
     const details = await getDetailedVestingInfo(Number(project.id));
-    console.log(project.id, details, "getDetailedVestingInfo")
+    console.log(project.id, details, 'getDetailedVestingInfo');
     setVestingDetails(details);
   };
 
@@ -335,24 +340,26 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
             View Updates
           </Button>
         )}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-slate-400 hover:text-white"
-          onClick={() => setIsExpanded((current) => !current)}
-        >
-          {isExpanded ? (
-            <>
-              <ChevronUp className="h-3 w-3 mr-1" />
-              Show Less Details
-            </>
-          ) : (
-            <>
-              <ChevronDown className="h-3 w-3 mr-1" />
-              Show More Details
-            </>
-          )}
-        </Button>
+        {showDetails && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-slate-400 hover:text-white"
+            onClick={() => setIsExpanded((current) => !current)}
+          >
+            {isExpanded ? (
+              <>
+                <ChevronUp className="h-3 w-3 mr-1" />
+                Show Less Details
+              </>
+            ) : (
+              <>
+                <ChevronDown className="h-3 w-3 mr-1" />
+                Show More Details
+              </>
+            )}
+          </Button>
+        )}
       </CardFooter>
       <ProjectUpdates
         projectId={project.id}
