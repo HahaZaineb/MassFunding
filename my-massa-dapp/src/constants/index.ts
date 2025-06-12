@@ -1,6 +1,3 @@
-
-export const CONTRACT_ADDRESS = "AS12WiaaAYf9WVEEyZ76rboNJwHJGqov4Ro5y3JMDsjxss6aJV958"
-
 export const CATEGORIES = [
   { name: "Web3", color: "#7E57C2" },             // rich purple
   { name: "Metaverse", color: "#BA68C8" },        // soft lavender
@@ -14,12 +11,4 @@ export const CATEGORIES = [
   { name: "Protocols", color: "#1E88E5" },        // sharp blue
   { name: "Cross-chain", color: "#9C27B0" },      // bold purple
   { name: "Other", color: "#66BB6A" },            // fresh green
-];
-
-export const PROJECT_CATEGORIES = [
-  { name: "DeFi", color: "#00ff9d" },           // green
-  { name: "Gaming", color: "#ff6b6b" },         // red
-  { name: "Infrastructure", color: "#4dabf7" }, // blue
-  { name: "Social", color: "#ffd43b" },         // yellow
-  { name: "Other", color: "#a29bfe" },          // purple
 ];

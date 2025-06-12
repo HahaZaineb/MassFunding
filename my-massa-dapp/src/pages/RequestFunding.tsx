@@ -22,7 +22,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { useToast } from '@/components/ui/use-toast';
 import {
   Card,
   CardContent,
@@ -35,11 +34,11 @@ import { createProject } from '@/services/contract-service';
 import { CATEGORIES } from '@/constants';
 import { Slider } from '@mui/material';
 import { useAccountStore } from '@massalabs/react-ui-kit/src/lib/ConnectMassaWallets';
+import { useToast } from '@/contexts/ToastProvider';
 
 export default function RequestFunding() {
-  const { toast } = useToast();
-  
-  const { connectedAccount } = useAccountStore()
+  const { showToast } = useToast();
+  const { connectedAccount } = useAccountStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     projectName: '',
@@ -95,23 +94,21 @@ export default function RequestFunding() {
       if (!connectedAccount) {
         throw new Error('Please connect your wallet first');
       }
-      const response = await createProject(connectedAccount, {
+      await createProject(connectedAccount, {
         title: formData.projectName,
         description: formData.description,
         fundingGoal: formData.amountNeeded,
-        beneficiaryAddress:
-          formData.walletAddress || connectedAccount?.address,
+        beneficiaryAddress: formData.walletAddress || connectedAccount?.address,
         category: formData.category,
         lockPeriod: formData.lockPeriod,
         releaseInterval: formData.releaseInterval,
         releasePercentage: formData.releasePercentage,
         image: formData.image,
       });
-      toast({
-        title: 'Project Created',
-        description: 'Your funding request has been submitted successfully.',
-        variant: 'default',
-      });
+      showToast(
+        'Your funding request has been submitted successfully.',
+        'success',
+      );
 
       setFormData({
         projectName: '',
@@ -126,14 +123,12 @@ export default function RequestFunding() {
       });
     } catch (error) {
       console.error('Error creating project:', error);
-      toast({
-        title: 'Error',
-        description:
-          error instanceof Error
-            ? error.message
-            : 'Failed to create project. Please try again.',
-        variant: 'destructive',
-      });
+      showToast(
+        error instanceof Error
+          ? error.message
+          : 'Failed to create project. Please try again.',
+        'error',
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -344,9 +339,11 @@ export default function RequestFunding() {
                         <SelectContent className="bg-[#1a2340] border-[#00ff9d]/20 text-white">
                           <SelectItem value="0.001388888">2 minutes</SelectItem>
                           <SelectItem value="0.000694444">1 minute</SelectItem>
-                           <SelectItem value="7">Weekly (7 days)</SelectItem>
+                          <SelectItem value="7">Weekly (7 days)</SelectItem>
                           <SelectItem value="30">Monthly (30 days)</SelectItem>
-                          <SelectItem value="90">Quarterly (90 days)</SelectItem>
+                          <SelectItem value="90">
+                            Quarterly (90 days)
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

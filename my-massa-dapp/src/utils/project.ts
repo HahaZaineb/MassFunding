@@ -23,7 +23,6 @@ export async function convertProjectToProjectData(project: Project): Promise<Pro
     creationPeriod: Number(project.creationPeriod),
     vestingScheduleId: project.vestingScheduleId.toString(),
     initialVestingTriggered: project.initialVestingTriggered,
-    // Default values for properties not directly from contract or not needed from contract
     amountNeeded: Number(formatMas(project.fundingGoal - project.amountRaised)),
     supporters: supportersCount,
     deadline: "N/A", // This would ideally come from contract or be calculated dynamically
