@@ -1,8 +1,8 @@
 import { callSmartContract, readSmartContractPublic } from '@/utils/smartContract';
 import { CONTRACT_ADDRESS } from '@/configs/massa';
 import { Args, MAX_GAS_CALL, parseMas } from '@massalabs/massa-web3';
-import { ProjectUpdate } from '@/models/ContractModels';
 import { ProjectUpdateData, ProjectUpdateInput } from '@/types/projectUpdate';
+import { ProjectUpdate } from '@/models/ProjectUpdate';
 
 export async function addUpdate(
   connectedAccount: any,

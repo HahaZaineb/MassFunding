@@ -1,5 +1,6 @@
 import { CONTRACT_ADDRESS } from '@/configs/massa';
-import { Project, VestingSchedule } from '@/models/ContractModels';
+import { Project } from '@/models/Project';
+import { VestingSchedule } from '@/models/VestingSchedule';
 import { ProjectData } from '@/types/project';
 import { parseDurationToPeriods } from '@/utils/functions';
 import { convertProjectToProjectData } from '@/utils/project';

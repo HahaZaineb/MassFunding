@@ -1,4 +1,4 @@
-import { Project } from "@/models/ContractModels";
+import { Project } from "@/models/Project";
 import { getProjectSupportersCount } from "@/services/projectService";
 import { ProjectData } from '@/types/project';
 import { formatMas } from '@massalabs/massa-web3'

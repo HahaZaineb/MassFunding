@@ -1,11 +1,11 @@
 import { CONTRACT_ADDRESS } from '@/configs/massa';
-import { VestingSchedule } from '@/models/ContractModels';
 import { readSmartContractPublic } from '@/utils/smartContract';
 import { Args } from '@massalabs/massa-web3';
 import { getProject } from './projectService';
 import { formatPeriodsToHumanReadable } from '@/utils/functions';
 import { getCurrentMassaPeriod } from './massaNetworkService';
 import { DetailedVestingInfo, VestingScheduleData } from '@/types/vestingSchedule';
+import { VestingSchedule } from '@/models/VestingSchedule';
 
 export async function getVestingSchedule(
   vestingId: number,
