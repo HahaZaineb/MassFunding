@@ -6,11 +6,11 @@ import { ProjectData } from '@/types';
 import { useNavigate } from 'react-router-dom';
 import ProgressBar from '../ProgressBar';
 import {
-  CheckCircle,
+  
   Clock,
   Coins,
   History,
-  ThumbsUp,
+ 
   Users,
   ChevronUp,
   ChevronDown,
@@ -22,6 +22,9 @@ import { useEffect, useState } from 'react';
 import {
   DetailedVestingInfo,
   getDetailedVestingInfo,
+  formatPeriodsToHumanReadable,
+  getCurrentMassaPeriod,
+  isProjectVestingCompleted,
 } from '@/services/contract-service';
 
 interface ProjectMiniCardProps {
@@ -40,38 +43,35 @@ const ProjectMiniCard = ({
   const [vestionDetails, setVestingDetails] =
     useState<DetailedVestingInfo | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [currentMassaPeriod, setCurrentMassaPeriod] = useState<number | null>(null);
+  const [isVestingActuallyCompleted, setIsVestingActuallyCompleted] = useState<boolean>(false);
 
   function getProjectStatus(
     project: ProjectData,
-  ): 'live' | 'release' | 'completed' {
-    let isLocked = true;
-    if (project?.creationDate) {
-      const createdAt = new Date(project?.creationDate);
-      const lockDurationDays = 30;
-      const now = new Date();
+    currentPeriod: number | null
+  ): 'funding_active' | 'lock_period_ended' | 'funded_and_locked' {
+    const isFundedToGoal = project.amountRaised >= project.goalAmount;
 
-      const lockEndDate = new Date(
-        createdAt.getTime() + lockDurationDays * 24 * 60 * 60 * 1000,
-      );
-
-      isLocked = now < lockEndDate;
-    }
-    if (project.amountRaised < project.goalAmount && isLocked) {
-      return 'live';
-    } else if (project.amountRaised === project.goalAmount && isLocked) {
-      return 'release';
-    } else if (project.amountRaised < project.goalAmount && !isLocked) {
-      return 'release';
-    } else if (project.amountRaised === project.goalAmount && !isLocked) {
-      return 'release';
+    let isLockPeriodActive = true;
+    if (project?.creationPeriod !== undefined && project.lockPeriod !== undefined && currentPeriod !== null) {
+      const lockEndPeriod = project.creationPeriod + Number(project.lockPeriod); 
+      isLockPeriodActive = currentPeriod < lockEndPeriod;
     } else {
-      return 'completed';
+        isLockPeriodActive = false;
+    }
+
+    if (isLockPeriodActive) {
+      if (isFundedToGoal) {
+        return 'funded_and_locked';
+      } else {
+        return 'funding_active';
+      }
+    } else {
+      return 'lock_period_ended';
     }
   }
 
   useEffect(() => {
-    if (getProjectStatus(project) !== 'live') return;
-
     const createdAt = new Date(project.creationDate || '');
     const lockPeriodInSeconds = Number(project.lockPeriod) * 15; // Convert periods to seconds
     const lockEnd = new Date(
@@ -105,11 +105,19 @@ const ProjectMiniCard = ({
     const details = await getDetailedVestingInfo(Number(project.id));
     console.log(details, 'details...');
     setVestingDetails(details);
+
+    const currentPeriod = await getCurrentMassaPeriod();
+    setCurrentMassaPeriod(currentPeriod);
+
+    const completed = await isProjectVestingCompleted(Number(project.id));
+    setIsVestingActuallyCompleted(completed);
   };
 
   useEffect(() => {
     getDetailedVestingInfoHandler();
   }, [project]);
+
+  const projectLifecycleStatus = getProjectStatus(project, currentMassaPeriod);
 
   return (
     <motion.div
@@ -167,7 +175,7 @@ const ProjectMiniCard = ({
           <div className="flex flex-col items-center p-3 bg-slate-700/50 rounded-lg">
             <Clock className="h-4 w-4 mb-1 text-yellow-400" />
             <span className="text-white text-center font-bold text-xs">
-              Every {project.releaseInterval} days
+              Every {formatPeriodsToHumanReadable(Number(project.releaseInterval))}
             </span>
             <span className="text-slate-400 text-xs">Interval</span>
           </div>
@@ -180,8 +188,87 @@ const ProjectMiniCard = ({
           </div>
         </div>
         <div className="flex flex-col gap-2 mt-2">
-          {/* Conditional Fund or View Updates Button */}
-          {getProjectStatus(project) === 'live' ? (
+          {projectLifecycleStatus === 'funding_active' && (
+            <div className="w-full p-3 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-700 shadow-lg">
+              <div className="text-center space-y-2">
+                <div className="text-teal-400 text-xs font-semibold tracking-wider flex items-center justify-center">
+                  <svg
+                    className="w-3 h-3 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  FUNDING CLOSES IN
+                </div>
+                <div className="flex justify-center space-x-2">
+                  {timeLeft.split(':').map((unit, index) => (
+                    <div key={index} className="flex flex-col items-center">
+                      <div className="relative group">
+                        <div className="absolute inset-0 bg-teal-500/20 blur-[3px] rounded-lg transition-all duration-300 group-hover:blur-[4px]"></div>
+                        <div className="relative bg-gray-800 text-teal-300 font-mono font-bold text-sm px-3 py-2 rounded-lg border border-teal-500/30 hover:border-teal-400/50 transition-all duration-200">
+                          {unit.padStart(2, '0')}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {projectLifecycleStatus === 'lock_period_ended' && !isVestingActuallyCompleted && (
+            <div className="w-full p-3 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-700 shadow-lg">
+              <div className="text-center space-y-2">
+                <div className="text-[#ff9100] text-xs font-semibold tracking-wider flex items-center justify-center">
+                  <Clock
+                    className="w-3 h-3 mr-2"
+                    stroke="#ff9100"
+                    fill="none"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  NEXT RELEASE DATE
+                </div>
+                <div className="relative bg-gray-800 text-[#ff9100] font-mono font-bold text-sm px-4 py-2 rounded-lg border border-[#ff9100]/30 hover:border-[#ff9100]/50 transition-all duration-200 inline-block">
+                  {vestionDetails?.nextRelease
+                    ? new Date().toLocaleString(undefined, {
+                        weekday: 'short',
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true,
+                      })
+                    : 'N/A'}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {projectLifecycleStatus === 'lock_period_ended' && isVestingActuallyCompleted && (
+            <div className="w-full p-3 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-700 shadow-lg">
+              <div className="text-center space-y-2">
+                <div className="text-[#90a4ae] text-xs font-semibold tracking-wider flex items-center justify-center">
+                  <History className="w-4 h-4 mr-2" />
+                  TOTAL FUNDS DISTRIBUTED
+                </div>
+                <div className="relative bg-gray-800 text-[#90a4ae] font-mono font-bold text-sm px-4 py-2 rounded-lg border border-[#90a4ae]/30 hover:border-[#90a4ae]/50 transition-all duration-200 inline-block">
+                  {project.totalAmountRaisedAtLockEnd != null ? project.totalAmountRaisedAtLockEnd : 'N/A'} MAS
+                </div>
+              </div>
+            </div>
+          )}
+
+          {projectLifecycleStatus === 'funding_active' ? (
             <Button
               onClick={() => navigate(`/fund/${project.id}`)}
               className="w-full bg-[#00ff9d] text-slate-900 hover:bg-[#00e68d] transition-colors flex items-center justify-center py-3 text-base font-semibold"

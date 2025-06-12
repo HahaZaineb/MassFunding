@@ -1,5 +1,5 @@
 
-export const CONTRACT_ADDRESS = "AS12WiaaAYf9WVEEyZ76rboNJwHJGqov4Ro5y3JMDsjxss6aJV958"
+export const CONTRACT_ADDRESS = "AS1262jxhDVvGuuSeyekKZRDdChdGpoHP3WFPWRGy5UDnEHGMjZkZ"
 
 export const CATEGORIES = [
   { name: "Web3", color: "#7E57C2" },             // rich purple

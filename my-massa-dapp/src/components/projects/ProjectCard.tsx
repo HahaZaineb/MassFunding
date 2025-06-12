@@ -3,7 +3,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import {
-  ThumbsUp,
   Users,
   Clock,
   Coins,
@@ -28,8 +27,13 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCategoryColor } from '@/utils/functions';
 import ProjectStatus from './ProjectStatus';
-import { getDetailedVestingInfo, DetailedVestingInfo } from '@/services/contract-service';
-import { formatPeriodsToHumanReadable } from '@/services/contract-service';
+import {
+  getDetailedVestingInfo,
+  DetailedVestingInfo,
+  formatPeriodsToHumanReadable,
+  getCurrentMassaPeriod,
+  isProjectVestingCompleted,
+} from '@/services/contract-service';
 
 
 interface ProjectCardProps {
@@ -44,47 +48,34 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
   const [timeLeft, setTimeLeft] = useState('');
   const [vestionDetails, setVestingDetails] =
     useState<DetailedVestingInfo | null>(null);
+  const [currentMassaPeriod, setCurrentMassaPeriod] = useState<number | null>(null);
+  const [isVestingActuallyCompleted, setIsVestingActuallyCompleted] = useState<boolean>(false);
 
   function getProjectStatus(
     project: ProjectData,
-  ): 'live' | 'release' | 'completed' {
-    let isLocked = true;
-    if (project?.creationDate) {
-      const createdAt = new Date(project?.creationDate);
-      const lockPeriodInMilliseconds = Number(project.lockPeriod) * 15 * 1000;
-      const now = new Date();
+    currentPeriod: number | null
+  ): 'funding_active' | 'lock_period_ended' | 'funded_and_locked' {
+    const isFundedToGoal = project.amountRaised >= project.goalAmount;
 
-      const lockEndDate = new Date(
-        createdAt.getTime() + lockPeriodInMilliseconds,
-      );
-
-      console.log('--- getProjectStatus Debug ---');
-      console.log('Project ID:', project.id);
-      console.log('Raw creationDate:', project.creationDate);
-      console.log('Raw lockPeriod (periods):', project.lockPeriod);
-      console.log('Calculated lockPeriodInMilliseconds:', lockPeriodInMilliseconds);
-      console.log('createdAt Date:', createdAt.toISOString());
-      console.log('lockEndDate Date:', lockEndDate.toISOString());
-      console.log('Current Date (now):', now.toISOString());
-
-      isLocked = now < lockEndDate;
-      console.log('Is Locked (now < lockEndDate):', isLocked);
-    }
-    if (project.amountRaised < project.goalAmount && isLocked) {
-      return 'live';
-    } else if (project.amountRaised === project.goalAmount && isLocked) {
-      return 'release';
-    } else if (project.amountRaised < project.goalAmount && !isLocked) {
-      return 'release';
-    } else if (project.amountRaised === project.goalAmount && !isLocked) {
-      return 'release';
+    let isLockPeriodActive = true;
+    if (project?.creationPeriod !== undefined && project.lockPeriod !== undefined && currentPeriod !== null) {
+      const lockEndPeriod = project.creationPeriod + Number(project.lockPeriod); 
+      isLockPeriodActive = currentPeriod < lockEndPeriod;
     } else {
-      return 'completed';
+        isLockPeriodActive = false;
+    }
+
+    if (isLockPeriodActive) {
+      if (isFundedToGoal) {
+        return 'funded_and_locked';
+      } else {
+        return 'funding_active';
+      }
+    } else {
+      return 'lock_period_ended';
     }
   }
   useEffect(() => {
-    if (getProjectStatus(project) !== 'live') return;
-
     const createdAt = new Date(project.creationDate || '');
     const lockPeriodInSeconds = Number(project.lockPeriod) * 15; // Convert periods to seconds
     const lockEnd = new Date(
@@ -118,17 +109,26 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
     const details = await getDetailedVestingInfo(Number(project.id));
     console.log(details, 'details...');
     setVestingDetails(details);
+
+    const currentPeriod = await getCurrentMassaPeriod();
+    setCurrentMassaPeriod(currentPeriod);
+
+    const completed = await isProjectVestingCompleted(Number(project.id));
+    setIsVestingActuallyCompleted(completed);
   };
 
   useEffect(() => {
     getDetailedVestingInfoHandler();
 
     console.log('Project ID:', project.id);
+    console.log('Raw creationDate:', project.creationDate);
     console.log('Raw Lock Period:', project.lockPeriod);
     console.log('Raw Release Interval:', project.releaseInterval);
     console.log('Formatted Lock Period:', formatPeriodsToHumanReadable(Number(project.lockPeriod)));
     console.log('Formatted Release Interval:', formatPeriodsToHumanReadable(Number(project.releaseInterval)));
   }, [project]);
+
+  const projectLifecycleStatus = getProjectStatus(project, currentMassaPeriod);
 
   return (
     <Card className="bg-slate-800/80 border-slate-600 text-white overflow-hidden hover:shadow-2xl transition-all duration-300 hover:scale-105 backdrop-blur-sm border-2 hover:border-emerald-500/50">
@@ -262,7 +262,7 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
       </CardContent>
 
       <CardFooter className="flex flex-col gap-3">
-        {getProjectStatus(project) === 'live' && (
+        {projectLifecycleStatus === 'funding_active' && (
           <div className="w-full p-3 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-700 shadow-lg">
             <div className="text-center space-y-2">
               <div className="text-teal-400 text-xs font-semibold tracking-wider flex items-center justify-center">
@@ -296,56 +296,56 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
             </div>
           </div>
         )}
-          {getProjectStatus(project) === 'release' && (
-  <div className="w-full p-3 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-700 shadow-lg">
-    <div className="text-center space-y-2">
-      <div className="text-[#ff9100] text-xs font-semibold tracking-wider flex items-center justify-center">
-        <Clock
-          className="w-3 h-3 mr-2"
-          stroke="#ff9100"
-          fill="none"
-          strokeWidth={2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        NEXT RELEASE DATE
-      </div>
-      <div className="relative bg-gray-800 text-[#ff9100] font-mono font-bold text-sm px-4 py-2 rounded-lg border border-[#ff9100]/30 hover:border-[#ff9100]/50 transition-all duration-200 inline-block">
-        {vestionDetails?.nextRelease
-          ? new Date().toLocaleString(undefined, {
-              weekday: 'short',
-              year: 'numeric',
-              month: 'short',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
-              hour12: true,
-            })
-          : 'N/A'}
-      </div>
-    </div>
-  </div>
 
-        )}
-
-        {getProjectStatus(project) === 'completed' && (
+        {projectLifecycleStatus === 'lock_period_ended' && !isVestingActuallyCompleted && (
           <div className="w-full p-3 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-700 shadow-lg">
-  <div className="text-center space-y-2">
-    <div className="text-[#90a4ae] text-xs font-semibold tracking-wider flex items-center justify-center">
-      <CheckCircle className="w-4 h-4 mr-2" />
-      TOTAL FUNDS DISTRIBUTED
-    </div>
-    <div className="relative bg-gray-800 text-[#90a4ae] font-mono font-bold text-sm px-4 py-2 rounded-lg border border-[#90a4ae]/30 hover:border-[#90a4ae]/50 transition-all duration-200 inline-block">
-      {project.amountRaised != null ? project.amountRaised : 'N/A'} MAS
-    </div>
-  </div>
-</div>
-
+            <div className="text-center space-y-2">
+              <div className="text-[#ff9100] text-xs font-semibold tracking-wider flex items-center justify-center">
+                <Clock
+                  className="w-3 h-3 mr-2"
+                  stroke="#ff9100"
+                  fill="none"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                NEXT RELEASE DATE
+              </div>
+              <div className="relative bg-gray-800 text-[#ff9100] font-mono font-bold text-sm px-4 py-2 rounded-lg border border-[#ff9100]/30 hover:border-[#ff9100]/50 transition-all duration-200 inline-block">
+                {vestionDetails?.nextRelease
+                  ? new Date().toLocaleString(undefined, {
+                      weekday: 'short',
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: true,
+                    })
+                  : 'N/A'}
+              </div>
+            </div>
+          </div>
         )}
-        {getProjectStatus(project) === 'live' ? (
+
+        {projectLifecycleStatus === 'lock_period_ended' && isVestingActuallyCompleted && (
+          <div className="w-full p-3 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-700 shadow-lg">
+            <div className="text-center space-y-2">
+              <div className="text-[#90a4ae] text-xs font-semibold tracking-wider flex items-center justify-center">
+                <CheckCircle className="w-4 h-4 mr-2" />
+                TOTAL FUNDS DISTRIBUTED
+              </div>
+              <div className="relative bg-gray-800 text-[#90a4ae] font-mono font-bold text-sm px-4 py-2 rounded-lg border border-[#90a4ae]/30 hover:border-[#90a4ae]/50 transition-all duration-200 inline-block">
+                {project.totalAmountRaisedAtLockEnd != null ? project.totalAmountRaisedAtLockEnd : 'N/A'} MAS
+              </div>
+            </div>
+          </div>
+        )}
+
+        {projectLifecycleStatus === 'funding_active' ? (
           <Button
             onClick={() => navigate(`/fund/${project.id}`)}
-            className="w-full bg-[#00ff9d] text-slate-900 hover:bg-[#00e68d] transition-colors flex items-center justify-center"
+            className="w-full bg-[#00ff9d] text-slate-900 hover:bg-[#00e68d] transition-colors flex items-center"
           >
             <Coins className="h-4 w-4 mr-2" /> Fund This Project
           </Button>
@@ -358,6 +358,7 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
             View Updates
           </Button>
         )}
+
         <Button
           variant="ghost"
           size="sm"
