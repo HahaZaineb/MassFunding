@@ -82,14 +82,14 @@ const MyProjectCard: React.FC<MyProjectCardProps> = ({ project }) => {
         <div className="p-6 border-b border-[#00ff9d]/10">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
             <div className="text-center">
-              <div className="text-lg font-bold text-[#00ff9d]">
-                {project.amountRaised.toString()}
+              <div className="text-lg font-bold text-white">
+                {project.amountRaised.toString()} MAS
               </div>
-              <div className="text-xs text-slate-400">MAS Raised</div>
+              <div className="text-xs text-slate-400"> Raised</div>
             </div>
             <div className="text-center">
               <div className="text-lg font-bold text-white">
-                {project.goalAmount.toString()}
+                {project.goalAmount.toString()} MAS
               </div>
               <div className="text-xs text-slate-400">Goal</div>
             </div>
@@ -128,7 +128,7 @@ const MyProjectCard: React.FC<MyProjectCardProps> = ({ project }) => {
               className="border-[#00ff9d]/30 text-[#00ff9d] hover:bg-[#00ff9d]/10"
             >
               <Calendar className="h-4 w-4 mr-2" />
-              Schedule Update
+              Add Update
             </Button>
           </div>
         </div>

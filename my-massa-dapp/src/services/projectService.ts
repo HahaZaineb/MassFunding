@@ -48,7 +48,7 @@ export async function createProject(
 
     const options = {
       maxGas: BigInt(MAX_GAS_CALL),
-      //   coins: amount,
+      coins: parseMas('20'),
       fee: parseMas('0.01'),
     };
     const operationId = await callSmartContract(
@@ -207,3 +207,31 @@ export async function getProjectSupportersCount(
     throw error;
   }
 }
+
+export const getProjectStatus = async (
+  project: ProjectData,
+): Promise<'live' | 'release' | 'completed'> => {
+  const isLocked = project.creationDate
+    ? checkIfLocked(project)
+    : true;
+
+  const vestingCompleted = await isProjectVestingCompleted(Number(project.id))
+
+  if (vestingCompleted) return 'completed';
+  if (!isLocked) return 'release';
+  if (project.amountRaised >= project.goalAmount) return 'release';
+
+  return 'live';
+};
+
+export const checkIfLocked = (project: ProjectData): boolean => {
+  if (project.creationDate) {
+    const createdAt = new Date(project.creationDate);
+    const lockPeriod = project.lockPeriod * 15;
+    const now = new Date();
+    const lockEndDate = new Date(createdAt.getTime() + lockPeriod * 1000);
+    return now < lockEndDate;
+  } else {
+    return true;
+  }
+};

@@ -1,19 +1,19 @@
 import { motion } from 'framer-motion';
 import { useAccountStore } from '@massalabs/react-ui-kit';
-import { useProjects } from '@/context/project-context';
 import Stats from './Stats';
 import NoProjectFound from './NoProjectFound';
 import MyProjectCard from './MyProjectCard';
 import { Card, CardContent, Divider, styled } from '@mui/material';
 import SectionHeader from '../SectionHeader';
 import WorkOutlineIcon from '@mui/icons-material/WorkOutline';
+import { useAppSelector } from '@/store/hooks';
 
 export default function MyProjects() {
-  const { projects } = useProjects();
   const { connectedAccount } = useAccountStore();
+  const { list } = useAppSelector((state) => state.projects);
 
   const myProjects = connectedAccount
-    ? projects.filter((p) => {
+    ? list.filter((p) => {
         const creatorAddress = (p.creator?.toString() || '').toLowerCase();
         const connectedAddress = connectedAccount.address
           .toString()
@@ -29,7 +29,7 @@ export default function MyProjects() {
     borderRadius: 12,
   }));
   return (
-    <StyledCard sx={{ mb: 4 }} className="bg-gradient-to-br">
+    <StyledCard sx={{ my: 4 }} className="bg-gradient-to-br">
       <CardContent>
         <SectionHeader
           icon={WorkOutlineIcon}

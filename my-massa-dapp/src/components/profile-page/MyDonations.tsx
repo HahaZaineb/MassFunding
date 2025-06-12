@@ -18,8 +18,8 @@ import {
 import { styled } from '@mui/system';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import { useAccountStore } from '@massalabs/react-ui-kit';
-import { useProjects } from '@/context/project-context';
 import { getUserDonations } from '@/services/statsService';
+import { useAppSelector } from '@/store/hooks';
 
 const StyledCard = styled(Card)(() => ({
   backgroundColor: '#11182f',
@@ -47,11 +47,11 @@ const SectionHeader = ({
 
 const MyDonations: React.FC = ({}) => {
   const { connectedAccount } = useAccountStore();
-  const { projects } = useProjects();
   const [donatedProjects, setDonatedProjects] = useState<
     Array<{ id: string; name: string; amount: number; date: string }>
   >([]);
   const [loading, setLoading] = useState(true);
+  const { list } = useAppSelector((state) => state.projects);
 
   useEffect(() => {
     const fetchDonatedProjects = async () => {
@@ -62,7 +62,7 @@ const MyDonations: React.FC = ({}) => {
             connectedAccount.address.toString(),
           );
           const mappedProjects = donations.map((donation) => {
-            const project = projects.find(
+            const project = list.find(
               (p) => p.id.toString() === donation.projectId,
             );
             return {
@@ -84,7 +84,7 @@ const MyDonations: React.FC = ({}) => {
       }
     };
     fetchDonatedProjects();
-  }, [connectedAccount, projects]);
+  }, [connectedAccount, list]);
 
   return (
     <StyledCard>

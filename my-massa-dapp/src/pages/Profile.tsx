@@ -29,8 +29,8 @@ const ProfilePage: React.FC = ({}) => {
         <WalletInfo />
         <UserActivity />
       </Box>
-      <MyProjects />
       <MyDonations />
+      <MyProjects />
     </div>
   );
 };

@@ -4,14 +4,14 @@ import { motion } from 'framer-motion';
 import { TrendingUp, Users, DollarSign } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAccountStore } from '@massalabs/react-ui-kit';
-import { useProjects } from '@/context/project-context';
+import { useAppSelector } from '@/store/hooks';
 
 export default function Stats() {
-  const { projects } = useProjects();
   const { connectedAccount } = useAccountStore();
+  const { list } = useAppSelector((state) => state.projects);
 
   const myProjects = connectedAccount
-    ? projects.filter((p) => {
+    ? list.filter((p) => {
         const creatorAddress = (p.creator?.toString() || '').toLowerCase();
         const connectedAddress = connectedAccount.address
           .toString()

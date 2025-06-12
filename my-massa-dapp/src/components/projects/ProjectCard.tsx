@@ -33,6 +33,8 @@ import {
 import ProjectStatus from './ProjectStatus';
 import { getDetailedVestingInfo } from '@/services/vestingScheduleService';
 import { DetailedVestingInfo } from '@/types/vestingSchedule';
+import { updateProjectStatus } from '@/store/slices/projectSlice';
+import { useAppDispatch } from '@/store/hooks';
 
 interface ProjectCardProps {
   project: ProjectData & { image?: string };
@@ -40,6 +42,7 @@ interface ProjectCardProps {
 }
 
 const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const percentFunded = (project.amountRaised / project.goalAmount) * 100;
   const [openProjectUpdates, setOpenProjectUpdates] = useState(false);
@@ -64,6 +67,10 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
       setNextReleaseDate(lockEnd);
     }
   }, [project, vestingDetails]);
+
+  useEffect(() => {
+    dispatch(updateProjectStatus({ id: project.id, status: projectStatus }))
+  },[project, projectStatus])
 
   useEffect(() => {
     if (projectStatus !== 'live') return;

@@ -17,7 +17,7 @@ export async function addUpdate(
       .addString(updateData.image || '');
     const options = {
       maxGas: BigInt(MAX_GAS_CALL),
-      //   coins: amount,
+      coins: parseMas('5'),
       fee: parseMas('0.01'),
     };
     const operationId = await callSmartContract(

@@ -22,6 +22,7 @@ import useAccountSync from './hooks/useAccountSync';
 import BridgePage from './pages/Bridge';
 import SwapPage from './pages/Swap';
 import AboutPage from './pages/About';
+import ScrollToTop from './components/ScrollToTop';
 
 function App() {
   useAccountSync();
@@ -47,6 +48,7 @@ function App() {
         <ToastProvider>
           <Router>
             <Navbar />
+            <ScrollToTop />
             <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/request-funding" element={<RequestFunding />} />
