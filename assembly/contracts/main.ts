@@ -592,9 +592,9 @@ function createVestingScheduleInternal(
   releasePercentage: u64 // Percentage out of 100
 ): u64 {
 
-assert(totalAmount > 0, "Total amount must be greater than 0");
+//assert(totalAmount > 0, "Total amount must be greater than 0");
 assert(releasePercentage > 0 && releasePercentage <= 100, "Release percentage must be between 1 and 100");
-assert(releaseInterval > 0, "Release interval must be greater than 0");
+//
 
 const vestingId = getNextVestingId();
 // Increment the next vesting ID right after getting it
