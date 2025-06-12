@@ -21,6 +21,7 @@ import {
   DetailedVestingInfo,
   getDetailedVestingInfo,
 } from '@/services/contract-service';
+import { shortenAddress } from '@/utils/functions';
 
 interface ProjectMiniCardProps {
   project: ProjectData & { image?: string };
@@ -138,6 +139,12 @@ const ProjectMiniCard = ({
         <h3 className="text-xl font-bold text-[#00ff9d] mb-2 line-clamp-1">
           {project.name}
         </h3>
+        <p className="text-slate-300 text-xs mb-2 line-clamp-2">
+          Owned By{' '}
+          <span className="text-teal-300">
+            {shortenAddress(project.beneficiary)}
+          </span>
+        </p>
         <p className="text-slate-300 text-sm mb-4 line-clamp-2">
           {project.description}
         </p>

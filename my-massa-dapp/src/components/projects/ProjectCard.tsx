@@ -26,7 +26,7 @@ import ProgressBar from '../ProgressBar';
 import ProjectUpdates from './ProjectUpdates';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getCategoryColor } from '@/utils/functions';
+import { getCategoryColor, shortenAddress } from '@/utils/functions';
 import ProjectStatus from './ProjectStatus';
 import {
   DetailedVestingInfo,
@@ -141,6 +141,12 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
         <CardTitle className="text-white text-xl leading-tight line-clamp-1">
           {project.name}
         </CardTitle>
+        <p className="text-slate-300 text-xs mb-2 line-clamp-2">
+          Owned By{' '}
+          <span className="text-teal-300">
+            {shortenAddress(project.beneficiary)}
+          </span>
+        </p>
         <CardDescription className="text-slate-300 text-sm leading-relaxed line-clamp-2">
           {project.description}
         </CardDescription>
@@ -272,51 +278,50 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
             </div>
           </div>
         )}
-          {getProjectStatus(project) === 'release' && (
-  <div className="w-full p-3 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-700 shadow-lg">
-    <div className="text-center space-y-2">
-      <div className="text-[#ff9100] text-xs font-semibold tracking-wider flex items-center justify-center">
-        <Clock
-          className="w-3 h-3 mr-2"
-          stroke="#ff9100"
-          fill="none"
-          strokeWidth={2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        NEXT RELEASE DATE
-      </div>
-      <div className="relative bg-gray-800 text-[#ff9100] font-mono font-bold text-sm px-4 py-2 rounded-lg border border-[#ff9100]/30 hover:border-[#ff9100]/50 transition-all duration-200 inline-block">
-        {vestionDetails?.nextRelease
-          ? new Date().toLocaleString(undefined, {
-              weekday: 'short',
-              year: 'numeric',
-              month: 'short',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
-              hour12: true,
-            })
-          : 'N/A'}
-      </div>
-    </div>
-  </div>
-
+        {getProjectStatus(project) === 'release' && (
+          <div className="w-full p-3 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-700 shadow-lg">
+            <div className="text-center space-y-2">
+              <div className="text-[#ff9100] text-xs font-semibold tracking-wider flex items-center justify-center">
+                <Clock
+                  className="w-3 h-3 mr-2"
+                  stroke="#ff9100"
+                  fill="none"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                NEXT RELEASE DATE
+              </div>
+              <div className="relative bg-gray-800 text-[#ff9100] font-mono font-bold text-sm px-4 py-2 rounded-lg border border-[#ff9100]/30 hover:border-[#ff9100]/50 transition-all duration-200 inline-block">
+                {vestionDetails?.nextRelease
+                  ? new Date().toLocaleString(undefined, {
+                      weekday: 'short',
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: true,
+                    })
+                  : 'N/A'}
+              </div>
+            </div>
+          </div>
         )}
 
         {getProjectStatus(project) === 'completed' && (
           <div className="w-full p-3 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-700 shadow-lg">
-  <div className="text-center space-y-2">
-    <div className="text-[#90a4ae] text-xs font-semibold tracking-wider flex items-center justify-center">
-      <CheckCircle className="w-4 h-4 mr-2" />
-      TOTAL FUNDS DISTRIBUTED
-    </div>
-    <div className="relative bg-gray-800 text-[#90a4ae] font-mono font-bold text-sm px-4 py-2 rounded-lg border border-[#90a4ae]/30 hover:border-[#90a4ae]/50 transition-all duration-200 inline-block">
-      {project.amountRaised != null ? project.amountRaised : 'N/A'} MAS
-    </div>
-  </div>
-</div>
-
+            <div className="text-center space-y-2">
+              <div className="text-[#90a4ae] text-xs font-semibold tracking-wider flex items-center justify-center">
+                <CheckCircle className="w-4 h-4 mr-2" />
+                TOTAL FUNDS DISTRIBUTED
+              </div>
+              <div className="relative bg-gray-800 text-[#90a4ae] font-mono font-bold text-sm px-4 py-2 rounded-lg border border-[#90a4ae]/30 hover:border-[#90a4ae]/50 transition-all duration-200 inline-block">
+                {project.amountRaised != null ? project.amountRaised : 'N/A'}{' '}
+                MAS
+              </div>
+            </div>
+          </div>
         )}
         {getProjectStatus(project) === 'live' && (
           <Button
