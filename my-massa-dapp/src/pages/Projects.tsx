@@ -78,7 +78,7 @@ export default function Projects() {
               Discover and support innovative projects that make a difference
             </p>
           </div>
-          <div className='flex flex-row flex-wrap gap-3'>
+          <div className="flex flex-row flex-wrap gap-3">
             {' '}
             {/* Enhanced Search Bar */}
             <div className="flex-grow">
@@ -102,9 +102,13 @@ export default function Projects() {
                 </SelectTrigger>
                 <SelectContent className="bg-[#1a2340] border-[#00ff9d]/20 text-white max-h-[300px] overflow-y-auto">
                   <SelectItem value="All">All Statuses</SelectItem>
-      <SelectItem value="live">Live (Ongoing Projects)</SelectItem>
-      <SelectItem value="release">Released (Recently Deployed)</SelectItem>
-      <SelectItem value="completed">Completed (Wrapped Up)</SelectItem>
+                  <SelectItem value="live">Live (Ongoing Projects)</SelectItem>
+                  <SelectItem value="release">
+                    Released (Recently Deployed)
+                  </SelectItem>
+                  <SelectItem value="completed">
+                    Completed (Wrapped Up)
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
