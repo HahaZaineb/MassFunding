@@ -601,7 +601,7 @@ const vestingId = getNextVestingId();
 incrementNextVestingId();
 
 // The start period for the first release is calculated here in the vesting logic
-const startPeriod = Context.currentPeriod() + lockPeriod;
+const startPeriod = Context.currentPeriod() + lockPeriod; 
 
 const schedule = new vestingSchedule(
   vestingId,
