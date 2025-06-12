@@ -64,7 +64,7 @@ export default function Stats() {
             <div className="text-2xl font-bold text-white">
               {formattedTotalDonations}
             </div>
-            <div className="text-sm text-slate-400">Total Donations</div>
+            <div className="text-sm text-slate-400">Total Donations Received</div>
           </CardContent>
         </Card>
 
@@ -76,7 +76,7 @@ export default function Stats() {
             <div className="text-2xl font-bold text-white">
               {totalSupportersReceived}
             </div>
-            <div className="text-sm text-slate-400">Total Support</div>
+            <div className="text-sm text-slate-400">Total Supporters</div>
           </CardContent>
         </Card>
       </div>

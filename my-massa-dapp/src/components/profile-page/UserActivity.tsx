@@ -2,10 +2,12 @@
 
 import { motion } from 'framer-motion';
 import { FilePlus2, HandHeart, DollarSign } from 'lucide-react';
+import { Card as CardMui, CardContent as CardContentMui, Divider } from '@mui/material';
 import { Card, CardContent } from '@/components/ui/card';
+
+import { styled } from '@mui/system';
 import { useAccountStore } from '@massalabs/react-ui-kit';
 import { useState, useEffect } from 'react';
-import { Divider, styled } from '@mui/material';
 import SectionHeader from '../SectionHeader';
 import TimelineIcon from '@mui/icons-material/Timeline';
 import { getUserDonations } from '@/services/statsService';
@@ -60,16 +62,17 @@ export default function UserActivity() {
     : [];
 
   const totalProjectsCreated = myProjects.length;
-  const StyledCard = styled(Card)(() => ({
-    backgroundColor: '#11182f',
-    color: '#e0e0e0',
-    border: '1px solid #1f2a48',
-    borderRadius: 12,
-  }));
+
+const StyledCard = styled(CardMui)(() => ({
+  backgroundColor: '#11182f',
+  color: '#e0e0e0',
+  border: '1px solid #1f2a48',
+  borderRadius: 12,
+}));
   
   return (
     <StyledCard sx={{ flex: 1 }} className="bg-gradient-to-br">
-      <CardContent>
+      <CardContentMui>
         <SectionHeader
           icon={TimelineIcon}
           title="User Activity"
@@ -102,7 +105,7 @@ export default function UserActivity() {
                 <div className="text-2xl font-bold text-white">
                   {loading ? '...' : totalDonations}
                 </div>
-                <div className="text-sm text-slate-400">Total Donations</div>
+                <div className="text-sm text-slate-400">Funds Donated</div>
               </CardContent>
             </Card>
 
@@ -115,13 +118,13 @@ export default function UserActivity() {
                   {loading ? '...' : totalAmountDonated.toFixed(2)}
                 </div>
                 <div className="text-sm text-slate-400">
-                  Total Amount Donated (MAS)
+                  Amount Donated (MAS)
                 </div>
               </CardContent>
             </Card>
           </div>
         </motion.div>
-      </CardContent>
+      </CardContentMui>
     </StyledCard>
   );
 }
