@@ -281,40 +281,31 @@ export function getProject(binArgs: StaticArray<u8>): StaticArray<u8> {
   return Storage.get(projectKey);
 }
 
-// New function to get all project IDs (renamed to replace the old getAllProjects)
+/**
+ * Retrieves all existing projects stored in the contract.
+ *
+ * @param _ - Unused input parameter.
+ * @returns Serialized array of all Project objects found in storage.
+ */
 export function getAllProjects(_: StaticArray<u8>): StaticArray<u8> {
-  let projectIds: u64[] = [];
   let projectCount = getNextProjectId(); // Total number of projects created
   const projects: Project[] = [];
 
   for (let i: u64 = 0; i < projectCount; i++) {
     const projectKey = new Args().add(PROJECTS_KEY).add(i).serialize();
+
     // Check if a project exists at this potential ID
     if (Storage.has(projectKey)) {
       const projectData = Storage.get(projectKey);
       const project = new Project();
       project.deserialize(projectData);
       projects.push(project);
-      // Since the project exists, we add its ID to the list
-      projectIds.push(i);
     }
   }
 
-  const args = new Args();
-  args.addSerializableObjectArray(projects);
+  generateEvent(`Returning ${projects.length} projects (via getAllProjects).`);
 
-  // Add the array length first
-  args.add<u64>(projectIds.length as u64);
-  // Then add each U64 ID individually
-  for (let i: u64 = 0; i < (projectIds.length as u64); i++) {
-    args.add(projectIds[i as i32]);
-  }
-
-  generateEvent(
-    `Returning ${projectIds.length} project IDs (via getAllProjects).`,
-  );
-
-  return args.serialize();
+  return new Args().addSerializableObjectArray(projects).serialize();
 }
 
 export function fundProject(binArgs: StaticArray<u8>): void {
