@@ -598,7 +598,7 @@ assert(releaseInterval > 0, "Release interval must be greater than 0");
 
 const vestingId = getNextVestingId();
 // Increment the next vesting ID right after getting it
-incrementNextVestingId();
+incrementNextVestingId(); 
 
 // The start period for the first release is calculated here in the vesting logic
 const startPeriod = Context.currentPeriod() + lockPeriod; 
