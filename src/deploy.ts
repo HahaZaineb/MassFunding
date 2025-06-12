@@ -29,7 +29,7 @@ const contract = await SmartContract.deploy(
   provider,
   byteCode,
   constructorArgs,
-  { coins: Mas.fromString('1') },
+  { coins: Mas.fromString('0.015') },
 );
 
 console.log('Contract deployed at:', contract.address);
