@@ -3,7 +3,9 @@ import { Dialog, DialogContent, IconButton, Typography } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { motion } from 'framer-motion';
 import { Calendar,  Loader2 } from 'lucide-react';
-import { ContractProjectUpdateData, getProjectUpdates, getCurrentMassaPeriod } from '@/services/contract-service';
+import { getProjectUpdates } from '@/services/projectUpdateService';
+import { getCurrentMassaPeriod } from '@/services/massaNetworkService';
+import { ProjectUpdateData } from '@/types/projectUpdate';
 
 interface ProjectUpdatesProps {
   open: boolean;
@@ -12,7 +14,7 @@ interface ProjectUpdatesProps {
 }
 
 const ProjectUpdates: React.FC<ProjectUpdatesProps> = ({ open, onClose, projectId }) => {
-  const [updates, setUpdates] = useState<ContractProjectUpdateData[]>([]);
+  const [updates, setUpdates] = useState<ProjectUpdateData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentMassaPeriod, setCurrentMassaPeriod] = useState<number | null>(null);

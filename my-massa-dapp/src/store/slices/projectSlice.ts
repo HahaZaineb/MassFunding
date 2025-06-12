@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
-import { getAllProjects, getProject } from '@/services/contract-service'
-import { ProjectData } from '@/types'
+import { getAllProjects, getProject } from '@/services/projectService'
+import { ProjectData } from '@/types/project'
 
 // Async thunk: Fetch all projects
 export const fetchProjects = createAsyncThunk<ProjectData[]>(

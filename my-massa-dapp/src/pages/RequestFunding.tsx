@@ -30,11 +30,11 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { createProject } from '@/services/contract-service';
 import { CATEGORIES } from '@/constants';
 import { Slider } from '@mui/material';
 import { useAccountStore } from '@massalabs/react-ui-kit/src/lib/ConnectMassaWallets';
 import { useToast } from '@/contexts/ToastProvider';
+import { createProject } from '@/services/projectService';
 
 export default function RequestFunding() {
   const { showToast } = useToast();

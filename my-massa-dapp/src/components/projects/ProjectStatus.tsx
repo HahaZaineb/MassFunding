@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Chip, styled } from '@mui/material';
-import { ProjectData } from '@/types';
-import { isProjectVestingCompleted } from '@/services/contract-service';
+import { ProjectData } from '@/types/project';
+import { isProjectVestingCompleted } from '@/services/projectService';
 
 const statusMap = {
   live: {

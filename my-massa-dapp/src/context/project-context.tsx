@@ -1,14 +1,12 @@
-import { ProjectData } from "@/types"
 import { createContext, useContext, useState, useEffect, ReactNode } from "react"
-import { getAllProjects as fetchAllProjects } from "@/services/contract-service";
+import { getAllProjects as fetchAllProjects } from "@/services/projectService";
+import { ProjectData } from "@/types/project";
 
 interface ProjectContextType {
   projects: ProjectData[]
   setProjects: (projects: ProjectData[]) => void
   addProject: (project: ProjectData) => void
   updateProject: (project: ProjectData) => void
-  addProjectMilestone: (projectId: string, milestone: any) => void
-  updateProjectMilestone: (projectId: string, milestone: any) => void
   getProject: (id: string) => ProjectData | undefined
 }
 
@@ -57,22 +55,6 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     )
   }
 
-  const addProjectMilestone = (projectId: string, milestone: any) => {
-    setProjects(prev => prev.map(project =>
-      project.id === projectId
-        ? { ...project, milestones: [...(project.milestones || []), milestone] }
-        : project
-    ))
-  }
-
-  const updateProjectMilestone = (projectId: string, milestone: any) => {
-    setProjects(prev => prev.map(project =>
-      project.id === projectId
-        ? { ...project, milestones: (project.milestones || []).map(m => m.id === milestone.id ? milestone : m) }
-        : project
-    ))
-  }
-
   const getProject = (id: string) => {
     return projects.find(project => project.id === id)
   }
@@ -83,8 +65,6 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
       setProjects, 
       addProject, 
       updateProject, 
-      addProjectMilestone, 
-      updateProjectMilestone, 
       getProject 
     }}>
       {children}

@@ -20,18 +20,15 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ProjectData } from '@/types';
+import { ProjectData } from '@/types/project';
 import ProgressBar from '../ProgressBar';
 import ProjectUpdates from './ProjectUpdates';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getCategoryColor, shortenAddress } from '@/utils/functions';
+import { formatPeriodsToHumanReadable, getCategoryColor, shortenAddress } from '@/utils/functions';
 import ProjectStatus from './ProjectStatus';
-import {
-  getDetailedVestingInfo,
-  DetailedVestingInfo,
-} from '@/services/contract-service';
-import { formatPeriodsToHumanReadable } from '@/services/contract-service';
+import { getDetailedVestingInfo } from '@/services/vestingScheduleService';
+import { DetailedVestingInfo } from '@/types/vestingSchedule';
 
 interface ProjectCardProps {
   project: ProjectData & { image?: string };

@@ -5,11 +5,11 @@ import { FilePlus2, HandHeart, DollarSign } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAccountStore } from '@massalabs/react-ui-kit';
 import { useProjects } from '@/context/project-context';
-import { getUserDonations } from '@/services/contract-service';
 import { useState, useEffect } from 'react';
 import { Divider, styled } from '@mui/material';
 import SectionHeader from '../SectionHeader';
 import TimelineIcon from '@mui/icons-material/Timeline';
+import { getUserDonations } from '@/services/statsService';
 
 export default function UserActivity() {
   const { projects } = useProjects();

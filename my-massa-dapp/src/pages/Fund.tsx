@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Info, Loader2 } from 'lucide-react';
 import { useAccountStore } from '@massalabs/react-ui-kit';
-import { fundProject } from '../services/contract-service';
 import {
   Card,
   CardContent,
@@ -26,7 +25,8 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchProjectById } from '@/store/slices/projectSlice';
 import { Alert } from '@mui/material';
 import { useToast } from '@/contexts/ToastProvider';
-import { formatPeriodsToHumanReadable } from '@/services/contract-service';
+import { fundProject } from '@/services/projectService';
+import { formatPeriodsToHumanReadable } from '@/utils/functions';
 
 export function FundPage() {
   const dispatch = useAppDispatch();

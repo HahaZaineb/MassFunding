@@ -4,11 +4,11 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Calendar, Eye } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import { ProjectData } from '@/types';
+import { ProjectData } from '@/types/project';
 import ProjectUpdates from '../projects/ProjectUpdates';
 import AddUpdateModal from '../projects/AddUpdateModal';
-import { getProjectSupportersCount } from '@/services/contract-service';
 import ProgressBar from '../ProgressBar';
+import { getProjectSupportersCount } from '@/services/projectService';
 
 
 interface MyProjectCardProps {

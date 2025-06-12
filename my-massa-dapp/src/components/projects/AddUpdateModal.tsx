@@ -11,10 +11,10 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { Label } from '../ui/label';
-import { ProjectData } from '@/types';
+import { ProjectData } from '@/types/project';
 import { useProjects } from '@/context/project-context';
-import { addUpdate } from '@/services/contract-service';
 import { useAccountStore } from '@massalabs/react-ui-kit';
+import { addUpdate } from '@/services/projectUpdateService';
 
 interface AddUpdateModalProps {
   project: ProjectData;
