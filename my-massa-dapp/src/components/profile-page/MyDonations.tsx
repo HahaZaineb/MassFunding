@@ -18,8 +18,8 @@ import {
 import { styled } from '@mui/system';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import { useAccountStore } from '@massalabs/react-ui-kit';
-import { getUserDonations } from '@/services/contract-service';
 import { useProjects } from '@/context/project-context';
+import { getUserDonations } from '@/services/statsService';
 
 const StyledCard = styled(Card)(() => ({
   backgroundColor: '#11182f',

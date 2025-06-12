@@ -14,15 +14,14 @@ import { store } from '@/store';
 import LandingPage from '@/pages/Home';
 import Projects from '@/pages/Projects';
 import RequestFunding from '@/pages/RequestFunding';
-import AboutPage from '@/pages/about';
 import ProfilePage from './pages/Profile';
 import PrivateRoute from './components/PrivateRoute';
 import { FundPage } from './pages/Fund';
-import SwapPage from './pages/swap';
 import { ToastProvider } from './contexts/ToastProvider';
-import { ProjectProvider } from './context/project-context';
 import useAccountSync from './hooks/useAccountSync';
 import BridgePage from './pages/Bridge';
+import SwapPage from './pages/Swap';
+import AboutPage from './pages/About';
 
 function App() {
   useAccountSync();
@@ -45,32 +44,30 @@ function App() {
   return (
     <ThemeProvider>
       <Provider store={store}>
-        <ProjectProvider>
-          <ToastProvider>
-            <Router>
-              <Navbar />
-              <Routes>
-                <Route path="/" element={<LandingPage />} />
-                <Route path="/request-funding" element={<RequestFunding />} />
-                <Route path="/projects" element={<Projects />} />
-                <Route path="/about" element={<AboutPage />} />
-                <Route path="/fund/:projectId" element={<FundPage />} />
-                <Route path="swap" element={<SwapPage />} />
-                <Route path="/bridge" element={<BridgePage />} />
-                <Route
-                  path="/profile"
-                  element={
-                    <PrivateRoute>
-                      <ProfilePage />
-                    </PrivateRoute>
-                  }
-                />
-                <Route path="*" element={<Navigate to="/" />} />
-              </Routes>
-              <Footer />
-            </Router>
-          </ToastProvider>
-        </ProjectProvider>
+        <ToastProvider>
+          <Router>
+            <Navbar />
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/request-funding" element={<RequestFunding />} />
+              <Route path="/projects" element={<Projects />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/fund/:projectId" element={<FundPage />} />
+              <Route path="/swap" element={<SwapPage />} />
+              <Route path="/bridge" element={<BridgePage />} />
+              <Route
+                path="/profile"
+                element={
+                  <PrivateRoute>
+                    <ProfilePage />
+                  </PrivateRoute>
+                }
+              />
+              <Route path="*" element={<Navigate to="/" />} />
+            </Routes>
+            <Footer />
+          </Router>
+        </ToastProvider>
       </Provider>
     </ThemeProvider>
   );

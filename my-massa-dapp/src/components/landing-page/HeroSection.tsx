@@ -3,12 +3,8 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight, HandCoins, Rocket, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import {
-  getTotalDonations,
-  getTotalProjectsFunded,
-  getTotalSupporters,
-} from '@/services/contract-service';
 import { formatMas } from '@massalabs/massa-web3';
+import { getTotalDonations, getTotalProjectsFunded, getTotalSupporters } from '@/services/statsService';
 
 const HeroSection = () => {
   const navigate = useNavigate();

@@ -1,7 +1,7 @@
-import { Project } from "@/models/ContractModels";
-import { ProjectData } from "@/types";
+import { Project } from "@/models/Project";
+import { getProjectSupportersCount } from "@/services/projectService";
+import { ProjectData } from '@/types/project';
 import { formatMas } from '@massalabs/massa-web3'
-import { getProjectSupportersCount, getProjectCreationDate } from "@/services/contract-service";
 
 export async function convertProjectToProjectData(project: Project): Promise<ProjectData> {
   const supportersCount = await getProjectSupportersCount(project.projectId);
@@ -32,4 +32,12 @@ export async function convertProjectToProjectData(project: Project): Promise<Pro
     milestones: [], // Initialize empty, will be populated by separate fetches
     totalAmountRaisedAtLockEnd: Number(project.totalAmountRaisedAtLockEnd),
   } as ProjectData;
+}
+
+export function getProjectCreationDate(creationPeriod: number): Date {
+  const MASSA_GENESIS_TIMESTAMP_MS = 1704289800000; // Wednesday, January 3, 2024 1:50:00 PM UTC (BuildNet)
+  const MASSA_PERIOD_DURATION_MS = 16 * 1000; // 16 seconds per period
+  const creationTimestampMs = MASSA_GENESIS_TIMESTAMP_MS + (creationPeriod * MASSA_PERIOD_DURATION_MS);
+
+  return new Date(creationTimestampMs);
 }
