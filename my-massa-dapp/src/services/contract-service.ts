@@ -2,8 +2,8 @@ import { Args, SmartContract, JsonRpcProvider, bytesToSerializableObjectArray} f
 import { ProjectData } from '@/types';
 import { Project, VestingSchedule, ProjectUpdate } from '@/models/ContractModels';
 import { readSmartContractPublic } from '@/utils/smartContract';
-import { CONTRACT_ADDRESS } from '@/constants';
 import { convertProjectToProjectData } from '@/utils/project';
+import { CONTRACT_ADDRESS } from '@/configs/massa';
 
 const PERIODS_PER_DAY = 5760; // 86400 seconds / 15 seconds per period
 const PERIODS_PER_SECOND = 1 / 15;
