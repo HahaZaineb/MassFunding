@@ -1,5 +1,5 @@
 import type React from 'react';
-import { ThemeProvider } from './components/theme-provider';
+import { ThemeProvider } from './contexts/ThemeProvider';
 import './index.css';
 
 interface LayoutProps {
