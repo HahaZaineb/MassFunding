@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Info, Loader2 } from 'lucide-react';
 import { useAccountStore } from '@massalabs/react-ui-kit';
-import { fundProject} from '../services/contract-service';
+import { fundProject } from '../services/contract-service';
 import {
   Card,
   CardContent,
@@ -22,7 +22,6 @@ import { useParams } from 'react-router-dom';
 import Loader from '@/components/Loader';
 import { styled } from '@mui/system';
 import ProgressBar from '@/components/ProgressBar';
-import { shortenAddress } from '@/utils/functions';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchProjectById } from '@/store/slices/projectSlice';
 import { Alert } from '@mui/material';
@@ -38,70 +37,12 @@ export function FundPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const { selected, loading } = useAppSelector((state) => state.projects);
-  // const [vestingSchedule, setVestingSchedule] = useState<ContractVestingScheduleData | null>(null);
-  // const [currentMassaPeriod, setCurrentMassaPeriod] = useState<number | null>(null);
-  // const [vestingLoading, setVestingLoading] = useState(false);
 
   useEffect(() => {
     if (projectId) {
       dispatch(fetchProjectById(projectId));
     }
   }, [dispatch, projectId]);
-
-  useEffect(() => {
-    const fetchVestingDetails = async () => {
-      if (selected && selected.vestingScheduleId) {
-        // setVestingLoading(true);
-        try {
-          // const [fetchedVestingSchedule, fetchedCurrentPeriod] = await Promise.all([
-          //   getVestingSchedule(Number(selected.vestingScheduleId)),
-          //   getCurrentMassaPeriod(),
-          // ]);
-          // setVestingSchedule(fetchedVestingSchedule);
-          // setCurrentMassaPeriod(fetchedCurrentPeriod);
-        } catch (err) {
-          console.error('Error fetching vesting details:', err);
-        } finally {
-          // setVestingLoading(false);
-        }
-      }
-    };
-
-    fetchVestingDetails();
-  }, [selected]);
-
-  // const formatPeriodDifference = (targetPeriod: number, currentPeriod: number | null): string => {
-  //   if (currentMassaPeriod === null || currentPeriod === null) return 'Loading...';
-
-  //   const diffPeriods = targetPeriod - currentPeriod;
-  //   const seconds = Math.abs(diffPeriods * 15); // 1 Massa period = 15 seconds
-
-  //   if (diffPeriods < 0) {
-  //     // Past
-  //     if (seconds < 60) {
-  //       return `${Math.floor(seconds)} seconds ago`;
-  //     } else if (seconds < 3600) {
-  //       return `${Math.floor(seconds / 60)} minutes ago`;
-  //     } else if (seconds < 86400) {
-  //       return `${Math.floor(seconds / 3600)} hours ago`;
-  //     } else {
-  //       return `${Math.floor(seconds / 86400)} days ago`;
-  //     }
-  //   } else if (diffPeriods > 0) {
-  //     // Future
-  //     if (seconds < 60) {
-  //       return `in ${Math.floor(seconds)} seconds`;
-  //     } else if (seconds < 3600) {
-  //       return `in ${Math.floor(seconds / 60)} minutes`;
-  //     } else if (seconds < 86400) {
-  //       return `in ${Math.floor(seconds / 3600)} hours`;
-  //     } else {
-  //       return `in ${Math.floor(seconds / 86400)} days`;
-  //     }
-  //   } else {
-  //     return 'now';
-  //   }
-  // };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -224,13 +165,17 @@ export function FundPage() {
                   <div>
                     <span className="text-slate-400">Lock Period:</span>
                     <div className="text-white font-medium">
-                      {formatPeriodsToHumanReadable(Number(selected?.lockPeriod))}
+                      {formatPeriodsToHumanReadable(
+                        Number(selected?.lockPeriod),
+                      )}
                     </div>
                   </div>
                   <div>
                     <span className="text-slate-400">Release Interval:</span>
                     <div className="text-white font-medium">
-                      {formatPeriodsToHumanReadable(Number(selected?.releaseInterval))}
+                      {formatPeriodsToHumanReadable(
+                        Number(selected?.releaseInterval),
+                      )}
                     </div>
                   </div>
                   <div>
@@ -248,13 +193,16 @@ export function FundPage() {
                   </div>
                 </div>
                 <div className="mt-3 text-xs text-slate-400">
-                  Your funds will be locked for {formatPeriodsToHumanReadable(Number(selected?.lockPeriod))},
+                  Your funds will be locked for{' '}
+                  {formatPeriodsToHumanReadable(Number(selected?.lockPeriod))},
                   then released {selected?.releasePercentage}% every{' '}
-                  {formatPeriodsToHumanReadable(Number(selected?.releaseInterval))}.
+                  {formatPeriodsToHumanReadable(
+                    Number(selected?.releaseInterval),
+                  )}
+                  .
                 </div>
               </div>
 
-              {/* Donation Amount */}
               <div>
                 <div className="flex items-center mb-2">
                   <label htmlFor="amount" className="text-white font-medium">
@@ -301,17 +249,6 @@ export function FundPage() {
                 </Alert>
               )}
 
-              {/* Connected Account Info */}
-              {connectedAccount && (
-                <div className="text-white text-sm">
-                  Connected Wallet:{' '}
-                  <span className="font-mono text-[#00ff9d]">
-                    {shortenAddress(connectedAccount.address?.toString() || '')}
-                  </span>
-                </div>
-              )}
-
-              {/* Connect Wallet / Submit Button */}
               <div className="mt-6">
                 <Button
                   type="submit"
