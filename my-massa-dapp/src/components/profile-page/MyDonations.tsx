@@ -20,6 +20,7 @@ import FavoriteIcon from '@mui/icons-material/Favorite';
 import { useAccountStore } from '@massalabs/react-ui-kit';
 import { getUserDonations } from '@/services/statsService';
 import { useAppSelector } from '@/store/hooks';
+import NoDonationFound from './NoDonationFound';
 
 const StyledCard = styled(Card)(() => ({
   backgroundColor: '#11182f',
@@ -96,9 +97,9 @@ const MyDonations: React.FC = ({}) => {
         />
         <Divider sx={{ my: 2, borderColor: '#1f2a48' }} />
         {loading ? (
-          <Typography color="text.secondary">Loading donations...</Typography>
+          <p className="text-slate-400 mb-6">Loading donations...</p>
         ) : donatedProjects.length === 0 ? (
-          <Typography color="text.secondary">No donations made yet.</Typography>
+          <NoDonationFound />
         ) : (
           <TableContainer component={Paper} sx={{ backgroundColor: '#11182f' }}>
             <Table>
