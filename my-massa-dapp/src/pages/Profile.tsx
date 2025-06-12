@@ -67,9 +67,6 @@ const ProfilePage: React.FC = ({}) => {
         try {
           setLoading(true);
           const donations = await getUserDonations(connectedAccount.address.toString());
-          console.log('User donations:', donations);
-          console.log('Projects:', projects);
-          // Map donations to projects
           const mappedProjects = donations.map((donation) => {
             const project = projects.find(p => p.id.toString() === donation.projectId);
             return {

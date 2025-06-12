@@ -60,25 +60,33 @@ const PulseCircle = styled('span')(() => ({
 
 interface StatusChipProps {
   project: ProjectData;
+  status: 'live' | 'release' | 'completed';
+  setStatus: (status: 'live' | 'release' | 'completed') => void;
   sx?: React.CSSProperties;
 }
 
-const ProjectStatus: React.FC<StatusChipProps> = ({ project, sx }) => {
+const ProjectStatus: React.FC<StatusChipProps> = ({
+  project,
+  status,
+  setStatus,
+  sx,
+}) => {
   const [vestingCompleted, setVestingCompleted] = useState(false);
-  const [status, setStatus] = useState<'live' | 'release' | 'completed'>('completed');
 
   const checkIfLocked = (creationDate: string): boolean => {
     const createdAt = new Date(creationDate);
-    const lockDurationDays = 30;
+    const lockPeriod = project.lockPeriod * 15;
     const now = new Date();
     const lockEndDate = new Date(
-      createdAt.getTime() + lockDurationDays * 24 * 60 * 60 * 1000
+      createdAt.getTime() + lockPeriod * 1000,
     );
     return now < lockEndDate;
   };
 
   const getProjectStatus = (): 'live' | 'release' | 'completed' => {
-    const isLocked = project.creationDate ? checkIfLocked(project.creationDate) : true;
+    const isLocked = project.creationDate
+      ? checkIfLocked(project.creationDate)
+      : true;
 
     if (vestingCompleted) return 'completed';
     if (!isLocked) return 'release';
@@ -90,6 +98,7 @@ const ProjectStatus: React.FC<StatusChipProps> = ({ project, sx }) => {
   useEffect(() => {
     const fetchVestingStatus = async () => {
       const res = await isProjectVestingCompleted(Number(project.id));
+      // console.log(res,project, 'isProjectVestingCompleted')
       setVestingCompleted(res);
     };
     fetchVestingStatus();

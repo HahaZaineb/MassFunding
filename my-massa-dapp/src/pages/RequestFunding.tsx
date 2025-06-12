@@ -54,8 +54,6 @@ export default function RequestFunding() {
   });
 
   useEffect(() => {
-          console.log(connectedAccount, "connectedAccount")
-
     if (connectedAccount) {
       setFormData((prev) => ({
         ...prev,
@@ -109,9 +107,6 @@ export default function RequestFunding() {
         releasePercentage: formData.releasePercentage,
         image: formData.image,
       });
-
-      console.log('Project creation response:', response);
-
       toast({
         title: 'Project Created',
         description: 'Your funding request has been submitted successfully.',

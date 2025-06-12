@@ -7,7 +7,6 @@ import { convertProjectToProjectData } from '@/utils/project';
 
 const PERIODS_PER_DAY = 5760; // 86400 seconds / 15 seconds per period
 const PERIODS_PER_SECOND = 1 / 15;
-const SECONDS_PER_DAY = 86400;
 
 // Helper function to format periods into human-readable time (days, hours, minutes, seconds)
 export const formatPeriodsToHumanReadable = (periods: number): string => {
@@ -128,10 +127,6 @@ export async function createProject(
     // Convert human-readable durations to periods
     const lockPeriodInPeriods = parseDurationToPeriods(projectData.lockPeriod);
     const releaseIntervalInPeriods = parseDurationToPeriods(projectData.releaseInterval);
-
-    console.log('Lock period in periods:', lockPeriodInPeriods.toString());
-    console.log('Release interval in periods:', releaseIntervalInPeriods.toString());
-
     const args = new Args()
       .addString(projectData.title)
       .addString(projectData.description)
@@ -547,7 +542,6 @@ export async function isProjectVestingCompleted(projectId: number): Promise<bool
     // 3. Fetch the vesting schedule
     const vestingArgs = new Args().addU64(BigInt(vestingScheduleId));
     const vestingResponse = await contract.read('getVestingSchedule', vestingArgs);
-
     if (!vestingResponse.value || vestingResponse.value.length === 0) {
       // If the vesting schedule does not exist, it is completed
       return true;

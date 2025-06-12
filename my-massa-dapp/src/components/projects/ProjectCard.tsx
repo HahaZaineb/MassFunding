@@ -3,7 +3,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import {
-  ThumbsUp,
   Users,
   Clock,
   Coins,
@@ -28,9 +27,11 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCategoryColor, shortenAddress } from '@/utils/functions';
 import ProjectStatus from './ProjectStatus';
-import { getDetailedVestingInfo, DetailedVestingInfo } from '@/services/contract-service';
+import {
+  getDetailedVestingInfo,
+  DetailedVestingInfo,
+} from '@/services/contract-service';
 import { formatPeriodsToHumanReadable } from '@/services/contract-service';
-
 
 interface ProjectCardProps {
   project: ProjectData & { image?: string };
@@ -42,54 +43,32 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
   const [openProjectUpdates, setOpenProjectUpdates] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [timeLeft, setTimeLeft] = useState('');
-  const [vestionDetails, setVestingDetails] =
+  const [vestingDetails, setVestingDetails] =
     useState<DetailedVestingInfo | null>(null);
+  const [projectStatus, setProjectStatus] = useState<
+    'live' | 'release' | 'completed'
+  >('completed');
+  const [nextReleaseDate, setNextReleaseDate] = useState<Date | null>(null);
 
-  function getProjectStatus(
-    project: ProjectData,
-  ): 'live' | 'release' | 'completed' {
-    let isLocked = true;
-    if (project?.creationDate) {
-      const createdAt = new Date(project?.creationDate);
-      const lockPeriodInMilliseconds = Number(project.lockPeriod) * 15 * 1000;
-      const now = new Date();
-
-      const lockEndDate = new Date(
-        createdAt.getTime() + lockPeriodInMilliseconds,
-      );
-
-      console.log('--- getProjectStatus Debug ---');
-      console.log('Project ID:', project.id);
-      console.log('Raw creationDate:', project.creationDate);
-      console.log('Raw lockPeriod (periods):', project.lockPeriod);
-      console.log('Calculated lockPeriodInMilliseconds:', lockPeriodInMilliseconds);
-      console.log('createdAt Date:', createdAt.toISOString());
-      console.log('lockEndDate Date:', lockEndDate.toISOString());
-      console.log('Current Date (now):', now.toISOString());
-
-      isLocked = now < lockEndDate;
-      console.log('Is Locked (now < lockEndDate):', isLocked);
-    }
-    if (project.amountRaised < project.goalAmount && isLocked) {
-      return 'live';
-    } else if (project.amountRaised === project.goalAmount && isLocked) {
-      return 'release';
-    } else if (project.amountRaised < project.goalAmount && !isLocked) {
-      return 'release';
-    } else if (project.amountRaised === project.goalAmount && !isLocked) {
-      return 'release';
-    } else {
-      return 'completed';
-    }
-  }
   useEffect(() => {
-    if (getProjectStatus(project) !== 'live') return;
+    if (vestingDetails?.vestingScheduleId && vestingDetails?.nextRelease) {
+      setNextReleaseDate(new Date(vestingDetails?.nextRelease));
+    } else {
+      const createdAt = new Date(project.creationDate || '');
+      const lockPeriodInSeconds = Number(project.lockPeriod) * 15; // Convert periods to seconds
+      const lockEnd = new Date(
+        createdAt.getTime() + lockPeriodInSeconds * 1000,
+      );
+      setNextReleaseDate(lockEnd);
+    }
+  }, [project, vestingDetails]);
+
+  useEffect(() => {
+    if (projectStatus !== 'live') return;
 
     const createdAt = new Date(project.creationDate || '');
     const lockPeriodInSeconds = Number(project.lockPeriod) * 15; // Convert periods to seconds
-    const lockEnd = new Date(
-      createdAt.getTime() + lockPeriodInSeconds * 1000,
-    );
+    const lockEnd = new Date(createdAt.getTime() + lockPeriodInSeconds * 1000);
 
     const updateCountdown = () => {
       const now = new Date().getTime();
@@ -112,22 +91,16 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
     const interval = setInterval(updateCountdown, 1000);
 
     return () => clearInterval(interval);
-  }, [project]);
+  }, [project, projectStatus]);
 
   const getDetailedVestingInfoHandler = async () => {
     const details = await getDetailedVestingInfo(Number(project.id));
-    console.log(details, 'details...');
+    console.log(project.id, details, "getDetailedVestingInfo")
     setVestingDetails(details);
   };
 
   useEffect(() => {
     getDetailedVestingInfoHandler();
-
-    console.log('Project ID:', project.id);
-    console.log('Raw Lock Period:', project.lockPeriod);
-    console.log('Raw Release Interval:', project.releaseInterval);
-    console.log('Formatted Lock Period:', formatPeriodsToHumanReadable(Number(project.lockPeriod)));
-    console.log('Formatted Release Interval:', formatPeriodsToHumanReadable(Number(project.releaseInterval)));
   }, [project]);
 
   return (
@@ -139,7 +112,11 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
           alt={project.name}
           className="w-full h-full object-cover"
         />
-        <ProjectStatus project={project} />
+        <ProjectStatus
+          project={project}
+          status={projectStatus}
+          setStatus={setProjectStatus}
+        />
         <div className="absolute top-4 right-4">
           <Badge
             className={`text-white border-0`}
@@ -195,7 +172,8 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
           <div className="flex flex-col items-center p-3 bg-slate-700/50 rounded-lg">
             <Clock className="h-4 w-4 mb-1 text-yellow-400" />
             <span className="text-white font-bold text-sm text-center">
-              Every {formatPeriodsToHumanReadable(Number(project.releaseInterval))}
+              Every{' '}
+              {formatPeriodsToHumanReadable(Number(project.releaseInterval))}
             </span>
             <span className="text-slate-400 text-xs">Interval</span>
           </div>
@@ -226,25 +204,27 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
                 </p>
                 <p className="text-white text-sm">
                   <span className="font-semibold">Release Interval:</span>{' '}
-                  {formatPeriodsToHumanReadable(Number(project.releaseInterval))}
+                  {formatPeriodsToHumanReadable(
+                    Number(project.releaseInterval),
+                  )}
                 </p>
-                {vestionDetails && vestionDetails.vestingScheduleId ? (
+                {vestingDetails && vestingDetails.vestingScheduleId ? (
                   <div className="text-white text-sm space-y-2">
                     <p>
                       <span className="font-semibold">Vesting Start:</span>{' '}
-                      {vestionDetails.vestingStart}
+                      {vestingDetails.vestingStart}
                     </p>
                     <p>
                       <span className="font-semibold">Next Release:</span>{' '}
-                      {vestionDetails.nextRelease}
+                      {vestingDetails.nextRelease}
                     </p>
                     <p>
                       <span className="font-semibold">Amount Received:</span>{' '}
-                      {vestionDetails.amountReceived} MAS
+                      {vestingDetails.amountReceived} MAS
                     </p>
                     <p>
                       <span className="font-semibold">Amount Left:</span>{' '}
-                      {vestionDetails.amountLeft} MAS
+                      {vestingDetails.amountLeft} MAS
                     </p>
                   </div>
                 ) : (
@@ -268,23 +248,18 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
       </CardContent>
 
       <CardFooter className="flex flex-col gap-3">
-        {getProjectStatus(project) === 'live' && (
+        {projectStatus === 'live' && (
           <div className="w-full p-3 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-700 shadow-lg">
             <div className="text-center space-y-2">
               <div className="text-teal-400 text-xs font-semibold tracking-wider flex items-center justify-center">
-                <svg
+                <Clock
                   className="w-3 h-3 mr-2"
+                  stroke="#2dd4bf"
                   fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
                 FUNDING CLOSES IN
               </div>
               <div className="flex justify-center space-x-2">
@@ -302,7 +277,7 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
             </div>
           </div>
         )}
-        {getProjectStatus(project) === 'release' && (
+        {projectStatus === 'release' && (
           <div className="w-full p-3 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-700 shadow-lg">
             <div className="text-center space-y-2">
               <div className="text-[#ff9100] text-xs font-semibold tracking-wider flex items-center justify-center">
@@ -317,8 +292,8 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
                 NEXT RELEASE DATE
               </div>
               <div className="relative bg-gray-800 text-[#ff9100] font-mono font-bold text-sm px-4 py-2 rounded-lg border border-[#ff9100]/30 hover:border-[#ff9100]/50 transition-all duration-200 inline-block">
-                {vestionDetails?.nextRelease
-                  ? new Date().toLocaleString(undefined, {
+                {nextReleaseDate
+                  ? nextReleaseDate.toLocaleString(undefined, {
                       weekday: 'short',
                       year: 'numeric',
                       month: 'short',
@@ -333,7 +308,7 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
           </div>
         )}
 
-        {getProjectStatus(project) === 'completed' && (
+        {projectStatus === 'completed' && (
           <div className="w-full p-3 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-700 shadow-lg">
             <div className="text-center space-y-2">
               <div className="text-[#90a4ae] text-xs font-semibold tracking-wider flex items-center justify-center">
@@ -347,7 +322,7 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
             </div>
           </div>
         )}
-        {getProjectStatus(project) === 'live' ? (
+        {projectStatus === 'live' ? (
           <Button
             onClick={() => navigate(`/fund/${project.id}`)}
             className="w-full bg-[#00ff9d] text-slate-900 hover:bg-[#00e68d] transition-colors flex items-center justify-center"

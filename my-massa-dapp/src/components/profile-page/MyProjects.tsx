@@ -9,9 +9,6 @@ export default function MyProjects() {
   const { projects } = useProjects();
   const { connectedAccount } = useAccountStore();
 
-  console.log('All projects:', projects);
-  console.log('Connected account:', connectedAccount?.address?.toString());
-
   const myProjects = connectedAccount
     ? projects.filter((p) => {
         const creatorAddress = (p.creator?.toString() || '').toLowerCase();
@@ -19,23 +16,17 @@ export default function MyProjects() {
           .toString()
           .toLowerCase();
         const match = creatorAddress === connectedAddress;
-        if (match) {
-          console.log('Matched project:', p);
-        }
         return match;
       })
     : [];
 
-  console.log('My projects:', myProjects);
-
-  
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <Stats/>
+      <Stats />
       {myProjects.length > 0 ? (
         <div className="space-y-8">
           {myProjects.map((project, index) => (
@@ -45,12 +36,12 @@ export default function MyProjects() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
             >
-              <MyProjectCard project={project}/>
+              <MyProjectCard project={project} />
             </motion.div>
           ))}
         </div>
       ) : (
-        <NoProjectFound/>
+        <NoProjectFound />
       )}
     </motion.div>
   );

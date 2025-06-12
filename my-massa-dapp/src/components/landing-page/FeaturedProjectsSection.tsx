@@ -3,9 +3,9 @@ import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import ProjectMiniCard from '../projects/ProjectMiniCard';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchProjects } from '@/store/slices/projectSlice';
+import ProjectCard from '../projects/ProjectCard';
 
 const FeaturedProjectsSection = () => {
   const navigate = useNavigate();
@@ -17,7 +17,7 @@ const FeaturedProjectsSection = () => {
   useEffect(() => {
     dispatch(fetchProjects());
   }, [dispatch]);
-  
+
   return (
     <>
       {list?.length > 0 && (
@@ -33,7 +33,7 @@ const FeaturedProjectsSection = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {featuredProjects.map((project, index) => (
-                <ProjectMiniCard project={project} key={index} />
+                <ProjectCard project={project} key={index} />
               ))}
             </div>
 
