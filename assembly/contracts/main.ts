@@ -29,6 +29,10 @@ import {
 import { Project } from './serializables/project';
 import { vestingSchedule } from './serializables/vestingSchedule';
 import { ProjectUpdate } from './serializables/projectUpdate';
+import { wrapMasToWMAS } from './lib';
+import { IWMAS } from '@massalabs/sc-standards/assembly/contracts/MRC20/IWMAS';
+import { WMAS_ADDRESS } from './lib/const';
+import { getBalanceEntryCost } from '@massalabs/sc-standards/assembly/contracts/MRC20/MRC20-external';
 
 export const PERIODS_PER_DAY: u64 = 86400 / 15;
 
@@ -311,9 +315,34 @@ export function getAllProjects(_: StaticArray<u8>): StaticArray<u8> {
 export function fundProject(binArgs: StaticArray<u8>): void {
   const args = new Args(binArgs);
   const projectId = args.nextU64().expect('Missing project ID');
+  const amount = args.nextU256().expect('Missing amount');
+  const isNative = args.nextBool().expect('Missing isNative');
 
-  const amountSent = Context.transferredCoins();
-  assert(amountSent > 0, 'Must send MAS to fund a project');
+  // Get Address of the tx caller
+  const callerAddress = Context.caller();
+  // Get Address of the current smart contract
+  const calleeAddress = Context.callee();
+
+  // If IsNative is true, wrap the MAS coins into WMAS, Else, transfer the wmas tokens to the contract
+  if (isNative) {
+    wrapMasToWMAS(amount);
+  } else {
+    const wmasToken = new IWMAS(new Address(WMAS_ADDRESS));
+
+    // Ensure the caller has enough WMAS tokens to fund the project
+    assert(
+      wmasToken.balanceOf(callerAddress) >= amount,
+      'INSUFFICIENT WMAS TOKENS',
+    );
+
+    // Transfer WMAS tokens to the contract
+    wmasToken.transferFrom(
+      callerAddress,
+      calleeAddress,
+      amount,
+      getBalanceEntryCost(WMAS_ADDRESS, calleeAddress.toString()), // Function by Massa to estimate the cost of the storage entry
+    );
+  }
 
   const projectKey = new Args().add(PROJECTS_KEY).add(projectId).serialize();
   assert(Storage.has(projectKey), `Project with ID ${projectId} not found`);
@@ -331,7 +360,8 @@ export function fundProject(binArgs: StaticArray<u8>): void {
   );
 
   // Add the amount to the total raised
-  project.amountRaised += amountSent;
+  // TODO: remove toU64 after updating all the balance and amount calculation to u256 instead of u64
+  project.amountRaised += amount.toU64();
   project.totalAmountRaisedAtLockEnd = project.amountRaised; // Update this with every donation during lock period
 
   // Save the updated project back to storage
@@ -341,7 +371,8 @@ export function fundProject(binArgs: StaticArray<u8>): void {
   let totalDonations = new Args(Storage.get(TOTAL_DONATIONS_KEY))
     .nextU64()
     .expect('Failed to deserialize total donations');
-  totalDonations += amountSent;
+  // TODO: remove toU64 after updating all the balance and amount calculation to u256 instead of u64
+  totalDonations += amount.toU64();
   Storage.set(TOTAL_DONATIONS_KEY, new Args().add(totalDonations).serialize());
 
   // Update global total supporters
@@ -380,14 +411,21 @@ export function fundProject(binArgs: StaticArray<u8>): void {
 
   // Store/Update donor amount for this project
   let prevAmount = loadProjectDonorAmount(projectId, Context.caller());
-  storeProjectDonorAmount(projectId, Context.caller(), prevAmount + amountSent);
+  // TODO: remove toU64 after updating all the balance and amount calculation to u256 instead of u64
+  storeProjectDonorAmount(
+    projectId,
+    Context.caller(),
+    prevAmount + amount.toU64(),
+  );
 
   generateEvent(PROJECT_FUNDED_EVENT);
 
   // The initial vesting trigger is already scheduled in createProject, it will handle vesting logic
   // after the lock period has passed using totalAmountRaisedAtLockEnd.
   generateEvent(
-    `Added ${amountSent} MAS to project ${projectId}. Total raised: ${project.amountRaised}.`,
+    `Added ${amount.toString()} MAS to project ${projectId}. Total raised: ${
+      project.amountRaised
+    }.`,
   );
 }
 

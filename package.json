@@ -26,6 +26,7 @@
         "@massalabs/as-types": "^2.0.0",
         "@massalabs/eslint-config": "^0.0.11",
         "@massalabs/massa-as-sdk": "^3.0.2",
+        "@massalabs/sc-standards": "^1.2.3-dev.20241209143606",
         "@massalabs/massa-sc-compiler": "^0.2.1-dev",
         "@massalabs/massa-web3": "^5.1.1",
         "@massalabs/prettier-config-as": "^0.0.2",
@@ -36,11 +37,18 @@
         "prettier": "^2.8.1",
         "tslib": "^2.4.0",
         "tsx": "^4.7.0",
-        "typescript": "^4.8.4"
+        "typescript": "^4.8.4",
+        "as-bignum": "github:massalabs/as-bignum#0105eb596b2fa707c00712e811a2efdfcb8a9848"
     },
     "overrides": {
         "visitor-as": {
             "assemblyscript": "$assemblyscript"
+        },
+        "@massalabs/as-types": {
+            "as-bignum": "$as-bignum"
+        },
+        "@massalabs/sc-standards": {
+            "as-bignum": "$as-bignum"
         }
     },
     "type": "module",
