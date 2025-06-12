@@ -106,7 +106,7 @@ export default function Projects() {
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent className="bg-[#1a2340] border-[#00ff9d]/20 text-white max-h-[300px] overflow-y-auto">
-                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="all">Show All</SelectItem>
                   <SelectItem value="live">Live (Ongoing Projects)</SelectItem>
                   <SelectItem value="release">
                     Released (Recently Deployed)
