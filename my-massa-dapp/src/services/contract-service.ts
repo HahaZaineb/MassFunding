@@ -291,6 +291,7 @@ export interface ContractVestingScheduleData {
   releaseInterval: number; // u64 in contract
   releasePercentage: number; // u64 in contract
   nextReleasePeriod: number; // u64 in contract
+  isCompleted: boolean; // New field to track completion status
 }
 
 export async function getVestingSchedule(vestingId: number): Promise<ContractVestingScheduleData | null> {
@@ -299,8 +300,7 @@ export async function getVestingSchedule(vestingId: number): Promise<ContractVes
     const args = new Args().addU64(BigInt(vestingId));
     const response = await contract.read('getVestingSchedule', args);
 
-    // IMPORTANT: If the contract returns an empty array for a non-existent schedule (e.g., completed and removed),
-    // we should treat this as "not found".
+    // If the contract returns an empty array, the schedule doesn't exist
     if (!response.value || response.value.length === 0) {
       return null;
     }
@@ -324,7 +324,8 @@ export async function getVestingSchedule(vestingId: number): Promise<ContractVes
       lockPeriod: Number(schedule.lockPeriod),
       releaseInterval: Number(schedule.releaseInterval),
       releasePercentage: Number(schedule.releasePercentage),
-      nextReleasePeriod: Number(schedule.nextReleasePeriod)
+      nextReleasePeriod: Number(schedule.nextReleasePeriod),
+      isCompleted: schedule.isCompleted
     };
 
   } catch (error) {
@@ -519,17 +520,11 @@ export async function getTotalClaimedAmount(userAddress: string): Promise<number
 // Returns true if the vesting for the project is completed
 export async function isProjectVestingCompleted(projectId: number): Promise<boolean> {
   try {
-    // 1. Fetch the project
-    const contract = new SmartContract(publicProvider, CONTRACT_ADDRESS);
-    const args = new Args().addU64(BigInt(projectId));
-    const response = await contract.read('getProject', args);
-
-    if (!response.value || response.value.length === 0) {
-      throw new Error('Project not found');
+    // 1. Get the project
+    const project = await getProject(projectId);
+    if (!project) {
+      return false; // If project doesn't exist, vesting is not completed
     }
-
-    // Parse the project object
-    const [project] = bytesToSerializableObjectArray(response.value, Project);
 
     // 2. Get the vestingScheduleId from the project
     const vestingScheduleId = Number(project.vestingScheduleId);
@@ -540,21 +535,21 @@ export async function isProjectVestingCompleted(projectId: number): Promise<bool
     }
 
     // 3. Fetch the vesting schedule
+    const contract = new SmartContract(publicProvider, CONTRACT_ADDRESS);
     const vestingArgs = new Args().addU64(BigInt(vestingScheduleId));
     const vestingResponse = await contract.read('getVestingSchedule', vestingArgs);
+    
     if (!vestingResponse.value || vestingResponse.value.length === 0) {
-      // If the vesting schedule does not exist, it is completed
-      return true;
+      return false; // If schedule doesn't exist, it's not completed
     }
 
     // Parse the vesting schedule
     const [schedule] = bytesToSerializableObjectArray(vestingResponse.value, VestingSchedule);
+    return schedule.isCompleted; // Use the new isCompleted flag
 
-    // 4. Check if all funds have been claimed
-    return Number(schedule.amountClaimed) >= Number(schedule.totalAmount);
   } catch (error) {
-    // If any error occurs (e.g., vesting schedule not found), treat as completed
-    return true;
+    console.error('Error checking if project vesting is completed:', error);
+    return false; // If any error occurs, treat as not completed
   }
 }
 
@@ -585,99 +580,82 @@ export async function getDetailedVestingInfo(projectId: number): Promise<Detaile
     vestingScheduleId: null,
     vestingStart: 'N/A',
     nextRelease: 'N/A',
-    amountReceived: 'N/A',
-    amountLeft: 'N/A',
+    amountReceived: '0',
+    amountLeft: '0',
     lockPeriod: 'N/A',
     releaseInterval: 'N/A',
     releasePercentage: 0,
     beneficiary: 'N/A',
     hasVestingSchedule: false,
-    loading: true,
+    loading: true
   };
 
   try {
     const selectedProject = await getProject(projectId);
-    
-    // If no vesting schedule ID is associated with the project, it means it was never created or is 0.
-    // We will still attempt to fetch it, as 0 could be a valid ID for a re-used schedule.
+    if (!selectedProject) {
+      return { ...initialInfo, loading: false };
+    }
+
+    // If no vesting schedule ID is associated with the project, it means it was never created
     if (!selectedProject.vestingScheduleId) {
       return { ...initialInfo, loading: false, hasVestingSchedule: false };
     }
 
     const vestingScheduleIdNum = Number(selectedProject.vestingScheduleId);
+    const currentMassaPeriod = await getCurrentMassaPeriod();
 
-    const [fetchedVestingSchedule, currentPeriod] = await Promise.all([
-      getVestingSchedule(vestingScheduleIdNum),
-      getCurrentMassaPeriod(),
-    ]);
+    const fetchedVestingSchedule = await getVestingSchedule(vestingScheduleIdNum);
 
-    // If fetchedVestingSchedule is null, it means the schedule was not found (e.g., completed and removed)
+    // If fetchedVestingSchedule is null, it means the schedule was not found
     if (!fetchedVestingSchedule) {
-      // If vesting is completed, amountReceived should be totalAmountRaisedAtLockEnd and amountLeft should be 0
-      const totalAmount = Number(selectedProject.totalAmountRaisedAtLockEnd) / 1e9;
       return {
         ...initialInfo,
         loading: false,
         hasVestingSchedule: false,
-        vestingStart: "Vesting completed", // More precise message
-        nextRelease: "N/A",
-        amountReceived: totalAmount.toLocaleString(), // Display the total amount received
-        amountLeft: "0", // Amount left is 0
-        lockPeriod: formatPeriodsToHumanReadable(Number(selectedProject.lockPeriod)),
-        releaseInterval: formatPeriodsToHumanReadable(Number(selectedProject.releaseInterval)),
-        releasePercentage: selectedProject.releasePercentage,
-        beneficiary: selectedProject.beneficiary,
+        vestingStart: "Vesting schedule not found"
       };
     }
 
-    const formatPeriodDifference = (targetPeriod: number, currentPeriod: number | null): string => {
-      if (currentPeriod === null) return 'Loading...';
-
-      const diffPeriods = targetPeriod - currentPeriod;
-      const seconds = Math.abs(diffPeriods * 15); // 1 Massa period = 15 seconds
-
-      if (diffPeriods < 0) {
-        // Past
-        if (seconds < 60) {
-          return `${Math.floor(seconds)} seconds ago`;
-        } else if (seconds < 3600) {
-          return `${Math.floor(seconds / 60)} minutes ago`;
-        } else if (seconds < 86400) {
-          return `${Math.floor(seconds / 3600)} hours ago`;
-        } else {
-          return `${Math.floor(seconds / 86400)} days ago`;
-        }
-      } else if (diffPeriods > 0) {
-        // Future
-        if (seconds < 60) {
-          return `in ${Math.floor(seconds)} seconds`;
-        } else if (seconds < 3600) {
-          return `in ${Math.floor(seconds / 60)} minutes`;
-        } else if (seconds < 86400) {
-          return `in ${Math.floor(seconds / 3600)} hours`;
-        } else {
-          return `in ${Math.floor(seconds / 86400)} days`;
-        }
-      } else {
-        return 'now';
-      }
-    };
+    // If vesting is completed, show final amounts
+    if (fetchedVestingSchedule.isCompleted) {
+      return {
+        ...initialInfo,
+        loading: false,
+        hasVestingSchedule: true,
+        vestingScheduleId: selectedProject.vestingScheduleId,
+        vestingStart: "Vesting completed",
+        nextRelease: "N/A",
+        amountReceived: (fetchedVestingSchedule.amountClaimed / 1e9).toLocaleString(),
+        amountLeft: "0",
+        lockPeriod: formatPeriodsToHumanReadable(fetchedVestingSchedule.lockPeriod),
+        releaseInterval: formatPeriodsToHumanReadable(fetchedVestingSchedule.releaseInterval),
+        releasePercentage: fetchedVestingSchedule.releasePercentage,
+        beneficiary: fetchedVestingSchedule.beneficiary
+      };
+    }
 
     const vestingStartPeriod = selectedProject.creationPeriod + Number(selectedProject.lockPeriod);
+    const formatPeriodDifference = (targetPeriod: number, currentPeriod: number | null): string => {
+      if (!currentPeriod) return 'N/A';
+      const diff = targetPeriod - currentPeriod;
+      if (diff <= 0) return 'Now';
+      return formatPeriodsToHumanReadable(diff);
+    };
 
     return {
       vestingScheduleId: selectedProject.vestingScheduleId,
-      vestingStart: formatPeriodDifference(vestingStartPeriod, currentPeriod),
-      nextRelease: formatPeriodDifference(fetchedVestingSchedule.nextReleasePeriod, currentPeriod),
+      vestingStart: formatPeriodDifference(vestingStartPeriod, currentMassaPeriod),
+      nextRelease: formatPeriodDifference(fetchedVestingSchedule.nextReleasePeriod, currentMassaPeriod),
       amountReceived: (fetchedVestingSchedule.amountClaimed / 1e9).toLocaleString(),
       amountLeft: ((fetchedVestingSchedule.totalAmount - fetchedVestingSchedule.amountClaimed) / 1e9).toLocaleString(),
-      lockPeriod: formatPeriodsToHumanReadable(Number(selectedProject.lockPeriod)), // Format lock period
-      releaseInterval: formatPeriodsToHumanReadable(Number(selectedProject.releaseInterval)), // Format release interval
-      releasePercentage: selectedProject.releasePercentage,
-      beneficiary: selectedProject.beneficiary,
+      lockPeriod: formatPeriodsToHumanReadable(fetchedVestingSchedule.lockPeriod),
+      releaseInterval: formatPeriodsToHumanReadable(fetchedVestingSchedule.releaseInterval),
+      releasePercentage: fetchedVestingSchedule.releasePercentage,
+      beneficiary: fetchedVestingSchedule.beneficiary,
       hasVestingSchedule: true,
-      loading: false,
+      loading: false
     };
+
   } catch (error) {
     console.error('Error getting detailed vesting info:', error);
     return { ...initialInfo, loading: false };

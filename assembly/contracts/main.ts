@@ -107,7 +107,8 @@ constructor(
   public lockPeriod: u64 = 0, // In periods (initial lock period relative to vesting schedule creation)
   public releaseInterval: u64 = 0, // In periods
   public releasePercentage: u64 = 0, // Percentage out of 100
-  public nextReleasePeriod: u64 = 0 // Period of the next scheduled release
+  public nextReleasePeriod: u64 = 0, // Period of the next scheduled release
+  public isCompleted: bool = false // New field to track completion status
 ) {}
 
 serialize(): StaticArray<u8> {
@@ -120,6 +121,7 @@ serialize(): StaticArray<u8> {
     .add(this.releaseInterval)
     .add(this.releasePercentage)
     .add(this.nextReleasePeriod)
+    .add(this.isCompleted)
     .serialize();
 }
 
@@ -134,6 +136,7 @@ deserialize(data: StaticArray<u8>, offset: u64 = 0): Result<i32> {
   this.releaseInterval = args.nextU64().expect('Failed to deserialize releaseInterval.');
   this.releasePercentage = args.nextU64().expect('Failed to deserialize releasePercentage.');
   this.nextReleasePeriod = args.nextU64().expect('Failed to deserialize nextReleasePeriod.');
+  this.isCompleted = args.nextBool().expect('Failed to deserialize isCompleted.');
 
   return new Result(args.offset);
 }
@@ -322,7 +325,15 @@ const creator = Context.caller();
 const beneficiary = new Address(beneficiaryAddress);
 const creationPeriod = Context.currentPeriod();
 
-// No conversion needed here, as inputs are already in periods
+// Create vesting schedule immediately with 0 initial amount
+const vestingId = createVestingScheduleInternal(
+  projectId,
+  beneficiary,
+  0, // Initial amount is 0
+  lockPeriodInPeriods,
+  releaseIntervalInPeriods,
+  releasePercentage
+);
 
 const newProject = new Project(
   projectId,
@@ -338,7 +349,7 @@ const newProject = new Project(
   releasePercentage,
   image,
   creationPeriod,
-  0, // Initialize vestingScheduleId to 0
+  vestingId, // Set the vesting schedule ID immediately
   false, // Initialize initialVestingTriggered to false
   0 // Initialize totalAmountRaisedAtLockEnd to 0
 );
@@ -517,7 +528,7 @@ export function triggerInitialVesting(binArgs: StaticArray<u8>): void {
     const newTriggerSlot = findCheapestSlot(
       reschedulePeriod,
       reschedulePeriod + 10, // Search window
-      20_000_000, // Gas
+      500_000_000, // Increased gas limit
       0 // No coins sent with this trigger call
     );
 
@@ -525,7 +536,7 @@ export function triggerInitialVesting(binArgs: StaticArray<u8>): void {
       Context.callee().toString(),
       'triggerInitialVesting',
       newTriggerSlot,
-      20_000_000,
+      500_000_000, // Increased gas limit
       binArgs, // Pass the same arguments
       0
     );
@@ -600,7 +611,8 @@ const schedule = new vestingSchedule(
   lockPeriod, // Storing the initial lock period for reference
   releaseInterval,
   releasePercentage,
-  startPeriod // Storing the period of the first scheduled release
+  startPeriod, // Storing the period of the first scheduled release
+  false // Initialize isCompleted to false
 );
 
 // Store the new vesting schedule
@@ -620,15 +632,15 @@ const releaseArgs = new Args().add(vestingId).serialize();
 const releaseSlot = findCheapestSlot(
   startPeriod,
   startPeriod + 10, // Search window
-  30_000_000, // Gas
+  500_000_000, // Increased gas limit
   0 // No coins sent with the deferred call
 );
 
 deferredCallRegister(
   Context.callee().toString(), // Call this contract (itself)
-  'releaseVestedTokens', // Call the internal release function
+  'releaseVestedTokens',
   releaseSlot,
-  30_000_000, // Gas
+  500_000_000, // Increased gas limit
   releaseArgs,
   0 // No coins sent with deferred call
 );
@@ -652,12 +664,18 @@ const scheduleKey = getVestingScheduleKey(vestingId);
 
 // Check if the vesting schedule exists
 if (!Storage.has(scheduleKey)) {
-  generateEvent(`Vesting schedule with ID ${vestingId} not found or already completed.`);
+  generateEvent(`Vesting schedule with ID ${vestingId} not found.`);
   return;
 }
 
 let schedule = new vestingSchedule();
 schedule.deserialize(Storage.get(scheduleKey));
+
+// If schedule is already completed, do nothing
+if (schedule.isCompleted) {
+  generateEvent(`Vesting schedule ${vestingId} is already completed.`);
+  return;
+}
 
 // Ensure it's time for this release
 const currentPeriod = Context.currentPeriod();
@@ -684,8 +702,6 @@ if (amountToRelease > 0) {
     generateEvent(`Attempting to transfer ${amountToRelease} MAS to ${beneficiaryAddress.toString()} for ID ${vestingId}`);
 
     // Transfer MAS to beneficiary from this contract's balance
-    // We need to handle potential transfer failures gracefully.
-    // In a real scenario, you might want error handling or a pull mechanism.
     Coins.transferCoins(beneficiaryAddress, amountToRelease);
     generateEvent(TOKENS_RELEASED_EVENT);
 
@@ -726,8 +742,9 @@ if (schedule.amountClaimed < schedule.totalAmount) {
   Storage.set(scheduleKey, schedule.serialize());
 
 } else {
-  // Vesting completed - remove the schedule from storage
-  Storage.del(scheduleKey);
+  // Mark vesting as completed but keep it in storage
+  schedule.isCompleted = true;
+  Storage.set(scheduleKey, schedule.serialize());
   generateEvent(VESTING_SCHEDULE_COMPLETED_EVENT);
 }
 }
