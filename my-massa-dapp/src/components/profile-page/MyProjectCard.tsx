@@ -9,11 +9,13 @@ import AddUpdateModal from '../projects/AddUpdateModal';
 import ProgressBar from '../ProgressBar';
 import { getProjectSupportersCount } from '@/services/projectService';
 import ProjectUpdatesModal from '../projects/ProjectUpdatesModal';
+import { useNavigate } from 'react-router-dom';
 
 interface MyProjectCardProps {
   project: ProjectData;
 }
 const MyProjectCard: React.FC<MyProjectCardProps> = ({ project }) => {
+  const navigate = useNavigate();
   const [openUpdates, setOpenUpdates] = useState<boolean>(false);
   const [openAddUpdate, setOpenAddUpdate] = useState<boolean>(false);
   const [supportersCount, setSupportersCount] = useState<number>(0);
@@ -34,7 +36,10 @@ const MyProjectCard: React.FC<MyProjectCardProps> = ({ project }) => {
   }, [project.id]);
 
   return (
-    <Card className="bg-gradient-to-br from-[#1a2340] to-[#0f1629] border border-[#00ff9d]/20 shadow-xl overflow-hidden">
+    <Card
+      onClick={() => navigate('/projects/' + project.id)}
+      className="cursor-pointer bg-gradient-to-br from-[#1a2340] to-[#0f1629] border border-[#00ff9d]/20 shadow-xl overflow-hidden"
+    >
       <CardContent className="p-0">
         {/* Project Header */}
         <div className="p-6 border-b border-[#00ff9d]/10">
@@ -125,7 +130,10 @@ const MyProjectCard: React.FC<MyProjectCardProps> = ({ project }) => {
         <div className="p-6 border-b border-[#00ff9d]/10">
           <div className="flex flex-wrap gap-3">
             <Button
-              onClick={() => setOpenAddUpdate(true)}
+              onClick={(e: any) => {
+                e.stopPropagation();
+                setOpenAddUpdate(true);
+              }}
               variant="outline"
               className="border-[#00ff9d]/30 text-[#00ff9d] hover:bg-[#00ff9d]/10"
             >
@@ -134,7 +142,10 @@ const MyProjectCard: React.FC<MyProjectCardProps> = ({ project }) => {
             </Button>
             <Button
               variant="ghost"
-              onClick={() => setOpenUpdates(true)}
+              onClick={(e: any) => {
+                e.stopPropagation();
+                setOpenUpdates(true);
+              }}
               className="border-[#00ff9d]/30 text-[#00ff9d] bg-[#00ff9d]/10 hover:bg-[#00ff9d]/20"
             >
               <Eye className="h-4 w-4 mr-1" />
@@ -145,12 +156,18 @@ const MyProjectCard: React.FC<MyProjectCardProps> = ({ project }) => {
       </CardContent>
       <ProjectUpdatesModal
         open={openUpdates}
-        onClose={() => setOpenUpdates(false)}
+        onClose={(e: any) => {
+          e.stopPropagation();
+          setOpenUpdates(false);
+        }}
         projectId={project.id}
       />
       <AddUpdateModal
         open={openAddUpdate}
-        onClose={() => setOpenAddUpdate(false)}
+        onClose={(e: any) => {
+          e.stopPropagation();
+          setOpenAddUpdate(false);
+        }}
         project={project}
       />
     </Card>

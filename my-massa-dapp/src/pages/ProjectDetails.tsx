@@ -33,11 +33,12 @@ const ProjectDetailsPage = () => {
     }
   }, [id]);
 
-  useEffect(() => {
-    console.log(project, 'project....');
-  }, [project]);
-
-  if (loading) return <Loader />;
+  if (loading)
+    return (
+      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 w-full min-h-screen">
+        <Loader />
+      </div>
+    );
 
   const percentFunded = project
     ? (Number(project.amountRaised) / Number(project.goalAmount)) * 100
@@ -164,9 +165,7 @@ const ProjectDetailsPage = () => {
               )}
             </div>
 
-            <ProjectUpdates
-              projectId={project.id}
-            />
+            <ProjectUpdates projectId={project.id} />
           </div>
         </div>
       )}
