@@ -8,22 +8,22 @@ const FAQSection = () => {
     {
       question: 'What is MassFunding?',
       answer:
-        'MassFunding is a decentralized crowdfunding platform built on the Massa blockchain. It enables project creators to raise funds with transparent vesting schedules and provides contributors with NFT receipts for their support.',
+        'MassFunding is a decentralized crowdfunding platform built on the Massa blockchain. It enables project creators to raise funds with transparent vesting schedules.',
     },
     {
       question: 'How does the vesting schedule work?',
       answer:
-        "Funds are released according to predefined milestones and vesting schedules. This ensures that project creators remain accountable and deliver on their promises while protecting contributors' investments.",
+        "Funds are released according to a predefined vesting schedules. This ensures that project creators remain accountable and deliver on their promises while protecting contributors' investments.",
     },
     {
       question: 'How do I start a project?',
       answer:
-        "Simply click on 'Request Funding' and fill out the project details, including your funding goal, vesting schedule, and project milestones. Once approved, your project will be listed on the platform.",
+        "Simply click on 'Request Funding' and fill out the project details, including your funding goal and vesting schedule. Once approved, your project will be listed on the platform.",
     },
     {
       question: 'How does crowdfunding work on Massa?',
       answer:
-        "Creators launch campaigns by deploying smart contracts on Massa. Backers contribute MAS tokens to fund the campaign. If funding goals are met, the creator receives the funds. If not, contributors can reclaim their MAS.",
+        "Creators launch campaigns by deploying smart contracts on Massa. Backers contribute MAS tokens to fund the campaign. If funds are raised before lock lock period, the creator receives the funds incrementally according to the release interval and percentage..",
     },
   ];
 
