@@ -55,7 +55,7 @@ const roadmapPhases = [
       'Earn NFT as proof of contribution',
     ],
     status: 'Planned',
-    target: 'Q3 2025',
+    target: 'Q4 2025',
   },
 ];
 
