@@ -20,7 +20,7 @@ import { FundPage } from './pages/Fund';
 import { ToastProvider } from './contexts/ToastProvider';
 import useAccountSync from './hooks/useAccountSync';
 import BridgePage from './pages/Bridge';
-import AboutPage from './pages/About';
+import AboutPage from './pages/about';
 import ScrollToTop from './components/ScrollToTop';
 import RoadmapPage from './pages/Roadmap';
 import SwapPage from './pages/swap';
