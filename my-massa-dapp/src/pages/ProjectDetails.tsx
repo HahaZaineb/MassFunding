@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Clock, Coins, Users, CheckCircle } from 'lucide-react';
+import { Clock, Coins, Users, CheckCircle, Copy, Check } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { useNavigate, useParams } from 'react-router-dom';
 import { fetchProjectById } from '@/store/slices/projectSlice';
@@ -15,6 +15,7 @@ import ProgressBar from '@/components/ProgressBar';
 import ProjectStatus from '@/components/projects/ProjectStatus';
 import Loader from '@/components/Loader';
 import StatCard from '@/components/StatCard';
+import { Tooltip } from '@mui/material';
 
 const ProjectDetailsPage = () => {
   const navigate = useNavigate();
@@ -26,7 +27,13 @@ const ProjectDetailsPage = () => {
   const { selected: project, loading } = useAppSelector(
     (state) => state.projects,
   );
+  const [copied, setCopied] = useState(false);
 
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
   useEffect(() => {
     if (id) {
       dispatch(fetchProjectById(id as string));
@@ -76,11 +83,23 @@ const ProjectDetailsPage = () => {
             {/* Title and Description */}
             <div>
               <h1 className="text-3xl font-bold">{project.name}</h1>
-              <p className="text-slate-400 mt-2">
+              <p className="text-slate-400 mt-2 flex items-center gap-1">
                 Owned by{' '}
                 <span className="text-teal-300">
                   {shortenAddress(project.beneficiary)}
                 </span>
+                <Tooltip title={copied ? 'Copied!' : 'Copy address'}>
+                  <button
+                    onClick={() => handleCopy(project.beneficiary)}
+                    className="text-teal-300 hover:text-teal-400 transition"
+                  >
+                    {copied ? (
+                      <Check size={16} className="text-green-400" />
+                    ) : (
+                      <Copy size={16} className="text-teal-300" />
+                    )}{' '}
+                  </button>
+                </Tooltip>
               </p>
               <p className="text-slate-300 mt-4 text-lg">
                 {project.description}
