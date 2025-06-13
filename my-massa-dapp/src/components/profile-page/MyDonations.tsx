@@ -21,6 +21,7 @@ import { useAccountStore } from '@massalabs/react-ui-kit';
 import { getUserDonations } from '@/services/statsService';
 import { useAppSelector } from '@/store/hooks';
 import NoDonationFound from './NoDonationFound';
+import { Link } from 'react-router-dom';
 
 const StyledCard = styled(Card)(() => ({
   backgroundColor: '#11182f',
@@ -97,7 +98,10 @@ const MyDonations: React.FC = ({}) => {
         />
         <Divider sx={{ my: 2, borderColor: '#1f2a48' }} />
         {loading ? (
-          <p className="text-slate-400 mb-6">Loading donations...</p>
+          <div className="flex flex-col items-center space-y-6">
+            <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-[#00ff9d]"></div>
+            <p className="text-white text-lg">Loading...</p>
+          </div>
         ) : donatedProjects.length === 0 ? (
           <NoDonationFound />
         ) : (
@@ -113,13 +117,30 @@ const MyDonations: React.FC = ({}) => {
               <TableBody>
                 {donatedProjects.map((project) => (
                   <TableRow key={project.id} hover>
-                    <TableCell sx={{ color: '#e0e0e0' }}>
-                      {project.name}
+                    <TableCell
+                      sx={{ color: '#00ff9d', textDecoration: 'underline' }}
+                    >
+                      <Link
+                        to={`/projects/${project.id}`}
+                        style={{ color: 'white', textDecoration: 'underline' }}
+                      >
+                        {project.name}
+                      </Link>
                     </TableCell>
                     <TableCell sx={{ color: '#e0e0e0' }}>
                       {project.amount.toLocaleString()} MAS
                     </TableCell>
-                    <TableCell sx={{ color: '#aaa' }}>{project.date}</TableCell>
+                    <TableCell sx={{ color: '#aaa' }}>
+                      {new Date(project.date).toLocaleString(undefined, {
+                        weekday: 'short',
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true,
+                      })}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

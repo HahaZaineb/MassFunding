@@ -15,7 +15,7 @@ import { useToast } from '@/contexts/ToastProvider';
 interface AddUpdateModalProps {
   project: ProjectData;
   open: boolean;
-  onClose: () => void;
+  onClose: (e: any) => void;
 }
 
 export default function AddUpdateModal({
@@ -67,7 +67,7 @@ export default function AddUpdateModal({
         image: formData.image,
       });
       showToast('Project update added successfully!', 'success');
-      onClose();
+      onClose(e);
     } catch (error) {
       console.error('Failed to add update:', error);
       showToast(

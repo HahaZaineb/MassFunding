@@ -35,11 +35,13 @@ import { Slider } from '@mui/material';
 import { useAccountStore } from '@massalabs/react-ui-kit/src/lib/ConnectMassaWallets';
 import { useToast } from '@/contexts/ToastProvider';
 import { createProject } from '@/services/projectService';
+import { isValidImageUrl } from '@/utils/functions';
 
 export default function RequestFunding() {
   const { showToast } = useToast();
   const { connectedAccount } = useAccountStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isValidImage, setIsValidImage] = useState<boolean>(false);
   const [formData, setFormData] = useState({
     projectName: '',
     description: '',
@@ -48,7 +50,7 @@ export default function RequestFunding() {
     lockPeriod: '30',
     releaseInterval: '30',
     releasePercentage: 10,
-    category: 'Environment',
+    category: 'Web3',
     image: '',
   });
 
@@ -61,11 +63,15 @@ export default function RequestFunding() {
     }
   }, [connectedAccount]);
 
-  const handleChange = (
+  const handleChange = async (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === 'image') {
+      const isValid = await isValidImageUrl(value);
+      setIsValidImage(isValid);
+    }
   };
 
   const handleSelectChange = (name: string, value: string) => {
@@ -211,6 +217,15 @@ export default function RequestFunding() {
                   <span className="text-xs text-slate-400">
                     This image will be shown on your project card.
                   </span>
+                  {formData.image &&
+                    formData.image.length > 0 &&
+                    isValidImage && (
+                      <img
+                        src={formData.image || ''}
+                        alt="Preview"
+                        className="mt-2 max-h-32 rounded border border-[#00ff9d]/20"
+                      />
+                    )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

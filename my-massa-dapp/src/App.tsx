@@ -23,7 +23,8 @@ import BridgePage from './pages/Bridge';
 import AboutPage from './pages/about';
 import ScrollToTop from './components/ScrollToTop';
 import RoadmapPage from './pages/Roadmap';
-import SwapPage from './pages/swap';
+import SwapPage from './pages/Swap';
+import ProjectDetailsPage from './pages/ProjectDetails';
 
 function App() {
   useAccountSync();
@@ -54,6 +55,7 @@ function App() {
               <Route path="/" element={<LandingPage />} />
               <Route path="/request-funding" element={<RequestFunding />} />
               <Route path="/projects" element={<Projects />} />
+              <Route path="/projects/:id" element={<ProjectDetailsPage />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/fund/:projectId" element={<FundPage />} />
               <Route path="/swap" element={<SwapPage />} />

@@ -78,3 +78,15 @@ export const formatPeriodsToHumanReadable = (periods: number): string => {
     return `${days} days`;
   }
 };
+
+export const isValidImageUrl = (url: string): Promise<boolean> => {
+  return new Promise((resolve) => {
+    if (!url || typeof url !== 'string') return resolve(false);
+
+    const img = new Image();
+    img.src = url;
+
+    img.onload = () => resolve(true);
+    img.onerror = () => resolve(false);
+  });
+};

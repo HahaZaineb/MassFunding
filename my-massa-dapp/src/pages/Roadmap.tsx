@@ -94,7 +94,7 @@ export default function RoadmapPage() {
               <tr>
                 <td className="py-2">Token & NFT Integration</td>
                 <td className="py-2 text-gray-400">Planned</td>
-                <td className="py-2">Q3 2025</td>
+                <td className="py-2">Q4 2025</td>
               </tr>
             </tbody>
           </table>

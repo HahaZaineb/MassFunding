@@ -5,16 +5,17 @@ import { Button } from '@/components/ui/button';
 import { Calendar, Eye } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { ProjectData } from '@/types/project';
-import ProjectUpdates from '../projects/ProjectUpdates';
 import AddUpdateModal from '../projects/AddUpdateModal';
 import ProgressBar from '../ProgressBar';
 import { getProjectSupportersCount } from '@/services/projectService';
-
+import ProjectUpdatesModal from '../projects/ProjectUpdatesModal';
+import { useNavigate } from 'react-router-dom';
 
 interface MyProjectCardProps {
   project: ProjectData;
 }
 const MyProjectCard: React.FC<MyProjectCardProps> = ({ project }) => {
+  const navigate = useNavigate();
   const [openUpdates, setOpenUpdates] = useState<boolean>(false);
   const [openAddUpdate, setOpenAddUpdate] = useState<boolean>(false);
   const [supportersCount, setSupportersCount] = useState<number>(0);
@@ -35,7 +36,10 @@ const MyProjectCard: React.FC<MyProjectCardProps> = ({ project }) => {
   }, [project.id]);
 
   return (
-    <Card className="bg-gradient-to-br from-[#1a2340] to-[#0f1629] border border-[#00ff9d]/20 shadow-xl overflow-hidden">
+    <Card
+      onClick={() => navigate('/projects/' + project.id)}
+      className="cursor-pointer bg-gradient-to-br from-[#1a2340] to-[#0f1629] border border-[#00ff9d]/20 shadow-xl overflow-hidden"
+    >
       <CardContent className="p-0">
         {/* Project Header */}
         <div className="p-6 border-b border-[#00ff9d]/10">
@@ -59,22 +63,25 @@ const MyProjectCard: React.FC<MyProjectCardProps> = ({ project }) => {
                   {project.creationDate && (
                     <div className="text-xs text-slate-400 mt-1 flex items-center">
                       <Calendar className="h-3 w-3 mr-1" />
-                      Created: {project.creationDate}
+                      Created:{' '}
+                      {new Date(project.creationDate).toLocaleString(
+                        undefined,
+                        {
+                          weekday: 'short',
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: true,
+                        },
+                      )}
                     </div>
                   )}
                 </div>
               </div>
               <p className="text-slate-300 text-sm">{project.description}</p>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setOpenUpdates(true)}
-              className="text-[#00ff9d] hover:bg-[#00ff9d]/10"
-            >
-              <Eye className="h-4 w-4 mr-1" />
-              View Details
-            </Button>
           </div>
         </div>
 
@@ -123,24 +130,44 @@ const MyProjectCard: React.FC<MyProjectCardProps> = ({ project }) => {
         <div className="p-6 border-b border-[#00ff9d]/10">
           <div className="flex flex-wrap gap-3">
             <Button
-              onClick={() => setOpenAddUpdate(true)}
+              onClick={(e: any) => {
+                e.stopPropagation();
+                setOpenAddUpdate(true);
+              }}
               variant="outline"
               className="border-[#00ff9d]/30 text-[#00ff9d] hover:bg-[#00ff9d]/10"
             >
               <Calendar className="h-4 w-4 mr-2" />
               Add Update
             </Button>
+            <Button
+              variant="ghost"
+              onClick={(e: any) => {
+                e.stopPropagation();
+                setOpenUpdates(true);
+              }}
+              className="border-[#00ff9d]/30 text-[#00ff9d] bg-[#00ff9d]/10 hover:bg-[#00ff9d]/20"
+            >
+              <Eye className="h-4 w-4 mr-1" />
+              View Updates
+            </Button>
           </div>
         </div>
       </CardContent>
-      <ProjectUpdates
+      <ProjectUpdatesModal
         open={openUpdates}
-        onClose={() => setOpenUpdates(false)}
+        onClose={(e: any) => {
+          e.stopPropagation();
+          setOpenUpdates(false);
+        }}
         projectId={project.id}
       />
       <AddUpdateModal
         open={openAddUpdate}
-        onClose={() => setOpenAddUpdate(false)}
+        onClose={(e: any) => {
+          e.stopPropagation();
+          setOpenAddUpdate(false);
+        }}
         project={project}
       />
     </Card>

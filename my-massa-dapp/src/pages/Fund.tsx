@@ -27,6 +27,7 @@ import { Alert } from '@mui/material';
 import { useToast } from '@/contexts/ToastProvider';
 import { fundProject } from '@/services/projectService';
 import { formatPeriodsToHumanReadable } from '@/utils/functions';
+import WalletBalance from '@/components/WalletBalance';
 
 export function FundPage() {
   const dispatch = useAppDispatch();
@@ -37,7 +38,7 @@ export function FundPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const { selected, loading } = useAppSelector((state) => state.projects);
-
+  const [balance, setBalance] = useState<number | null>(null);
   useEffect(() => {
     if (projectId) {
       dispatch(fetchProjectById(projectId));
@@ -80,6 +81,15 @@ export function FundPage() {
       showToast(errorMessage, 'error');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputAmount = e.target.value;
+    setAmount(inputAmount);
+    if (balance && balance < Number(inputAmount)) {
+      setError('Entered amount exceeds wallet balance.');
+    } else {
+      setError('');
     }
   };
   const AccentText = styled('span')({
@@ -204,37 +214,41 @@ export function FundPage() {
               </div>
 
               <div>
-                <div className="flex items-center mb-2">
-                  <label htmlFor="amount" className="text-white font-medium">
-                    Donation Amount (MAS)
-                  </label>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-5 w-5 ml-2 text-slate-400"
-                        >
-                          <Info className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent className="bg-[#1a2340] text-white border border-[#00ff9d]/20">
-                        <p className="max-w-xs">
-                          Amount of MAS tokens to donate. These will be held in
-                          a vesting schedule according to the project
-                          parameters.
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                <div className="flex flex-row justify-between flex-wrap gap-1 mb-2">
+                  <div className="flex items-center ">
+                    <label htmlFor="amount" className="text-white font-medium">
+                      Donation Amount (MAS)
+                    </label>
+
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-5 w-5 ml-2 text-slate-400"
+                          >
+                            <Info className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-[#1a2340] text-white border border-[#00ff9d]/20">
+                          <p className="max-w-xs">
+                            Amount of MAS tokens to donate. These will be held
+                            in a vesting schedule according to the project
+                            parameters.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  <WalletBalance setWalletBalance={setBalance} />
                 </div>
                 <Input
                   id="amount"
                   type="number"
                   placeholder="Enter amount (e.g., 100)"
                   value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
+                  onChange={handleAmountChange}
                   min="0.1"
                   step="0.1"
                   className="bg-[#0f1629] border-[#00ff9d]/20 text-white focus:border-[#00ff9d] focus:ring-[#00ff9d]/20"
@@ -243,11 +257,7 @@ export function FundPage() {
                   Minimum donation: 0.1 MAS
                 </p>
               </div>
-              {error && (
-                <Alert variant="filled" severity="error">
-                  {error}
-                </Alert>
-              )}
+              {error && <Alert severity="error">{error}</Alert>}
 
               <div className="mt-6">
                 <Button
