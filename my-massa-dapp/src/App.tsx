@@ -23,7 +23,7 @@ import BridgePage from './pages/Bridge';
 import AboutPage from './pages/About';
 import ScrollToTop from './components/ScrollToTop';
 import RoadmapPage from './pages/Roadmap';
-import SwapPage from './pages/swap';
+import SwapPage from './pages/Swap';
 import ProjectDetailsPage from './pages/ProjectDetails';
 
 function App() {

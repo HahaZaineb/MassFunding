@@ -5,6 +5,7 @@ import FeaturesSection from '@/components/landing-page/FeaturesSection';
 import FeaturedProjectsSection from '@/components/landing-page/FeaturedProjectsSection';
 import FAQSection from '@/components/landing-page/FAQ';
 import CTASection from '@/components/landing-page/CTASection';
+import RoadmapSection from '@/components/landing-page/RoadmapSection';
 
 export default function LandingPage() {
 
@@ -13,6 +14,7 @@ export default function LandingPage() {
       <HeroSection />
       <FeaturedProjectsSection />
       <FeaturesSection />
+      <RoadmapSection />
       <FAQSection />
       <CTASection />
     </div>
