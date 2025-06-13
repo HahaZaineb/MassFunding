@@ -201,7 +201,7 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
             {shortenAddress(project.beneficiary)}
           </span>
         </p>
-        <CardDescription className="text-slate-300 text-sm leading-relaxed line-clamp-2">
+        <CardDescription className={!isExpanded ? "text-slate-300 text-sm leading-relaxed line-clamp-2": "text-slate-300 text-sm"}>
           {project.description}
         </CardDescription>
       </CardHeader>
