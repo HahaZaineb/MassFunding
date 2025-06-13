@@ -119,7 +119,15 @@ const MyDonations: React.FC = ({}) => {
                     <TableCell sx={{ color: '#e0e0e0' }}>
                       {project.amount.toLocaleString()} MAS
                     </TableCell>
-                    <TableCell sx={{ color: '#aaa' }}>{project.date}</TableCell>
+                    <TableCell sx={{ color: '#aaa' }}>{new Date(project.date).toLocaleString(undefined, {
+                            weekday: 'short',
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true,
+                          })}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

@@ -10,7 +10,6 @@ import AddUpdateModal from '../projects/AddUpdateModal';
 import ProgressBar from '../ProgressBar';
 import { getProjectSupportersCount } from '@/services/projectService';
 
-
 interface MyProjectCardProps {
   project: ProjectData;
 }
@@ -59,7 +58,19 @@ const MyProjectCard: React.FC<MyProjectCardProps> = ({ project }) => {
                   {project.creationDate && (
                     <div className="text-xs text-slate-400 mt-1 flex items-center">
                       <Calendar className="h-3 w-3 mr-1" />
-                      Created: {project.creationDate}
+                      Created:{' '}
+                      {new Date(project.creationDate).toLocaleString(
+                        undefined,
+                        {
+                          weekday: 'short',
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: true,
+                        },
+                      )}
                     </div>
                   )}
                 </div>
