@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Clock, Coins, Users, History, CheckCircle } from 'lucide-react';
+import { Clock, Coins, Users, CheckCircle } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { useNavigate, useParams } from 'react-router-dom';
 import { fetchProjectById } from '@/store/slices/projectSlice';
@@ -23,7 +23,6 @@ const ProjectDetailsPage = () => {
   const [status, setStatus] = useState<'live' | 'release' | 'completed'>(
     'live',
   );
-  const [showUpdates, setShowUpdates] = useState(false);
   const { selected: project, loading } = useAppSelector(
     (state) => state.projects,
   );
@@ -163,20 +162,10 @@ const ProjectDetailsPage = () => {
                   Fund This Project
                 </Button>
               )}
-              <Button
-                variant="outline"
-                className="text-white border-slate-600 hover:bg-slate-700"
-                onClick={() => setShowUpdates(true)}
-              >
-                <History className="w-4 h-4 mr-2" />
-                View Project Updates
-              </Button>
             </div>
 
             <ProjectUpdates
               projectId={project.id}
-              open={showUpdates}
-              onClose={() => setShowUpdates(false)}
             />
           </div>
         </div>

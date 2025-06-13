@@ -5,10 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Calendar, Eye } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { ProjectData } from '@/types/project';
-import ProjectUpdates from '../projects/ProjectUpdates';
 import AddUpdateModal from '../projects/AddUpdateModal';
 import ProgressBar from '../ProgressBar';
 import { getProjectSupportersCount } from '@/services/projectService';
+import ProjectUpdatesModal from '../projects/ProjectUpdatesModal';
 
 interface MyProjectCardProps {
   project: ProjectData;
@@ -143,7 +143,7 @@ const MyProjectCard: React.FC<MyProjectCardProps> = ({ project }) => {
           </div>
         </div>
       </CardContent>
-      <ProjectUpdates
+      <ProjectUpdatesModal
         open={openUpdates}
         onClose={() => setOpenUpdates(false)}
         projectId={project.id}

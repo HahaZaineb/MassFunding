@@ -22,7 +22,6 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { ProjectData } from '@/types/project';
 import ProgressBar from '../ProgressBar';
-import ProjectUpdates from './ProjectUpdates';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -36,6 +35,7 @@ import { VestingScheduleData } from '@/types/vestingSchedule';
 import { updateProjectStatus } from '@/store/slices/projectSlice';
 import { useAppDispatch } from '@/store/hooks';
 import { formatMas } from '@massalabs/massa-web3';
+import ProjectUpdatesModal from './ProjectUpdatesModal';
 
 interface ProjectCardProps {
   project: ProjectData & { image?: string };
@@ -477,7 +477,7 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
           </Button>
         )}
       </CardFooter>
-      <ProjectUpdates
+      <ProjectUpdatesModal
         projectId={project.id}
         open={openProjectUpdates}
         onClose={(e: any) => {
