@@ -66,15 +66,6 @@ const MyProjectCard: React.FC<MyProjectCardProps> = ({ project }) => {
               </div>
               <p className="text-slate-300 text-sm">{project.description}</p>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setOpenUpdates(true)}
-              className="text-[#00ff9d] hover:bg-[#00ff9d]/10"
-            >
-              <Eye className="h-4 w-4 mr-1" />
-              View Details
-            </Button>
           </div>
         </div>
 
@@ -129,6 +120,14 @@ const MyProjectCard: React.FC<MyProjectCardProps> = ({ project }) => {
             >
               <Calendar className="h-4 w-4 mr-2" />
               Add Update
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => setOpenUpdates(true)}
+              className="border-[#00ff9d]/30 text-[#00ff9d] bg-[#00ff9d]/10 hover:bg-[#00ff9d]/20"
+            >
+              <Eye className="h-4 w-4 mr-1" />
+              View Updates
             </Button>
           </div>
         </div>

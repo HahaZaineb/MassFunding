@@ -48,7 +48,7 @@ export default function RequestFunding() {
     lockPeriod: '30',
     releaseInterval: '30',
     releasePercentage: 10,
-    category: 'Environment',
+    category: 'Web3',
     image: '',
   });
 
@@ -211,6 +211,13 @@ export default function RequestFunding() {
                   <span className="text-xs text-slate-400">
                     This image will be shown on your project card.
                   </span>
+                  {formData.image && formData.image.length > 0 && (
+                    <img
+                      src={formData.image || ''}
+                      alt="Preview"
+                      className="mt-2 max-h-32 rounded border border-[#00ff9d]/20"
+                    />
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

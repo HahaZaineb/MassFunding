@@ -165,7 +165,7 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
   }, [project]);
 
   return (
-    <Card className="bg-slate-800/80 border-slate-600 text-white overflow-hidden hover:shadow-2xl transition-all duration-300 hover:scale-105 backdrop-blur-sm border-2 hover:border-emerald-500/50">
+    <Card onClick={() => navigate('/projects/'+project.id)} className="bg-slate-800/80 border-slate-600 text-white overflow-hidden hover:shadow-2xl transition-all duration-300 hover:scale-105 backdrop-blur-sm border-2 hover:border-emerald-500/50">
       {/* Project Image */}
       <div className="relative h-48 overflow-hidden">
         <img
