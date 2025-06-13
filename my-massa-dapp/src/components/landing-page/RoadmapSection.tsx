@@ -2,6 +2,12 @@
 
 import { FaCheckCircle, FaRocket, FaVoteYea, FaGift } from 'react-icons/fa';
 
+const statusColors: Record<string, string> = {
+  Done: 'text-green-400 bg-green-400/10',
+  'In Progress': 'text-yellow-400 bg-yellow-400/10',
+  Planned: 'text-gray-400 bg-gray-400/10',
+};
+
 const roadmapPhases = [
   {
     icon: <FaCheckCircle className="text-[#00ff9d]" size={20} />,
@@ -12,6 +18,8 @@ const roadmapPhases = [
       'Fund a project securely',
       'Explore projects & view details',
     ],
+    status: 'Done',
+    target: 'Q2 2025',
   },
   {
     icon: <FaRocket className="text-[#00ff9d]" size={20} />,
@@ -21,8 +29,9 @@ const roadmapPhases = [
       'Automatic fund release in stages',
       'Lock periods to protect early backers',
       'Real-time vesting & release countdowns',
-      'Project updates shared with funders',
     ],
+    status: 'Done',
+    target: 'Q2 2025',
   },
   {
     icon: <FaVoteYea className="text-[#00ff9d]" size={20} />,
@@ -31,7 +40,10 @@ const roadmapPhases = [
       'Backers vote to approve each fund release',
       'Automatic pause if voting fails',
       'On-chain recording of all voting outcomes',
+      'Transparency dashboard for community insights'
     ],
+    status: 'In Progress',
+    target: 'Q3 2025',
   },
   {
     icon: <FaGift className="text-[#00ff9d]" size={20} />,
@@ -42,21 +54,10 @@ const roadmapPhases = [
       'Token utility for governance & early access',
       'Earn NFT as proof of contribution',
     ],
+    status: 'Planned',
+    target: 'Q3 2025',
   },
 ];
-
-const timeline = [
-  { feature: 'Foundation', status: 'Done', target: 'Q2 2025' },
-  { feature: 'Smart Vesting', status: 'Done', target: 'Q2 2025' },
-  { feature: 'Voting System', status: 'In Progress', target: 'Q3 2025' },
-  { feature: 'Token & NFT Integration', status: 'Planned', target: 'Q3 2025' },
-];
-
-const statusColors: Record<string, string> = {
-  Done: 'text-green-400 bg-green-400/10',
-  'In Progress': 'text-yellow-400 bg-yellow-400/10',
-  Planned: 'text-gray-400 bg-gray-400/10',
-};
 
 export default function RoadmapSection() {
   return (
@@ -67,57 +68,38 @@ export default function RoadmapSection() {
         </h2>
 
         <div className="grid md:grid-cols-2 gap-10">
-          {roadmapPhases.map((phase, index) => (
-            <div
-              key={index}
-              className="bg-slate-800/80 border border-[#00ff9d]/10 backdrop-blur-sm p-6 rounded-xl transition hover:shadow-lg"
-            >
-              <div className="flex items-center mb-4">
-                {phase.icon}
-                <h3 className="ml-3 text-xl font-semibold text-white">
-                  {phase.title}
-                </h3>
-              </div>
-              <ul className="list-disc list-inside text-slate-300 space-y-1 ml-1">
-                {phase.items.map((item, i) => (
-                  <li key={i}>{item}</li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
+          {roadmapPhases.map((phase, index) => {
+            return (
+              <div
+                key={index}
+                className="bg-slate-800/80 border border-[#00ff9d]/10 backdrop-blur-sm p-6 rounded-xl transition hover:shadow-lg"
+              >
+                <div className="flex items-center mb-4">
+                  {phase.icon}
+                  <h3 className="ml-3 text-xl font-semibold text-white">
+                    {phase.title}
+                  </h3>
+                </div>
 
-        {/* Timeline */}
-        <div className="mt-16">
-          <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-            📆 Estimated Timeline
-          </h3>
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-left text-slate-300 text-sm">
-              <thead className="text-slate-400 border-b border-[#00ff9d]/10">
-                <tr>
-                  <th className="py-2 pr-4">Feature</th>
-                  <th className="py-2 pr-4">Status</th>
-                  <th className="py-2">Target</th>
-                </tr>
-              </thead>
-              <tbody>
-                {timeline.map((row, i) => (
-                  <tr key={i} className="border-b border-white/5">
-                    <td className="py-3 pr-4">{row.feature}</td>
-                    <td className="py-3 pr-4">
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[row.status]}`}
-                      >
-                        {row.status}
-                      </span>
-                    </td>
-                    <td className="py-3">{row.target}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                <ul className="list-disc list-inside text-slate-300 space-y-1 ml-1 mb-4">
+                  {phase.items.map((item, i) => (
+                    <li key={i} className={item ? '' : 'opacity-40'}>
+                      {item || '-'}
+                    </li>
+                  ))}
+                </ul>
+
+                <div className="flex flex-wrap items-center justify-between border-t border-white/10 pt-4">
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[phase.status]}`}
+                  >
+                    {phase.status}
+                  </span>
+                  <span className="text-sm text-slate-400">🎯 {phase.target}</span>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>
