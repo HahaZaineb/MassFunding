@@ -68,8 +68,7 @@ const FeaturesSection = () => {
               Milestone Tracking
             </h3>
             <p className="text-slate-300">
-              Monitor project progress effortlessly with transparent milestone
-              checkpoints and consistent updates directly from the creators,
+              Monitor project progress effortlessly with transparent and consistent updates directly from the creators,
               ensuring full visibility and confidence every step of the way.
             </p>
           </motion.div>
