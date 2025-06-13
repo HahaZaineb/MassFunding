@@ -165,7 +165,10 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
   }, [project]);
 
   return (
-    <Card onClick={() => navigate('/projects/'+project.id)} className="bg-slate-800/80 border-slate-600 text-white overflow-hidden hover:shadow-2xl transition-all duration-300 hover:scale-105 backdrop-blur-sm border-2 hover:border-emerald-500/50">
+    <Card
+      onClick={() => navigate('/projects/' + project.id)}
+      className="bg-slate-800/80 border-slate-600 text-white overflow-hidden hover:shadow-2xl transition-all duration-300 hover:scale-105 backdrop-blur-sm border-2 hover:border-emerald-500/50"
+    >
       {/* Project Image */}
       <div className="relative h-48 overflow-hidden">
         <img
@@ -201,7 +204,13 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
             {shortenAddress(project.beneficiary)}
           </span>
         </p>
-        <CardDescription className={!isExpanded ? "text-slate-300 text-sm leading-relaxed line-clamp-2": "text-slate-300 text-sm"}>
+        <CardDescription
+          className={
+            !isExpanded
+              ? 'text-slate-300 text-sm leading-relaxed line-clamp-2'
+              : 'text-slate-300 text-sm'
+          }
+        >
           {project.description}
         </CardDescription>
       </CardHeader>
@@ -332,7 +341,10 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setOpenProjectUpdates(true)}
+                onClick={(e: any) => {
+                  e.stopPropagation();
+                  setOpenProjectUpdates(true);
+                }}
                 className="w-full text-white border-slate-600 hover:bg-slate-600"
               >
                 View Updates
@@ -421,14 +433,20 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
         )}
         {projectStatus === 'live' ? (
           <Button
-            onClick={() => navigate(`/fund/${project.id}`)}
+            onClick={(e: any) => {
+              e.stopPropagation();
+              navigate(`/fund/${project.id}`);
+            }}
             className="w-full bg-[#00ff9d] text-slate-900 hover:bg-[#00e68d] transition-colors flex items-center justify-center"
           >
             <Coins className="h-4 w-4 mr-2" /> Fund This Project
           </Button>
         ) : (
           <Button
-            onClick={() => setOpenProjectUpdates(true)}
+            onClick={(e: any) => {
+              e.stopPropagation();
+              setOpenProjectUpdates(true);
+            }}
             className="w-full bg-gradient-to-r from-emerald-500 via-green-500 to-teal-600 hover:from-emerald-600 hover:via-green-600 hover:to-teal-700 text-white font-bold py-3 text-lg shadow-lg hover:shadow-emerald-500/25 transition-all duration-300"
           >
             <History className="h-4 w-4 mr-2" />
@@ -440,7 +458,10 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
             variant="ghost"
             size="sm"
             className="text-slate-400 hover:text-white"
-            onClick={() => setIsExpanded((current) => !current)}
+            onClick={(e: any) => {
+              e.stopPropagation();
+              setIsExpanded((current) => !current);
+            }}
           >
             {isExpanded ? (
               <>
@@ -459,7 +480,10 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
       <ProjectUpdates
         projectId={project.id}
         open={openProjectUpdates}
-        onClose={() => setOpenProjectUpdates(false)}
+        onClose={(e: any) => {
+          e.stopPropagation();
+          setOpenProjectUpdates(false);
+        }}
       />
     </Card>
   );

@@ -9,7 +9,7 @@ import { ProjectUpdateData } from '@/types/projectUpdate';
 
 interface ProjectUpdatesProps {
   open: boolean;
-  onClose: () => void;
+  onClose: (e: any) => void;
   projectId: string;
 }
 
