@@ -8,7 +8,6 @@ import { CATEGORIES } from '@/constants';
 import ProjectCard from '@/components/projects/ProjectCard';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { filterProjectsByAsyncStatus } from '@/store/slices/projectSlice';
-import Loader from '@/components/Loader';
 import {
   Select,
   SelectContent,
@@ -35,14 +34,6 @@ export default function Projects() {
       }),
     );
   }, [dispatch, status, searchQuery, selectedCategory]);
-
-  if (loading) {
-    return (
-      <div className="w-full min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
-        <Loader />
-      </div>
-    );
-  }
 
   return (
     <div className="w-full min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
@@ -142,33 +133,41 @@ export default function Projects() {
           </div>
 
           {/* Projects Grid */}
-          <div className="max-w-7xl mx-auto">
-            {list.length === 0 ? (
-              <div className="text-center py-16">
-                <div className="text-slate-400 text-xl mb-2">
-                  No projects found
+          {loading && (
+            <div className="flex flex-col items-center space-y-6">
+              <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-[#00ff9d]"></div>
+              <p className="text-white text-lg">Loading...</p>
+            </div>
+          )}
+          {!loading && (
+            <div className="max-w-7xl mx-auto">
+              {list.length === 0 ? (
+                <div className="text-center py-16">
+                  <div className="text-slate-400 text-xl mb-2">
+                    No projects found
+                  </div>
+                  <div className="text-slate-500">
+                    {searchQuery
+                      ? 'Try adjusting your search terms'
+                      : 'No projects in this category yet'}
+                  </div>
                 </div>
-                <div className="text-slate-500">
-                  {searchQuery
-                    ? 'Try adjusting your search terms'
-                    : 'No projects in this category yet'}
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {list.map((project, index) => (
+                    <motion.div
+                      key={project.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.4, delay: index * 0.1 }}
+                    >
+                      <ProjectCard project={project} />
+                    </motion.div>
+                  ))}
                 </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {list.map((project, index) => (
-                  <motion.div
-                    key={project.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: index * 0.1 }}
-                  >
-                    <ProjectCard project={project} />
-                  </motion.div>
-                ))}
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </motion.div>
       </AnimatePresence>
     </div>
