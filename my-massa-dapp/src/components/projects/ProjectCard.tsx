@@ -55,30 +55,53 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
     'live' | 'release' | 'completed'
   >('live');
   const [nextReleaseDate, setNextReleaseDate] = useState<Date | null>(null);
+  const [lockDate, setLockDate] = useState<Date | null>(null);
+  const [createdDate, setCreatedDate] = useState<Date | null>(null);
 
   useEffect(() => {
-    if (vestingDetails?.id && vestingDetails?.nextReleasePeriod) {
-      setNextReleaseDate(new Date(new Date().getTime() + vestingDetails?.nextReleasePeriod));
-    } else {
-      const createdAt = new Date(project.creationDate || '');
-      const lockPeriodInSeconds = Number(project.lockPeriod) * 15; // Convert periods to seconds
-      const lockEnd = new Date(
-        createdAt.getTime() + lockPeriodInSeconds * 1000,
+    if (!project?.creationDate) return;
+
+    const createdAt = new Date(project.creationDate);
+    const createdAtTimestamp = createdAt.getTime() + 120 * 1000;
+    setCreatedDate(new Date(createdAtTimestamp));
+
+    const lockPeriodInMs = Number(project.lockPeriod) * 15 * 1000;
+    const lockEnd = new Date(createdAtTimestamp + lockPeriodInMs);
+    setLockDate(lockEnd);
+
+    if (
+      vestingDetails?.id &&
+      vestingDetails?.amountClaimed !== undefined &&
+      project.releasePercentage > 0
+    ) {
+      const totalAmountPerRelease =
+        (vestingDetails.totalAmount * project.releasePercentage) / 100;
+      const claimedReleases = Math.floor(
+        vestingDetails.amountClaimed / totalAmountPerRelease,
       );
+
+      const nextReleaseTimestamp =
+        lockEnd.getTime() +
+        (claimedReleases + 1) * project.releaseInterval * 15 * 1000;
+
+      setNextReleaseDate(new Date(nextReleaseTimestamp));
+    } else {
       setNextReleaseDate(lockEnd);
     }
   }, [project, vestingDetails]);
 
   useEffect(() => {
-    dispatch(updateProjectStatus({ id: project.id, status: projectStatus }))
-  },[project, projectStatus])
+    dispatch(updateProjectStatus({ id: project.id, status: projectStatus }));
+  }, [project, projectStatus]);
 
   useEffect(() => {
     if (projectStatus !== 'live') return;
 
     const createdAt = new Date(project.creationDate || '');
     const lockPeriodInSeconds = Number(project.lockPeriod) * 15; // Convert periods to seconds
-    const lockEnd = new Date(createdAt.getTime() + lockPeriodInSeconds * 1000);
+    const lockEnd = new Date(
+      createdAt.getTime() + 120 * 1000 + lockPeriodInSeconds * 1000,
+    );
 
     const updateCountdown = () => {
       const now = new Date().getTime();
@@ -106,8 +129,34 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
   const getDetailedVestingInfoHandler = async () => {
     const details = await getVestingSchedule(Number(project.vestingScheduleId));
     setVestingDetails(details);
-    if(details?.isCompleted){
-       setProjectStatus('completed')
+    if (details) {
+      console.log(details, 'details');
+      const createdAt = new Date(project.creationDate || '');
+      const lockPeriodInMs = Number(project.lockPeriod) * 15 * 1000;
+      const intervalInMs = project.releaseInterval * 15 * 1000;
+
+      const totalReleases =
+        details.totalAmount /
+        ((details.totalAmount / 100) * project.releasePercentage);
+      const firstReleaseDate = new Date(
+        createdAt.getTime() + 120 * 1000 + lockPeriodInMs,
+      );
+      const lastReleaseDate =
+        totalReleases > 0
+          ? new Date(
+              firstReleaseDate.getTime() + (totalReleases - 1) * intervalInMs,
+            )
+          : firstReleaseDate;
+
+      const now = new Date();
+      const x = project.amountRaised > 0 ? details?.amountClaimed > 0 : true;
+
+      const hasEnded = now >= lastReleaseDate;
+      console.log(project.id, hasEnded, x, details.isCompleted, 'eeeeeeeeee');
+      if (details?.isCompleted && hasEnded && x) {
+        console.log('heeeeere', project.id);
+        setProjectStatus('completed');
+      }
     }
   };
 
@@ -220,7 +269,37 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
                     Number(project.releaseInterval),
                   )}
                 </p>
-                {vestingDetails && vestingDetails.id && projectStatus === 'release' ? (
+                {createdDate && (
+                  <p className="text-white text-sm">
+                    <span className="font-semibold">Created At:</span>{' '}
+                    {createdDate.toLocaleString(undefined, {
+                      weekday: 'short',
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: true,
+                    })}
+                  </p>
+                )}
+                {lockDate && (
+                  <p className="text-white text-sm">
+                    <span className="font-semibold">Lock At:</span>{' '}
+                    {lockDate.toLocaleString(undefined, {
+                      weekday: 'short',
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: true,
+                    })}
+                  </p>
+                )}
+                {vestingDetails &&
+                vestingDetails.id &&
+                projectStatus === 'release' ? (
                   <div className="text-white text-sm space-y-2">
                     <p>
                       <span className="font-semibold">Amount Claimed:</span>{' '}
@@ -229,16 +308,16 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
                     <p>
                       <span className="font-semibold">Next Release:</span>{' '}
                       {nextReleaseDate
-                  ? nextReleaseDate.toLocaleString(undefined, {
-                      weekday: 'short',
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      hour12: true,
-                    })
-                  : 'N/A'}
+                        ? nextReleaseDate.toLocaleString(undefined, {
+                            weekday: 'short',
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true,
+                          })
+                        : 'N/A'}
                     </p>
                     <p>
                       <span className="font-semibold">Total Amount:</span>{' '}
@@ -246,8 +325,7 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
                     </p>
                   </div>
                 ) : (
-                  <>
-                  </>
+                  <></>
                 )}
               </div>
 
@@ -333,7 +411,9 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
                 TOTAL FUNDS DISTRIBUTED
               </div>
               <div className="relative bg-gray-800 text-[#90a4ae] font-mono font-bold text-sm px-4 py-2 rounded-lg border border-[#90a4ae]/30 hover:border-[#90a4ae]/50 transition-all duration-200 inline-block">
-                {vestingDetails?.id != null ? formatMas(BigInt(vestingDetails.amountClaimed)) : 'N/A'}{' '}
+                {vestingDetails?.id != null
+                  ? formatMas(BigInt(vestingDetails.amountClaimed))
+                  : 'N/A'}{' '}
                 MAS
               </div>
             </div>
