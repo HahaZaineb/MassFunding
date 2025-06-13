@@ -23,6 +23,7 @@ export function Footer() {
         { label: 'Explore Projects', path: '/projects' },
         { label: 'Request Funding', path: '/request-funding' },
         { label: 'How It Works', path: '/about' },
+        { label: 'Roadmap', path: '/roadmap' },
       ],
       internal: true,
     },
