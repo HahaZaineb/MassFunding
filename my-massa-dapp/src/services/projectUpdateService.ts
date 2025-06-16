@@ -27,7 +27,6 @@ export async function addUpdate(
       args,
       options,
     );
-    console.log(`Successfully added update for project ${projectId}.`);
     return operationId;
   } catch (error) {
     console.error('Error adding update:', error);
@@ -43,7 +42,6 @@ export async function getProjectUpdates(projectId: number): Promise<ProjectUpdat
     const result = response.value;
     
     if (!result || result.length === 0) {
-      console.log("No project data returned.", result);
       return [];
     }
 

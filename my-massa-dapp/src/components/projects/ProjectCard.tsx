@@ -127,10 +127,11 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
   }, [project, projectStatus]);
 
   const getDetailedVestingInfoHandler = async () => {
+    console.log("getDetailedVestingInfoHandler")
     const details = await getVestingSchedule(Number(project.vestingScheduleId));
     setVestingDetails(details);
+
     if (details) {
-      console.log(details, 'details');
       const createdAt = new Date(project.creationDate || '');
       const lockPeriodInMs = Number(project.lockPeriod) * 15 * 1000;
       const intervalInMs = project.releaseInterval * 15 * 1000;
@@ -152,9 +153,7 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
       const x = project.amountRaised > 0 ? details?.amountClaimed > 0 : true;
 
       const hasEnded = now >= lastReleaseDate;
-      console.log(project.id, hasEnded, x, details.isCompleted, 'eeeeeeeeee');
       if (details?.isCompleted && hasEnded && x) {
-        console.log('heeeeere', project.id);
         setProjectStatus('completed');
       }
     }

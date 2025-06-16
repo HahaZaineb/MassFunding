@@ -119,7 +119,6 @@ export async function getAllProjects(): Promise<ProjectData[]> {
     const result = response.value;
 
     if (!result || result.length === 0) {
-      console.log('No project data returned.', result);
       return [];
     }
     const arrArgs = new Args(result);
