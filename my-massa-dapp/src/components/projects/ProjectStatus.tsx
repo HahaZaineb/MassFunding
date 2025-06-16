@@ -92,6 +92,7 @@ const ProjectStatus: React.FC<StatusChipProps> = ({
 
   useEffect(() => {
     const statusValue = getProjectStatus();
+    console.log(statusValue, "statusValue")
     setStatus(statusValue);
   }, [project]);
 

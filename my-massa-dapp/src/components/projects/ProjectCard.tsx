@@ -186,13 +186,11 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
           alt={project.name}
           className="w-full h-full object-cover"
         />
-        {projectStatus && (
           <ProjectStatus
             project={project}
             status={projectStatus}
             setStatus={setProjectStatus}
           />
-        )}
         <div className="absolute top-3 right-4">
           <Badge
             className={`text-white border-0`}
