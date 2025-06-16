@@ -56,7 +56,7 @@ export const callSmartContract = async (connectedAccount : any, contractAddress:
     }
     return operation.id
   } catch (e: any) {
-    console.log('error callSmartContract', e)
+  
     throw e
   }
 }

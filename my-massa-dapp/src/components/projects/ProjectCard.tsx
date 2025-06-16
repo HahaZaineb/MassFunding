@@ -69,11 +69,7 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
     const lockPeriodInMs = Number(project.lockPeriod) * MASSA_PERIOD_DURATION_MS;
     const lockEnd = new Date(createdAt.getTime() + lockPeriodInMs);
     setLockDate(lockEnd);
-/*
-    console.log('--- Debugging Next Release Date ---');
-    console.log('vestingDetails:', vestingDetails);
-    console.log('project.releasePercentage:', project.releasePercentage);
-    console.log('lockEnd:', lockEnd);*/
+
 
     if (
       vestingDetails?.id &&
@@ -85,21 +81,19 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
       const claimedReleases = Math.floor(
         vestingDetails.amountClaimed / totalAmountPerRelease,
       );
-      /*console.log('claimedReleases:', claimedReleases);
-      console.log('project.releaseInterval:', project.releaseInterval);
-      console.log('MASSA_PERIOD_DURATION_MS:', MASSA_PERIOD_DURATION_MS);*/
+    
 
       const nextReleaseTimestamp =
         lockEnd.getTime() +
         (claimedReleases + 1) * project.releaseInterval * MASSA_PERIOD_DURATION_MS;
 
-     // console.log('nextReleaseTimestamp (calculated):', nextReleaseTimestamp);
+  
       setNextReleaseDate(new Date(nextReleaseTimestamp));
     } else {
-      //console.log('Setting nextReleaseDate to lockEnd (else block):', lockEnd);
+     
       setNextReleaseDate(lockEnd);
     }
-    //console.log('--- End Debugging Next Release Date ---');
+   
   }, [project, vestingDetails]);
 
   useEffect(() => {
@@ -113,17 +107,14 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
     const lockPeriodDuration = Number(project.lockPeriod); // This is already in periods
     const lockEndPeriod = createdAtPeriod + lockPeriodDuration; // Calculate lock end in periods
 
-    console.log('--- Debugging Countdown ---');
-    console.log('Project Creation Period:', createdAtPeriod);
-    console.log('Project Lock Period Duration:', lockPeriodDuration);
-    console.log('Calculated Lock End Period:', lockEndPeriod);
+   
 
     const updateCountdown = async () => {
       const currentMassaPeriod = await getCurrentMassaPeriod();
-      console.log('Current Massa Period (fetched):', currentMassaPeriod);
+     
       const remainingPeriods = lockEndPeriod - currentMassaPeriod;
 
-      console.log('Remaining Periods (calculated):', remainingPeriods);
+    
 
       if (remainingPeriods <= 0) {
         setTimeLeft('Lock period ended');
@@ -147,7 +138,7 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
   }, [project, projectStatus]);
 
   const getDetailedVestingInfoHandler = async () => {
-    console.log("getDetailedVestingInfoHandler")
+  
     const details = await getVestingSchedule(Number(project.vestingScheduleId));
     setVestingDetails(details);
 
