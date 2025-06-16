@@ -22,7 +22,7 @@ export default function Projects() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const { list, loading } = useAppSelector((state) => state.projects);
   const [status, setStatus] = useState<
-    'live' | 'release' | 'completed' | 'all'
+    'live' | 'release' | 'completed' | '' | 'all'
   >('all');
 
   useEffect(() => {
@@ -83,7 +83,7 @@ export default function Projects() {
               <Select
                 value={status}
                 onValueChange={(
-                  value: 'live' | 'release' | 'completed' | 'all',
+                  value: 'live' | 'release' | 'completed' | '' | 'all',
                 ) => setStatus(value)}
               >
                 <SelectTrigger className="bg-slate-800/60 border-[#00ff9d]/20 text-white focus:border-[#00ff9d] focus:ring-[#00ff9d]/20 border-2 border-emerald-500/50 text-white placeholder-slate-400 rounded-xl backdrop-blur-sm focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400/80 shadow-lg shadow-emerald-500/20 h-[50px]">

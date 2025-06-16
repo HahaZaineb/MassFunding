@@ -10,5 +10,5 @@ export interface ProjectState {
 export interface FetchProjectsParams {
   searchQuery?: string
   selectedCategory?: string
-  status?: 'live' | 'release' | 'completed' | 'all'
+  status?: 'live' | 'release' | 'completed' | '' | 'all'
 }

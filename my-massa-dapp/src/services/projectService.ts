@@ -211,7 +211,7 @@ export async function getProjectSupportersCount(
 
 export const getProjectStatus = async (
   project: ProjectData,
-): Promise<'live' | 'release' | 'completed'> => {
+): Promise<'live' | 'release' | 'completed' | ''> => {
   const isLocked = project.creationDate
     ? checkIfLocked(project)
     : true;

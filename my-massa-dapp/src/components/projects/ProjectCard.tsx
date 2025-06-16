@@ -52,8 +52,8 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
   const [vestingDetails, setVestingDetails] =
     useState<VestingScheduleData | null>(null);
   const [projectStatus, setProjectStatus] = useState<
-    'live' | 'release' | 'completed'
-  >('live');
+    'live' | 'release' | 'completed' | '' | ''
+  >('');
   const [nextReleaseDate, setNextReleaseDate] = useState<Date | null>(null);
   const [lockDate, setLockDate] = useState<Date | null>(null);
   const [createdDate, setCreatedDate] = useState<Date | null>(null);
@@ -176,11 +176,13 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
           alt={project.name}
           className="w-full h-full object-cover"
         />
-        <ProjectStatus
-          project={project}
-          status={projectStatus}
-          setStatus={setProjectStatus}
-        />
+        {projectStatus && (
+          <ProjectStatus
+            project={project}
+            status={projectStatus}
+            setStatus={setProjectStatus}
+          />
+        )}
         <div className="absolute top-3 right-4">
           <Badge
             className={`text-white border-0`}

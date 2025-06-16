@@ -19,7 +19,7 @@ export const fetchProjects = createAsyncThunk<ProjectData[]>(
 export const filterProjectsByAsyncStatus = createAsyncThunk<
   ProjectData[],
   {
-    status: 'live' | 'release' | 'completed' | 'all';
+    status: 'live' | 'release' | 'completed' | '' | 'all';
     search?: string;
     category?: string;
   }
@@ -84,7 +84,7 @@ const projectSlice = createSlice({
       state,
       action: PayloadAction<{
         id: string;
-        status: 'live' | 'release' | 'completed';
+        status: 'live' | 'release' | 'completed' | '';
       }>,
     ) {
       const { id, status } = action.payload;

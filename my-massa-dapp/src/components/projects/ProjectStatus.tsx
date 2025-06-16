@@ -59,8 +59,8 @@ const PulseCircle = styled('span')(() => ({
 
 interface StatusChipProps {
   project: ProjectData;
-  status: 'live' | 'release' | 'completed';
-  setStatus: (status: 'live' | 'release' | 'completed') => void;
+  status: 'live' | 'release' | 'completed' | '';
+  setStatus: (status: 'live' | 'release' | 'completed' | '') => void;
   sx?: React.CSSProperties;
 }
 
@@ -70,18 +70,15 @@ const ProjectStatus: React.FC<StatusChipProps> = ({
   setStatus,
   sx,
 }) => {
-
   const checkIfLocked = (creationDate: string): boolean => {
     const createdAt = new Date(creationDate);
     const lockPeriod = project.lockPeriod * 15;
     const now = new Date();
-    const lockEndDate = new Date(
-      createdAt.getTime() + lockPeriod * 1000,
-    );
+    const lockEndDate = new Date(createdAt.getTime() + lockPeriod * 1000);
     return now < lockEndDate;
   };
 
-  const getProjectStatus = (): 'live' | 'release' | 'completed' => {
+  const getProjectStatus = (): 'live' | 'release' | 'completed' | '' => {
     const isLocked = project.creationDate
       ? checkIfLocked(project.creationDate)
       : true;
@@ -99,16 +96,20 @@ const ProjectStatus: React.FC<StatusChipProps> = ({
   }, [project]);
 
   return (
-    <div className="absolute top-3 left-4">
-      <StyledChip
-        label={statusMap[status].label}
-        icon={status === 'live' ? <PulseCircle /> : undefined}
-        style={{
-          background: statusMap[status].background,
-          ...sx,
-        }}
-      />
-    </div>
+    <>
+      {status && (
+        <div className="absolute top-3 left-4">
+          <StyledChip
+            label={statusMap[status].label}
+            icon={status === 'live' ? <PulseCircle /> : undefined}
+            style={{
+              background: statusMap[status].background,
+              ...sx,
+            }}
+          />
+        </div>
+      )}
+    </>
   );
 };
 

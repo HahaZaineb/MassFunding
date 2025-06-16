@@ -24,5 +24,5 @@ export interface ProjectData {
   creationPeriod: number;
   initialVestingTriggered: boolean;
   totalAmountRaisedAtLockEnd: number;
-  status?: 'live' | 'release' | 'completed'
+  status?: 'live' | 'release' | 'completed' | ''
 }

@@ -21,7 +21,7 @@ const ProjectDetailsPage = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { id } = useParams();
-  const [status, setStatus] = useState<'live' | 'release' | 'completed'>(
+  const [status, setStatus] = useState<'live' | 'release' | 'completed' | ''>(
     'live',
   );
   const { selected: project, loading } = useAppSelector(
