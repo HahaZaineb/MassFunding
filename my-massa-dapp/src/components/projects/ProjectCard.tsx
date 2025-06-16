@@ -36,6 +36,7 @@ import { updateProjectStatus } from '@/store/slices/projectSlice';
 import { useAppDispatch } from '@/store/hooks';
 import { formatMas } from '@massalabs/massa-web3';
 import ProjectUpdatesModal from './ProjectUpdatesModal';
+import { getCurrentMassaPeriod } from '@/services/massaNetworkService';
 
 interface ProjectCardProps {
   project: ProjectData & { image?: string };
@@ -62,12 +63,17 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
     if (!project?.creationDate) return;
 
     const createdAt = new Date(project.creationDate);
-    const createdAtTimestamp = createdAt.getTime() + 120 * 1000;
-    setCreatedDate(new Date(createdAtTimestamp));
+    setCreatedDate(createdAt);
 
-    const lockPeriodInMs = Number(project.lockPeriod) * 15 * 1000;
-    const lockEnd = new Date(createdAtTimestamp + lockPeriodInMs);
+    const MASSA_PERIOD_DURATION_MS = 16 * 1000; // 16 seconds per period
+    const lockPeriodInMs = Number(project.lockPeriod) * MASSA_PERIOD_DURATION_MS;
+    const lockEnd = new Date(createdAt.getTime() + lockPeriodInMs);
     setLockDate(lockEnd);
+/*
+    console.log('--- Debugging Next Release Date ---');
+    console.log('vestingDetails:', vestingDetails);
+    console.log('project.releasePercentage:', project.releasePercentage);
+    console.log('lockEnd:', lockEnd);*/
 
     if (
       vestingDetails?.id &&
@@ -79,15 +85,21 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
       const claimedReleases = Math.floor(
         vestingDetails.amountClaimed / totalAmountPerRelease,
       );
+      /*console.log('claimedReleases:', claimedReleases);
+      console.log('project.releaseInterval:', project.releaseInterval);
+      console.log('MASSA_PERIOD_DURATION_MS:', MASSA_PERIOD_DURATION_MS);*/
 
       const nextReleaseTimestamp =
         lockEnd.getTime() +
-        (claimedReleases + 1) * project.releaseInterval * 15 * 1000;
+        (claimedReleases + 1) * project.releaseInterval * MASSA_PERIOD_DURATION_MS;
 
+     // console.log('nextReleaseTimestamp (calculated):', nextReleaseTimestamp);
       setNextReleaseDate(new Date(nextReleaseTimestamp));
     } else {
+      //console.log('Setting nextReleaseDate to lockEnd (else block):', lockEnd);
       setNextReleaseDate(lockEnd);
     }
+    //console.log('--- End Debugging Next Release Date ---');
   }, [project, vestingDetails]);
 
   useEffect(() => {
@@ -97,31 +109,39 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
   useEffect(() => {
     if (projectStatus !== 'live') return;
 
-    const createdAt = new Date(project.creationDate || '');
-    const lockPeriodInSeconds = Number(project.lockPeriod) * 15; // Convert periods to seconds
-    const lockEnd = new Date(
-      createdAt.getTime() + 120 * 1000 + lockPeriodInSeconds * 1000,
-    );
+    const createdAtPeriod = project.creationPeriod; // This is already in periods
+    const lockPeriodDuration = Number(project.lockPeriod); // This is already in periods
+    const lockEndPeriod = createdAtPeriod + lockPeriodDuration; // Calculate lock end in periods
 
-    const updateCountdown = () => {
-      const now = new Date().getTime();
-      const distance = lockEnd.getTime() - now;
+    console.log('--- Debugging Countdown ---');
+    console.log('Project Creation Period:', createdAtPeriod);
+    console.log('Project Lock Period Duration:', lockPeriodDuration);
+    console.log('Calculated Lock End Period:', lockEndPeriod);
 
-      if (distance <= 0) {
+    const updateCountdown = async () => {
+      const currentMassaPeriod = await getCurrentMassaPeriod();
+      console.log('Current Massa Period (fetched):', currentMassaPeriod);
+      const remainingPeriods = lockEndPeriod - currentMassaPeriod;
+
+      console.log('Remaining Periods (calculated):', remainingPeriods);
+
+      if (remainingPeriods <= 0) {
         setTimeLeft('Lock period ended');
         return;
       }
 
-      const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((distance / (1000 * 60 * 60)) % 24);
-      const minutes = Math.floor((distance / (1000 * 60)) % 60);
-      const seconds = Math.floor((distance / 1000) % 60);
+      const totalSeconds = remainingPeriods * 16; // Convert periods to seconds
+
+      const days = Math.floor(totalSeconds / (60 * 60 * 24));
+      const hours = Math.floor((totalSeconds / (60 * 60)) % 24);
+      const minutes = Math.floor((totalSeconds / 60) % 60);
+      const seconds = Math.floor(totalSeconds % 60);
 
       setTimeLeft(`${days}d ${hours}h ${minutes}m ${seconds}s`);
     };
 
     updateCountdown();
-    const interval = setInterval(updateCountdown, 1000);
+    const interval = setInterval(updateCountdown, 1000); // Update every second
 
     return () => clearInterval(interval);
   }, [project, projectStatus]);
@@ -295,7 +315,7 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
                 )}
                 {lockDate && (
                   <p className="text-white text-sm">
-                    <span className="font-semibold">Lock At:</span>{' '}
+                    <span className="font-semibold">Lock Period Ends At:</span>{' '}
                     {lockDate.toLocaleString(undefined, {
                       weekday: 'short',
                       year: 'numeric',

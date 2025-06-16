@@ -310,12 +310,12 @@ export default function RequestFunding() {
                           <SelectValue placeholder="Select lock period" />
                         </SelectTrigger>
                         <SelectContent className="bg-[#1a2340] border-[#00ff9d]/20 text-white">
-                          <SelectItem value="0.001388888">2 minutes</SelectItem>
-                          <SelectItem value="0.000694444">1 minute</SelectItem>
-                          <SelectItem value="30">30 days</SelectItem>
-                          <SelectItem value="60">60 days</SelectItem>
-                          <SelectItem value="90">90 days</SelectItem>
-                          <SelectItem value="180">180 days</SelectItem>
+                          <SelectItem value="2 minutes">2 minutes</SelectItem>
+                          <SelectItem value="1 minute">1 minute</SelectItem>
+                          <SelectItem value="30 days">30 days</SelectItem>
+                          <SelectItem value="60 days">60 days</SelectItem>
+                          <SelectItem value="90 days">90 days</SelectItem>
+                          <SelectItem value="180 days">180 days</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -334,11 +334,11 @@ export default function RequestFunding() {
                           <SelectValue placeholder="Select release interval" />
                         </SelectTrigger>
                         <SelectContent className="bg-[#1a2340] border-[#00ff9d]/20 text-white">
-                          <SelectItem value="0.001388888">2 minutes</SelectItem>
-                          <SelectItem value="0.000694444">1 minute</SelectItem>
-                          <SelectItem value="7">Weekly (7 days)</SelectItem>
-                          <SelectItem value="30">Monthly (30 days)</SelectItem>
-                          <SelectItem value="90">
+                          <SelectItem value="2 minutes">2 minutes</SelectItem>
+                          <SelectItem value="1 minute">1 minute</SelectItem>
+                          <SelectItem value="7 days">Weekly (7 days)</SelectItem>
+                          <SelectItem value="30 days">Monthly (30 days)</SelectItem>
+                          <SelectItem value="90 days">
                             Quarterly (90 days)
                           </SelectItem>
                         </SelectContent>

@@ -145,7 +145,7 @@ export async function getDetailedVestingInfo(
       if (currentPeriod === null) return 'Loading...';
 
       const diffPeriods = targetPeriod - currentPeriod;
-      const seconds = Math.abs(diffPeriods * 15); // 1 Massa period = 15 seconds
+      const seconds = Math.abs(diffPeriods * 16); // 1 Massa period = 16 seconds
 
       if (diffPeriods < 0) {
         // Past

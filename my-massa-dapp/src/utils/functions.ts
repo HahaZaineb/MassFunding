@@ -2,8 +2,8 @@ import { CATEGORIES } from "@/constants"
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 
-const PERIODS_PER_DAY = 5760; // 86400 seconds / 15 seconds per period
-const PERIODS_PER_SECOND = 1 / 15;
+const PERIODS_PER_DAY = 5400; // 86400 seconds / 16 seconds per period
+const PERIODS_PER_SECOND = 1 / 16;
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -61,7 +61,7 @@ export const parseDurationToPeriods = (durationString: string): bigint => {
 
 // Helper function to format periods into human-readable time (days, hours, minutes, seconds)
 export const formatPeriodsToHumanReadable = (periods: number): string => {
-  const totalSeconds = periods * 15; // 1 Massa period = 15 seconds
+  const totalSeconds = periods * 16; // 1 Massa period = 16 seconds
 
   if (totalSeconds < 60) {
     return `${Math.round(totalSeconds)} seconds`;

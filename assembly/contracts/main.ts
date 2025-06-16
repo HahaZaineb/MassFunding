@@ -28,7 +28,7 @@ processTask
 } from '../internals';
 
 
-export const PERIODS_PER_DAY: u64 = 86400 / 15;
+export const PERIODS_PER_DAY: u64 = 5400;
  
 // Storage keys
 export const PROJECTS_KEY = stringToBytes('projects');
@@ -325,15 +325,8 @@ const creator = Context.caller();
 const beneficiary = new Address(beneficiaryAddress);
 const creationPeriod = Context.currentPeriod();
 
-// Create vesting schedule immediately with 0 initial amount
-const vestingId = createVestingScheduleInternal(
-  projectId,
-  beneficiary,
-  0, // Initial amount is 0
-  lockPeriodInPeriods,
-  releaseIntervalInPeriods,
-  releasePercentage
-);
+// NO LONGER CREATE A DUMMY VESTING SCHEDULE HERE.
+// The actual vesting schedule will be created by triggerInitialVesting.
 
 const newProject = new Project(
   projectId,
@@ -341,23 +334,21 @@ const newProject = new Project(
   title,
   description,
   fundingGoal,
-  0, // Initial amount raised is 0
+  0, // amountRaised starts at 0
   beneficiary,
   category,
-  lockPeriodInPeriods, // Storing lock period in periods
-  releaseIntervalInPeriods, // Storing release interval in periods
+  lockPeriodInPeriods,
+  releaseIntervalInPeriods,
   releasePercentage,
   image,
   creationPeriod,
-  vestingId, // Set the vesting schedule ID immediately
+  0, // vestingScheduleId should be 0 initially
   false, // Initialize initialVestingTriggered to false
   0 // Initialize totalAmountRaisedAtLockEnd to 0
 );
 
-Storage.set(
-  new Args().add(PROJECTS_KEY).add(projectId).serialize(),
-  newProject.serialize()
-);
+const projectKey = new Args().add(PROJECTS_KEY).add(projectId).serialize();
+Storage.set(projectKey, newProject.serialize());
 
 // Initialize updates storage for the new project
 Storage.set(getProjectUpdatesKey(projectId), new Args().add([] as string[]).serialize());
@@ -551,6 +542,8 @@ export function triggerInitialVesting(binArgs: StaticArray<u8>): void {
   }
 
   // Get the amount raised at the end of the lock period
+  // Set totalAmountRaisedAtLockEnd to the actual amount raised
+  project.totalAmountRaisedAtLockEnd = project.amountRaised; 
   const amountToVest = project.totalAmountRaisedAtLockEnd;
 
   // If no funds were raised, no vesting schedule is needed
@@ -566,7 +559,7 @@ export function triggerInitialVesting(binArgs: StaticArray<u8>): void {
     projectId,
     project.beneficiary,
     amountToVest,
-    project.lockPeriod,
+    0, // Pass 0 for lockPeriod here, as the initial lock period has elapsed
     project.releaseInterval,
     project.releasePercentage
   );
@@ -601,7 +594,7 @@ const vestingId = getNextVestingId();
 incrementNextVestingId(); 
 
 // The start period for the first release is calculated here in the vesting logic
-const startPeriod = Context.currentPeriod() + lockPeriod; 
+const startPeriod = Context.currentPeriod() + (lockPeriod == 0 ? 1 : lockPeriod); 
 
 const schedule = new vestingSchedule(
   vestingId,
@@ -627,25 +620,27 @@ let projectVestingSchedules = loadProjectVestingSchedules(projectId);
 projectVestingSchedules.push(vestingId);
 storeProjectVestingSchedules(projectId, projectVestingSchedules);
 
-// Schedule the first release call for this specific schedule
-const releaseArgs = new Args().add(vestingId).serialize();
-const releaseSlot = findCheapestSlot(
-  startPeriod,
-  startPeriod + 10, // Search window
-  500_000_000, // Increased gas limit
-  0 // No coins sent with the deferred call
-);
+// Only schedule the first release call if lockPeriod is 0.
+// If lockPeriod > 0, the initial vesting will be triggered by the deferred call to triggerInitialVesting.
+if (lockPeriod == 0) {
+  const releaseArgs = new Args().add(vestingId).serialize();
+  const releaseSlot = findCheapestSlot(
+    startPeriod,
+    startPeriod + 10, // Search window
+    500_000_000, // Increased gas limit
+    0 // No coins sent with the deferred call
+  );
 
-deferredCallRegister(
-  Context.callee().toString(), // Call this contract (itself)
-  'releaseVestedTokens',
-  releaseSlot,
-  500_000_000, // Increased gas limit
-  releaseArgs,
-  0 // No coins sent with deferred call
-);
-
-generateEvent(VESTING_SCHEDULE_CREATED_EVENT);
+  deferredCallRegister(
+    Context.callee().toString(), // Call this contract (itself)
+    'releaseVestedTokens',
+    releaseSlot,
+    500_000_000, // Increased gas limit
+    releaseArgs,
+    0 // No coins sent with deferred call
+  );
+  generateEvent(VESTING_SCHEDULE_CREATED_EVENT); // This event is for the creation of the schedule itself
+}
 
 // Return the vesting ID
 return vestingId;

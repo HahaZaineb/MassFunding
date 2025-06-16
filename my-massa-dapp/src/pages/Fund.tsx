@@ -72,6 +72,7 @@ export function FundPage() {
         `Your donation of ${amount} MAS has been processed and the vesting schedule has been created.`,
         'success',
       );
+      dispatch(fetchProjectById(projectId as string));
     } catch (error) {
       console.error('Failed to donate:', error);
       let errorMessage = 'Failed to process donation. Please try again.';
