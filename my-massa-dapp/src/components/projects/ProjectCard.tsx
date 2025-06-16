@@ -306,7 +306,7 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
                 )}
                 {lockDate && (
                   <p className="text-white text-sm">
-                    <span className="font-semibold">Lock Period Ends At:</span>{' '}
+                    <span className="font-semibold">Lock At:</span>{' '}
                     {lockDate.toLocaleString(undefined, {
                       weekday: 'short',
                       year: 'numeric',
