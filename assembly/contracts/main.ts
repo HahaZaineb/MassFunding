@@ -37,6 +37,7 @@ export const VESTING_CONTRACT_ADDRESS_KEY = stringToBytes('vestingContractAddres
 export const OWNER_KEY = stringToBytes('owner');
 export const VESTING_SCHEDULES_KEY_PREFIX = stringToBytes('vesting_schedule_');
 export const NEXT_VESTING_ID_KEY = stringToBytes('next_vesting_id');
+export const PROJECT_VESTING_ID_KEY_PREFIX = stringToBytes('project_vesting_id_');
 export const TOTAL_DONATIONS_KEY = stringToBytes('total_donations');
 export const TOTAL_SUPPORTERS_KEY = stringToBytes('total_supporters');
 export const DONATORS_KEY_PREFIX = stringToBytes('donators_');
@@ -147,7 +148,7 @@ function getVestingScheduleKey(id: u64): StaticArray<u8> {
   return new Args().add(VESTING_SCHEDULES_KEY_PREFIX).add(id).serialize();
 }
 
-// Helper to get the next available vesting ID
+// Helper to get the next available vesting ID (GLOBAL)
 function getNextVestingId(): u64 {
   let nextId: u64 = 0;
   if (Storage.has(NEXT_VESTING_ID_KEY)) {
@@ -158,7 +159,7 @@ function getNextVestingId(): u64 {
   return nextId;
 }
 
-// Helper to increment the next vesting ID
+// Helper to increment the next vesting ID (GLOBAL)
 function incrementNextVestingId(): void {
   let nextId = getNextVestingId(); // This will log the current ID
   nextId++;
@@ -251,11 +252,11 @@ function getProjectUpdatesKey(projectId: u64): StaticArray<u8> {
 }
 
 // Helper to get the stored Vesting Contract Address (Might not be needed if fully internal)
-function getVestingContractAddress(): Address {
+/*function getVestingContractAddress(): Address {
   assert(Storage.has(VESTING_CONTRACT_ADDRESS_KEY), "Vesting contract address not set");
   const addrBytes = Storage.get(VESTING_CONTRACT_ADDRESS_KEY);
   return new Address(bytesToString(addrBytes));
-}
+}*/
 
 export function constructor(binArgs: StaticArray<u8>): void {
   assert(Context.isDeployingContract(), "ProjectManager: Not in deployment context");
@@ -325,8 +326,14 @@ const creator = Context.caller();
 const beneficiary = new Address(beneficiaryAddress);
 const creationPeriod = Context.currentPeriod();
 
-// NO LONGER CREATE A DUMMY VESTING SCHEDULE HERE.
-// The actual vesting schedule will be created by triggerInitialVesting.
+const vestingId = createVestingScheduleInternal(
+  projectId,
+  beneficiary,
+  0, // Initial amount is 0
+  lockPeriodInPeriods,
+  releaseIntervalInPeriods,
+  releasePercentage
+);
 
 const newProject = new Project(
   projectId,
@@ -342,7 +349,7 @@ const newProject = new Project(
   releasePercentage,
   image,
   creationPeriod,
-  0, // vestingScheduleId should be 0 initially
+  vestingId,
   false, // Initialize initialVestingTriggered to false
   0 // Initialize totalAmountRaisedAtLockEnd to 0
 );
@@ -559,7 +566,7 @@ export function triggerInitialVesting(binArgs: StaticArray<u8>): void {
     projectId,
     project.beneficiary,
     amountToVest,
-    0, // Pass 0 for lockPeriod here, as the initial lock period has elapsed
+    project.lockPeriod, // Pass 0 for lockPeriod here, as the initial lock period has elapsed
     project.releaseInterval,
     project.releasePercentage
   );
@@ -570,6 +577,7 @@ export function triggerInitialVesting(binArgs: StaticArray<u8>): void {
   Storage.set(projectKey, project.serialize());
 
   generateEvent(`Initial vesting triggered for project ${projectId}. Schedule ID: ${vestingId}. Amount: ${amountToVest}`);
+
 }
 
 // --- Vesting Functions (Internal) ---
@@ -583,46 +591,45 @@ function createVestingScheduleInternal(
   lockPeriod: u64, // In periods
   releaseInterval: u64, // In periods
   releasePercentage: u64 // Percentage out of 100
-): u64 {
+): u64 {/*
+  assert(totalAmount > 0, 'Total amount for vesting schedule must be greater than 0');
+  assert(lockPeriod >= 0, 'Lock period must be non-negative');
+  assert(releaseInterval > 0, 'Release interval must be greater than 0');*/
+  assert(releasePercentage > 0 && releasePercentage <= 100, 'Release percentage must be between 1 and 100');
 
-//assert(totalAmount > 0, "Total amount must be greater than 0");
-assert(releasePercentage > 0 && releasePercentage <= 100, "Release percentage must be between 1 and 100");
-//
+  const vestingId = getNextVestingId(); // Use global ID
+  incrementNextVestingId(); // Increment global ID
 
-const vestingId = getNextVestingId();
-// Increment the next vesting ID right after getting it
-incrementNextVestingId(); 
+  const currentPeriod = Context.currentPeriod();
+  // The start period for the first release is calculated here in the vesting logic
+const startPeriod = Context.currentPeriod() + lockPeriod; 
+  // Adjust nextReleasePeriod: if lockPeriod is 0, schedule for the next period
+  const actualNextReleasePeriod = lockPeriod === 0 ? currentPeriod + 1 : currentPeriod + lockPeriod;
 
-// The start period for the first release is calculated here in the vesting logic
-const startPeriod = Context.currentPeriod() + (lockPeriod == 0 ? 1 : lockPeriod); 
+  const schedule = new vestingSchedule(
+      vestingId,
+      beneficiary,
+      totalAmount,
+      0, // amountClaimed
+      lockPeriod,
+      releaseInterval,
+      releasePercentage,
+      actualNextReleasePeriod, // Use adjusted nextReleasePeriod
+      false // isCompleted
+  );
 
-const schedule = new vestingSchedule(
-  vestingId,
-  beneficiary,
-  totalAmount,
-  0, // amountClaimed starts at 0
-  lockPeriod, // Storing the initial lock period for reference
-  releaseInterval,
-  releasePercentage,
-  startPeriod, // Storing the period of the first scheduled release
-  false // Initialize isCompleted to false
-);
+  Storage.set(getVestingScheduleKey(vestingId), schedule.serialize());
 
-// Store the new vesting schedule
-Storage.set(getVestingScheduleKey(vestingId), schedule.serialize());
+    // Update user-specific vesting schedules mapping
+  let userVestingSchedules = loadUserVestingSchedules(beneficiary);
+  userVestingSchedules.push(vestingId);
+  storeUserVestingSchedules(beneficiary, userVestingSchedules);
+  // Update project-specific vesting schedules mapping
+  let projectVestingSchedules = loadProjectVestingSchedules(projectId);
+  projectVestingSchedules.push(vestingId);
+  storeProjectVestingSchedules(projectId, projectVestingSchedules);
 
-// Update user-specific vesting schedules mapping
-let userVestingSchedules = loadUserVestingSchedules(beneficiary);
-userVestingSchedules.push(vestingId);
-storeUserVestingSchedules(beneficiary, userVestingSchedules);
-// Update project-specific vesting schedules mapping
-let projectVestingSchedules = loadProjectVestingSchedules(projectId);
-projectVestingSchedules.push(vestingId);
-storeProjectVestingSchedules(projectId, projectVestingSchedules);
-
-// Only schedule the first release call if lockPeriod is 0.
-// If lockPeriod > 0, the initial vesting will be triggered by the deferred call to triggerInitialVesting.
-if (lockPeriod == 0) {
+    // Schedule the first release call for this specific schedule
   const releaseArgs = new Args().add(vestingId).serialize();
   const releaseSlot = findCheapestSlot(
     startPeriod,
@@ -630,7 +637,6 @@ if (lockPeriod == 0) {
     500_000_000, // Increased gas limit
     0 // No coins sent with the deferred call
   );
-
   deferredCallRegister(
     Context.callee().toString(), // Call this contract (itself)
     'releaseVestedTokens',
@@ -639,11 +645,13 @@ if (lockPeriod == 0) {
     releaseArgs,
     0 // No coins sent with deferred call
   );
-  generateEvent(VESTING_SCHEDULE_CREATED_EVENT); // This event is for the creation of the schedule itself
-}
+  
 
-// Return the vesting ID
-return vestingId;
+  generateEvent(
+      `${VESTING_SCHEDULE_CREATED_EVENT}: ${vestingId},${beneficiary.toString()},${totalAmount},${lockPeriod},${releaseInterval},${releasePercentage}`
+  );
+
+  return vestingId;
 }
 
 // This function is called by the deferred call mechanism (internal call)
@@ -777,7 +785,9 @@ return new Args().add(schedule.totalAmount - schedule.amountClaimed).serialize()
 
 // Add a function to get the next vesting ID (useful for frontend)
 export function viewNextVestingId(_: StaticArray<u8>): StaticArray<u8> {
-  return new Args().add(getNextVestingId()).serialize();
+  // Revert to global next vesting ID view
+  const nextId = getNextVestingId();
+  return new Args().add(nextId).serialize();
 }
 
 // The stop function remains largely the same, but might need to handle stopping a specific schedule

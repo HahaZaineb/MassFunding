@@ -1,3 +1,3 @@
-export const CONTRACT_ADDRESS = "AS1v3KhVEzj8gPtFgc6np6cZ6X2ZDkvR3eCbFdNxoJpba24wrN7X"
+export const CONTRACT_ADDRESS = "AS1jAKiKqMDawcUbmUx7cdeG3xmFyQWG5s1s4KwtrP4UXdp5N1HV"
 
 export const MASSA_NETWORK: 'buildnet' | 'mainnet' = 'buildnet'
