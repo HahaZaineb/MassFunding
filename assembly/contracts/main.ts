@@ -47,6 +47,9 @@ export const PROJECT_UPDATES_KEY_PREFIX = stringToBytes('project_updates_');
 export const USER_VESTING_SCHEDULES_KEY_PREFIX = stringToBytes('user_vesting_schedules_');
 export const PROJECT_DONOR_AMOUNTS_KEY_PREFIX = stringToBytes('project_donor_amounts_');
 export const PROJECT_VESTING_SCHEDULES_KEY_PREFIX = stringToBytes('project_vesting_schedules_');
+export const VESTING_VOTES_KEY_PREFIX = stringToBytes('vesting_votes_');
+export const VESTING_VOTING_SESSION_KEY_PREFIX = stringToBytes('vesting_voting_session_');
+export const VESTING_VOTING_PERIOD_KEY_PREFIX = stringToBytes('vesting_voting_period_');
 // Event names
 export const PROJECT_CREATED_EVENT = 'PROJECT_CREATED';
 export const PROJECT_FUNDED_EVENT = 'PROJECT_FUNDED';
@@ -656,51 +659,118 @@ const startPeriod = Context.currentPeriod() + lockPeriod;
 
 // This function is called by the deferred call mechanism (internal call)
 export function releaseVestedTokens(binArgs: StaticArray<u8>): void {
-// Note: This function is called by a deferred call, Context.caller() will be the contract itself.
-generateEvent('releaseVestedTokens function called internally');
+  // Note: This function is called by a deferred call, Context.caller() will be the contract itself.
+  generateEvent('releaseVestedTokens function called internally');
 
-const args = new Args(binArgs);
-// Get the vesting schedule ID from the deferred call arguments
-const vestingId = args.nextU64().expect('Missing vesting schedule ID for release');
+  const args = new Args(binArgs);
+  // Get the vesting schedule ID from the deferred call arguments
+  const vestingId = args.nextU64().expect('Missing vesting schedule ID for release');
 
-const scheduleKey = getVestingScheduleKey(vestingId);
+  const scheduleKey = getVestingScheduleKey(vestingId);
 
-// Check if the vesting schedule exists
-if (!Storage.has(scheduleKey)) {
-  generateEvent(`Vesting schedule with ID ${vestingId} not found.`);
-  return;
+  // Check if the vesting schedule exists
+  if (!Storage.has(scheduleKey)) {
+    generateEvent(`Vesting schedule with ID ${vestingId} not found.`);
+    return;
+  }
+
+  let schedule = new vestingSchedule();
+  schedule.deserialize(Storage.get(scheduleKey));
+
+  // If schedule is already completed, do nothing
+  if (schedule.isCompleted) {
+    generateEvent(`Vesting schedule ${vestingId} is already completed.`);
+    return;
+  }
+
+  // Ensure it's time for this release
+  const currentPeriod = Context.currentPeriod();
+  generateEvent(`Current period: ${currentPeriod}, Next release period for ID ${vestingId}: ${schedule.nextReleasePeriod}`);
+  if (currentPeriod < schedule.nextReleasePeriod) {
+    generateEvent(`Not yet time for release for ID ${vestingId}`);
+    return;
+  }
+
+  // Find the project ID for this vesting schedule
+  let projectId: u64 = 0;
+  let foundProject = false;
+  let projectCount = getNextProjectId();
+  
+  for (let i: u64 = 0; i < projectCount; i++) {
+    const projectVestingSchedules = loadProjectVestingSchedules(i);
+    for (let j: u64 = 0; j < (projectVestingSchedules.length as u64); j++) {
+      if (projectVestingSchedules[j as i32] === vestingId) {
+        projectId = i;
+        foundProject = true;
+        break;
+      }
+    }
+    if (foundProject) break;
+  }
+  
+  assert(foundProject, `Could not find project for vesting schedule ${vestingId}`);
+
+  // Start a new voting session
+  startVotingSession(vestingId, projectId);
+
+  // Schedule the voting result processing
+  const votingSessionKey = getVotingSessionKey(vestingId);
+  let votingSession = new VotingSession();
+  votingSession.deserialize(Storage.get(votingSessionKey));
+
+  const processVotingArgs = new Args().add(vestingId).add(projectId).serialize();
+  const processVotingSlot = findCheapestSlot(
+    votingSession.endPeriod + 1, // Process right after voting ends
+    votingSession.endPeriod + 2, // Search window
+    500_000_000, // Gas
+    0 // No coins sent
+  );
+
+  deferredCallRegister(
+    Context.callee().toString(),
+    'processVotingAndRelease',
+    processVotingSlot,
+    500_000_000, // Gas
+    processVotingArgs,
+    0 // No coins sent
+  );
+
+  generateEvent(`Voting session started for vesting schedule ${vestingId}. Results will be processed at period ${processVotingSlot.period}`);
 }
 
-let schedule = new vestingSchedule();
-schedule.deserialize(Storage.get(scheduleKey));
+// New function to process voting results and handle release
+export function processVotingAndRelease(binArgs: StaticArray<u8>): void {
+  const args = new Args(binArgs);
+  const vestingId = args.nextU64().expect('Missing vesting schedule ID');
+  const projectId = args.nextU64().expect('Missing project ID');
 
-// If schedule is already completed, do nothing
-if (schedule.isCompleted) {
-  generateEvent(`Vesting schedule ${vestingId} is already completed.`);
-  return;
-}
+  // Process voting results
+  const shouldProceed = processVotingResult(vestingId, projectId);
 
-// Ensure it's time for this release
-const currentPeriod = Context.currentPeriod();
-generateEvent(`Current period: ${currentPeriod}, Next release period for ID ${vestingId}: ${schedule.nextReleasePeriod}`);
-if (currentPeriod < schedule.nextReleasePeriod) {
-  generateEvent(`Not yet time for release for ID ${vestingId}`);
-  return;
-}
+  if (!shouldProceed) {
+    generateEvent(`Release cancelled for vesting schedule ${vestingId} due to stop vote majority`);
+    return;
+  }
 
-generateEvent(`Total amount for ID ${vestingId}: ${schedule.totalAmount}, Already claimed: ${schedule.amountClaimed}`);
-// Calculate amount to release based on the *original total amount*
-let amountToRelease = (schedule.totalAmount * schedule.releasePercentage) / 100;
+  // If we should proceed, perform the release
+  const scheduleKey = getVestingScheduleKey(vestingId);
+  let schedule = new vestingSchedule();
+  schedule.deserialize(Storage.get(scheduleKey));
 
-// Ensure we don't release more than remains
-let remainingAmount = schedule.totalAmount - schedule.amountClaimed;
-if (amountToRelease > remainingAmount) {
-  amountToRelease = remainingAmount;
-  generateEvent(`Adjusted release amount to remaining for ID ${vestingId}: ${amountToRelease}`);
-}
+  generateEvent(`Total amount for ID ${vestingId}: ${schedule.totalAmount}, Already claimed: ${schedule.amountClaimed}`);
+  
+  // Calculate amount to release based on the *original total amount*
+  let amountToRelease = (schedule.totalAmount * schedule.releasePercentage) / 100;
 
-// If there's still amount to release
-if (amountToRelease > 0) {
+  // Ensure we don't release more than remains
+  let remainingAmount = schedule.totalAmount - schedule.amountClaimed;
+  if (amountToRelease > remainingAmount) {
+    amountToRelease = remainingAmount;
+    generateEvent(`Adjusted release amount to remaining for ID ${vestingId}: ${amountToRelease}`);
+  }
+
+  // If there's still amount to release
+  if (amountToRelease > 0) {
     const beneficiaryAddress = schedule.beneficiary;
     generateEvent(`Attempting to transfer ${amountToRelease} MAS to ${beneficiaryAddress.toString()} for ID ${vestingId}`);
 
@@ -711,45 +781,45 @@ if (amountToRelease > 0) {
     // Update vesting schedule
     schedule.amountClaimed += amountToRelease;
     generateEvent(`Updated amount claimed for ID ${vestingId}: ${schedule.amountClaimed}`);
-}
+  }
 
-// If there's still amount left to claim after this release
-if (schedule.amountClaimed < schedule.totalAmount) {
-  // Schedule the next release based on the current period + interval
-  schedule.nextReleasePeriod = currentPeriod + schedule.releaseInterval;
+  // If there's still amount left to claim after this release
+  if (schedule.amountClaimed < schedule.totalAmount) {
+    // Schedule the next release based on the current period + interval
+    const currentPeriod = Context.currentPeriod();
+    schedule.nextReleasePeriod = currentPeriod + schedule.releaseInterval;
 
-  const nextReleaseArgs = new Args().add(vestingId).serialize();
-  const nextReleaseSlot = findCheapestSlot(
-    schedule.nextReleasePeriod,
-    schedule.nextReleasePeriod + 10, // Search window
-    20_000_000, // Gas
-    0 // No coins sent
-  );
+    const nextReleaseArgs = new Args().add(vestingId).serialize();
+    const nextReleaseSlot = findCheapestSlot(
+      schedule.nextReleasePeriod,
+      schedule.nextReleasePeriod + 10, // Search window
+      20_000_000, // Gas
+      0 // No coins sent
+    );
 
-  // Store current state before registering next call
-  Storage.set(scheduleKey, schedule.serialize());
+    // Store current state before registering next call
+    Storage.set(scheduleKey, schedule.serialize());
 
-  deferredCallRegister(
-    Context.callee().toString(),
-    'releaseVestedTokens',
-    nextReleaseSlot,
-    20_000_000, // Gas
-    nextReleaseArgs,
-    0 // No coins sent
-  );
-  generateEvent(`Next release for ID ${vestingId} scheduled for period ${nextReleaseSlot.period}`);
-  // The nextReleasePeriod needs to be set to the actual scheduled period from the slot.
-  schedule.nextReleasePeriod = nextReleaseSlot.period;
+    deferredCallRegister(
+      Context.callee().toString(),
+      'releaseVestedTokens',
+      nextReleaseSlot,
+      20_000_000, // Gas
+      nextReleaseArgs,
+      0 // No coins sent
+    );
+    generateEvent(`Next release for ID ${vestingId} scheduled for period ${nextReleaseSlot.period}`);
+    // The nextReleasePeriod needs to be set to the actual scheduled period from the slot.
+    schedule.nextReleasePeriod = nextReleaseSlot.period;
 
-  // Update the schedule again with the actual scheduled period
-  Storage.set(scheduleKey, schedule.serialize());
-
-} else {
-  // Mark vesting as completed but keep it in storage
-  schedule.isCompleted = true;
-  Storage.set(scheduleKey, schedule.serialize());
-  generateEvent(VESTING_SCHEDULE_COMPLETED_EVENT);
-}
+    // Update the schedule again with the actual scheduled period
+    Storage.set(scheduleKey, schedule.serialize());
+  } else {
+    // Mark vesting as completed but keep it in storage
+    schedule.isCompleted = true;
+    Storage.set(scheduleKey, schedule.serialize());
+    generateEvent(VESTING_SCHEDULE_COMPLETED_EVENT);
+  }
 }
 
 // --- Vesting View Functions (Internal) ---
@@ -1087,4 +1157,291 @@ export function getUserDonations(binArgs: StaticArray<u8>): StaticArray<u8> {
     returnArgs.add<u64>(amount);
   }
   return returnArgs.serialize();
+}
+
+// New class to track voting session
+class VotingSession implements Serializable {
+  constructor(
+    public isActive: bool = false,
+    public startPeriod: u64 = 0,
+    public endPeriod: u64 = 0,
+    public totalVotingPower: u64 = 0,
+    public continueVotes: u64 = 0,
+    public stopVotes: u64 = 0
+  ) {}
+
+  serialize(): StaticArray<u8> {
+    return new Args()
+      .add(this.isActive)
+      .add(this.startPeriod)
+      .add(this.endPeriod)
+      .add(this.totalVotingPower)
+      .add(this.continueVotes)
+      .add(this.stopVotes)
+      .serialize();
+  }
+
+  deserialize(data: StaticArray<u8>, offset: u64 = 0): Result<i32> {
+    const args = new Args(data, i32(offset));
+    this.isActive = args.nextBool().expect('Failed to deserialize isActive');
+    this.startPeriod = args.nextU64().expect('Failed to deserialize startPeriod');
+    this.endPeriod = args.nextU64().expect('Failed to deserialize endPeriod');
+    this.totalVotingPower = args.nextU64().expect('Failed to deserialize totalVotingPower');
+    this.continueVotes = args.nextU64().expect('Failed to deserialize continueVotes');
+    this.stopVotes = args.nextU64().expect('Failed to deserialize stopVotes');
+    return new Result(args.offset);
+  }
+}
+
+// New class to track individual votes
+class Vote implements Serializable {
+  constructor(
+    public voter: Address = new Address(''),
+    public votingPower: u64 = 0,
+    public vote: bool = false // true for continue, false for stop
+  ) {}
+
+  serialize(): StaticArray<u8> {
+    return new Args()
+      .add(this.voter as Serializable)
+      .add(this.votingPower)
+      .add(this.vote)
+      .serialize();
+  }
+
+  deserialize(data: StaticArray<u8>, offset: u64 = 0): Result<i32> {
+    const args = new Args(data, i32(offset));
+    this.voter = args.nextSerializable<Address>().expect('Failed to deserialize voter');
+    this.votingPower = args.nextU64().expect('Failed to deserialize votingPower');
+    this.vote = args.nextBool().expect('Failed to deserialize vote');
+    return new Result(args.offset);
+  }
+}
+
+// Helper to get the storage key for a vesting schedule's voting session
+function getVotingSessionKey(vestingId: u64): StaticArray<u8> {
+  return new Args().add(VESTING_VOTING_SESSION_KEY_PREFIX).add(vestingId).serialize();
+}
+
+// Helper to get the storage key for a vesting schedule's votes
+function getVotesKey(vestingId: u64): StaticArray<u8> {
+  return new Args().add(VESTING_VOTES_KEY_PREFIX).add(vestingId).serialize();
+}
+
+// Function to start a voting session for a vesting schedule
+function startVotingSession(vestingId: u64, projectId: u64): void {
+  const scheduleKey = getVestingScheduleKey(vestingId);
+  assert(Storage.has(scheduleKey), `Vesting schedule ${vestingId} not found`);
+  
+  let schedule = new vestingSchedule();
+  schedule.deserialize(Storage.get(scheduleKey));
+  
+  // Get all project donors and their amounts
+  const donors = loadProjectDonors(projectId);
+  let totalVotingPower: u64 = 0;
+  
+  // Calculate total voting power
+  for (let i: u64 = 0; i < (donors.length as u64); i++) {
+    const donor = new Address(donors[i as i32]);
+    const amount = loadProjectDonorAmount(projectId, donor);
+    totalVotingPower += amount;
+  }
+  
+  const currentPeriod = Context.currentPeriod();
+  const votingSession = new VotingSession(
+    true, // isActive
+    currentPeriod, // startPeriod
+    currentPeriod + 10, // endPeriod (10 periods from now)
+    totalVotingPower,
+    0, // continueVotes
+    0  // stopVotes
+  );
+  
+  Storage.set(getVotingSessionKey(vestingId), votingSession.serialize());
+  generateEvent(`Voting session started for vesting schedule ${vestingId}`);
+}
+
+// Function to vote on a release
+export function voteOnRelease(binArgs: StaticArray<u8>): void {
+  const args = new Args(binArgs);
+  const vestingId = args.nextU64().expect('Missing vesting ID');
+  const vote = args.nextBool().expect('Missing vote');
+  
+  const scheduleKey = getVestingScheduleKey(vestingId);
+  assert(Storage.has(scheduleKey), `Vesting schedule ${vestingId} not found`);
+  
+  let schedule = new vestingSchedule();
+  schedule.deserialize(Storage.get(scheduleKey));
+  
+  const votingSessionKey = getVotingSessionKey(vestingId);
+  assert(Storage.has(votingSessionKey), `No active voting session for vesting schedule ${vestingId}`);
+  
+  let votingSession = new VotingSession();
+  votingSession.deserialize(Storage.get(votingSessionKey));
+  
+  const currentPeriod = Context.currentPeriod();
+  assert(votingSession.isActive && currentPeriod <= votingSession.endPeriod, 
+    `Voting session is not active or has ended for vesting schedule ${vestingId}`);
+  
+  const caller = Context.caller();
+  
+  // Get all project donors to find the project ID
+  let projectId: u64 = 0;
+  let foundProject = false;
+  let projectCount = getNextProjectId();
+  
+  for (let i: u64 = 0; i < projectCount; i++) {
+    const projectVestingSchedules = loadProjectVestingSchedules(i);
+    for (let j: u64 = 0; j < (projectVestingSchedules.length as u64); j++) {
+      if (projectVestingSchedules[j as i32] === vestingId) {
+        projectId = i;
+        foundProject = true;
+        break;
+      }
+    }
+    if (foundProject) break;
+  }
+  
+  assert(foundProject, `Could not find project for vesting schedule ${vestingId}`);
+  
+  // Check if caller is a donor
+  const donorAmount = loadProjectDonorAmount(projectId, caller);
+  assert(donorAmount > 0, `Caller is not a donor for project ${projectId}`);
+  
+  // Check if caller has already voted
+  const votesKey = getVotesKey(vestingId);
+  let votes: Vote[] = [];
+  if (Storage.has(votesKey)) {
+    const votesData = Storage.get(votesKey);
+    const votesResult = bytesToSerializableObjectArray<Vote>(votesData);
+    if (votesResult.isOk()) {
+      votes = votesResult.unwrap();
+    }
+    
+    // Check if caller has already voted
+    for (let i: u64 = 0; i < (votes.length as u64); i++) {
+      if (votes[i as i32].voter.equals(caller)) {
+        assert(false, `Caller has already voted for vesting schedule ${vestingId}`);
+      }
+    }
+  }
+  
+  // Add new vote
+  const newVote = new Vote(caller, donorAmount, vote);
+  votes.push(newVote);
+  Storage.set(votesKey, serializableObjectsArrayToBytes(votes));
+  
+  // Update voting session
+  if (vote) {
+    votingSession.continueVotes += donorAmount;
+  } else {
+    votingSession.stopVotes += donorAmount;
+  }
+  Storage.set(votingSessionKey, votingSession.serialize());
+  
+  generateEvent(`Vote recorded for vesting schedule ${vestingId}: ${vote ? 'continue' : 'stop'} with power ${donorAmount}`);
+}
+
+// Function to process voting results
+function processVotingResult(vestingId: u64, projectId: u64): bool {
+  const votingSessionKey = getVotingSessionKey(vestingId);
+  assert(Storage.has(votingSessionKey), `No voting session found for vesting schedule ${vestingId}`);
+  
+  let votingSession = new VotingSession();
+  votingSession.deserialize(Storage.get(votingSessionKey));
+  
+  const currentPeriod = Context.currentPeriod();
+  assert(currentPeriod > votingSession.endPeriod, `Voting period has not ended for vesting schedule ${vestingId}`);
+  
+  // Calculate if stop votes have majority
+  const stopVotesPercentage = (votingSession.stopVotes * 100) / votingSession.totalVotingPower;
+  
+  if (stopVotesPercentage > 50) {
+    // Stop votes have majority, return funds to donors
+    const scheduleKey = getVestingScheduleKey(vestingId);
+    let schedule = new vestingSchedule();
+    schedule.deserialize(Storage.get(scheduleKey));
+    
+    const remainingAmount = schedule.totalAmount - schedule.amountClaimed;
+    if (remainingAmount > 0) {
+      // Get all donors and their amounts
+      const donors = loadProjectDonors(projectId);
+      for (let i: u64 = 0; i < (donors.length as u64); i++) {
+        const donor = new Address(donors[i as i32]);
+        const donorAmount = loadProjectDonorAmount(projectId, donor);
+        const donorPercentage = (donorAmount * 100) / schedule.totalAmount;
+        const refundAmount = (remainingAmount * donorPercentage) / 100;
+        
+        if (refundAmount > 0) {
+          Coins.transferCoins(donor, refundAmount);
+          generateEvent(`Refunded ${refundAmount} MAS to ${donor.toString()} for vesting schedule ${vestingId}`);
+        }
+      }
+    }
+    
+    // Mark vesting schedule as completed
+    schedule.isCompleted = true;
+    Storage.set(scheduleKey, schedule.serialize());
+    generateEvent(`Vesting schedule ${vestingId} marked as completed due to stop vote majority`);
+    
+    return false; // Return false to indicate release should not proceed
+  }
+  
+  return true; // Return true to indicate release should proceed
+}
+
+// New getter function for voting session
+export function getVotingSession(binArgs: StaticArray<u8>): StaticArray<u8> {
+  const args = new Args(binArgs);
+  const vestingId = args.nextU64().expect('Missing vesting ID');
+  
+  const votingSessionKey = getVotingSessionKey(vestingId);
+  assert(Storage.has(votingSessionKey), `No voting session found for vesting schedule ${vestingId}`);
+  
+  return Storage.get(votingSessionKey);
+}
+
+// New getter function for votes
+export function getVotes(binArgs: StaticArray<u8>): StaticArray<u8> {
+  const args = new Args(binArgs);
+  const vestingId = args.nextU64().expect('Missing vesting ID');
+  
+  const votesKey = getVotesKey(vestingId);
+  if (!Storage.has(votesKey)) {
+    // Return empty array if no votes exist
+    return new Args().add<u64>(0).serialize();
+  }
+  
+  return Storage.get(votesKey);
+}
+
+// New getter function for project supporters with amounts
+export function getProjectSupporters(binArgs: StaticArray<u8>): StaticArray<u8> {
+  const args = new Args(binArgs);
+  const projectId = args.nextU64().expect('Missing project ID');
+  
+  const donors = loadProjectDonors(projectId);
+  const returnArgs = new Args();
+  returnArgs.add<u64>(donors.length as u64);
+  
+  for (let i: u64 = 0; i < (donors.length as u64); i++) {
+    const donor = new Address(donors[i as i32]);
+    const amount = loadProjectDonorAmount(projectId, donor);
+    returnArgs.add(donor as Serializable);
+    returnArgs.add(amount);
+  }
+  
+  return returnArgs.serialize();
+}
+
+// New getter function for supporter's donation amount
+export function getSupporterDonationAmount(binArgs: StaticArray<u8>): StaticArray<u8> {
+  const args = new Args(binArgs);
+  const projectId = args.nextU64().expect('Missing project ID');
+  const supporterAddress = args.nextString().expect('Missing supporter address');
+  
+  const supporter = new Address(supporterAddress);
+  const amount = loadProjectDonorAmount(projectId, supporter);
+  
+  return new Args().add(amount).serialize();
 }

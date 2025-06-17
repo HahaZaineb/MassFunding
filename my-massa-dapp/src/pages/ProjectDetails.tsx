@@ -24,6 +24,7 @@ import { VestingScheduleData } from '@/types/vestingSchedule';
 import { formatMas } from '@massalabs/massa-web3';
 import { motion } from 'framer-motion';
 import { getCurrentMassaPeriod } from '@/services/massaNetworkService';
+import { VotingPoll } from '@/components/VotingPoll';
 
 const ProjectDetailsPage = () => {
   const navigate = useNavigate();
@@ -451,6 +452,13 @@ const ProjectDetailsPage = () => {
             </div>
 
             <ProjectUpdates projectId={project.id} />
+
+            <div className="mt-8">
+              <VotingPoll 
+                vestingId={project.vestingScheduleId} 
+                projectId={project.id}
+              />
+            </div>
           </div>
         </div>
       )}
