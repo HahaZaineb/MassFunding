@@ -44,11 +44,14 @@ export default function AddUpdateModal({
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
+    e.stopPropagation();
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
+    e.stopPropagation();
+
     e.preventDefault();
 
     if (!formData.title.trim() || !formData.content.trim()) {
@@ -96,6 +99,7 @@ export default function AddUpdateModal({
           border: '1px solid #00ff9d',
         },
       }}
+      onClick={(e: any) => e.stopPropagation()}
     >
       <form onSubmit={handleSubmit}>
         <DialogTitle sx={{ color: '#00ff9d' }}>Add Project Update</DialogTitle>
