@@ -3,8 +3,10 @@
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Plus, TrendingUp } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export default function NoProjectFound() {
+  const navigate = useNavigate();
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
@@ -20,7 +22,7 @@ export default function NoProjectFound() {
           your first project!
         </p>
         <Button
-          onClick={() => {}}
+          onClick={() => navigate('/request-funding')}
           className="bg-gradient-to-r from-[#00ff9d] to-[#00cc7d] hover:from-[#00cc7d] hover:to-[#00ff9d] text-black font-bold"
         >
           <Plus className="h-4 w-4 mr-2" />
