@@ -1,6 +1,5 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Chip, styled } from '@mui/material';
-import { ProjectData } from '@/types/project';
 
 const statusMap = {
   live: {
@@ -58,43 +57,14 @@ const PulseCircle = styled('span')(() => ({
 }));
 
 interface StatusChipProps {
-  project: ProjectData;
   status: 'live' | 'release' | 'completed' | '';
-  setStatus: (status: 'live' | 'release' | 'completed' | '') => void;
   sx?: React.CSSProperties;
 }
 
 const ProjectStatus: React.FC<StatusChipProps> = ({
-  project,
   status,
-  setStatus,
   sx,
 }) => {
-  const checkIfLocked = (creationDate: string): boolean => {
-    const createdAt = new Date(creationDate);
-    const lockPeriod = project.lockPeriod * 15;
-    const now = new Date();
-    const lockEndDate = new Date(createdAt.getTime() + lockPeriod * 1000);
-    return now < lockEndDate;
-  };
-
-  const getProjectStatus = (): 'live' | 'release' | 'completed' | '' => {
-    const isLocked = project.creationDate
-      ? checkIfLocked(project.creationDate)
-      : true;
-
-    if (status === 'completed') return 'completed';
-    if (!isLocked) return 'release';
-    if (project.amountRaised >= project.goalAmount) return 'release';
-
-    return 'live';
-  };
-
-  useEffect(() => {
-    const statusValue = getProjectStatus();
-    console.log(statusValue, "statusValue")
-    setStatus(statusValue);
-  }, [project]);
 
   return (
     <>

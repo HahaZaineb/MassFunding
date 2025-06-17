@@ -4,10 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Clock, Coins, Users, CheckCircle, Copy, Check } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { useNavigate, useParams } from 'react-router-dom';
-import {
-  fetchProjectById,
-  updateProjectStatus,
-} from '@/store/slices/projectSlice';
+import { fetchProjectById } from '@/store/slices/projectSlice';
 import ProjectUpdates from '@/components/projects/ProjectUpdates';
 import {
   formatPeriodsToHumanReadable,
@@ -19,19 +16,18 @@ import ProjectStatus from '@/components/projects/ProjectStatus';
 import Loader from '@/components/Loader';
 import StatCard from '@/components/StatCard';
 import { Tooltip } from '@mui/material';
-import { getVestingSchedule } from '@/services/vestingScheduleService';
 import { VestingScheduleData } from '@/types/vestingSchedule';
 import { formatMas } from '@massalabs/massa-web3';
 import { motion } from 'framer-motion';
-import { getCurrentMassaPeriod } from '@/services/massaNetworkService';
+import { calculateProjectDetails } from '@/utils/project';
 
 const ProjectDetailsPage = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { id } = useParams();
-  const [status, setStatus] = useState<'live' | 'release' | 'completed' | ''>(
-    'live',
-  );
+  const [projectStatus, setProjectStatus] = useState<
+    'live' | 'release' | 'completed' | ''
+  >('live');
   const { selected: project, loading } = useAppSelector(
     (state) => state.projects,
   );
@@ -42,11 +38,13 @@ const ProjectDetailsPage = () => {
   const [lockDate, setLockDate] = useState<Date | null>(null);
   const [createdDate, setCreatedDate] = useState<Date | null>(null);
   const [timeLeft, setTimeLeft] = useState('');
+
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
+
   useEffect(() => {
     if (id) {
       dispatch(fetchProjectById(id as string));
@@ -54,131 +52,18 @@ const ProjectDetailsPage = () => {
   }, [id]);
 
   useEffect(() => {
-    if (status !== 'live' || !project) return;
-
-    const MASSA_PERIOD_DURATION_MS = 16 * 1000; // 16 seconds per period
-    const MASSA_GENESIS_TIMESTAMP_MS = 1704289800000; // January 3, 2024 1:50:00 PM UTC (BuildNet)
-
-    const lockEndMs = new Date(project.creationDate as string).getTime() +
-                      Number(project.lockPeriod) * MASSA_PERIOD_DURATION_MS;
-
-    let timeOffset = 0; // Initialize offset
-
-    const setupCountdown = async () => {
-      try {
-        const currentMassaPeriod = await getCurrentMassaPeriod();
-        const massaCurrentTimeMs = MASSA_GENESIS_TIMESTAMP_MS + (currentMassaPeriod * MASSA_PERIOD_DURATION_MS);
-        timeOffset = new Date().getTime() - massaCurrentTimeMs;
-      } catch (error) {
-        console.error('Error fetching current Massa period for countdown offset:', error);
-        // Fallback to no offset if fetching fails
+    const fetchAndSetDetails = async () => {
+      if (project) {
+        const details = await calculateProjectDetails(project);
+        setCreatedDate(details.createdDate);
+        setLockDate(details.lockDate);
+        setNextReleaseDate(details.nextReleaseDate);
+        setProjectStatus(details.projectStatus);
+        setVestingDetails(details.vestingDetails);
+        setTimeLeft(details.timeLeft);
       }
-
-      const updateCountdown = () => {
-        const now = new Date().getTime();
-        const distance = (lockEndMs - timeOffset) - now; // Apply offset here
-
-        if (distance <= 0) {
-          setTimeLeft('Lock period ended');
-          return;
-        }
-
-        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((distance / (1000 * 60 * 60)) % 24);
-        const minutes = Math.floor((distance / (1000 * 60)) % 60);
-        const seconds = Math.floor((distance / 1000) % 60);
-
-        setTimeLeft(`${days}d ${hours}h ${minutes}m ${seconds}s`);
-      };
-
-      updateCountdown();
-      const interval = setInterval(updateCountdown, 1000);
-
-      return () => clearInterval(interval);
     };
-
-    setupCountdown();
-  }, [project, status]);
-
-  useEffect(() => {
-    if (!project?.creationDate) return;
-
-    const createdAt = new Date(project.creationDate as string);
-    setCreatedDate(createdAt);
-
-    const MASSA_PERIOD_DURATION_MS = 16 * 1000; // 16 seconds per period
-    const lockPeriodInMs = Number(project.lockPeriod) * MASSA_PERIOD_DURATION_MS;
-    const lockEnd = new Date(createdAt.getTime() + lockPeriodInMs);
-    setLockDate(lockEnd);
-
-    if (
-      vestingDetails?.id &&
-      vestingDetails?.amountClaimed !== undefined &&
-      project.releasePercentage > 0
-    ) {
-      const totalAmountPerRelease =
-        (vestingDetails.totalAmount * project.releasePercentage) / 100;
-      const claimedReleases = Math.floor(
-        vestingDetails.amountClaimed / totalAmountPerRelease,
-      );
-
-      const nextReleaseTimestamp =
-        lockEnd.getTime() +
-        (claimedReleases + 1) * project.releaseInterval * MASSA_PERIOD_DURATION_MS;
-
-      setNextReleaseDate(new Date(nextReleaseTimestamp));
-    } else {
-      setNextReleaseDate(lockEnd);
-    }
-  }, [project, vestingDetails]);
-
-  useEffect(() => {
-    if (project) {
-      dispatch(updateProjectStatus({ id: project.id, status }));
-    }
-  }, [project, status]);
-
-  const getDetailedVestingInfoHandler = async () => {
-    if (project) {
-      const details = await getVestingSchedule(
-        Number(project.vestingScheduleId),
-      );
-      setVestingDetails(details);
-
-      if (details) {
-        const createdAt = new Date(project.creationDate as string);
-        const MASSA_PERIOD_DURATION_MS = 16 * 1000; // 16 seconds per period
-        const lockPeriodInMs = Number(project.lockPeriod) * MASSA_PERIOD_DURATION_MS;
-        const intervalInMs = project.releaseInterval * MASSA_PERIOD_DURATION_MS;
-
-      const totalReleases = project.amountRaised > 0 ? 
-        details.totalAmount /
-        ((details.totalAmount / 100) * project.releasePercentage) : 0;
-        const firstReleaseDate = new Date(
-          createdAt.getTime() + lockPeriodInMs,
-        );
-        const lastReleaseDate =
-          totalReleases > 0
-            ? new Date(
-                firstReleaseDate.getTime() + (totalReleases - 1) * intervalInMs,
-              )
-            : firstReleaseDate;
-
-        const now = new Date();
-        const x = project.amountRaised > 0 ? details?.amountClaimed > 0 : true;
-
-        const hasEnded = now >= lastReleaseDate;
-        if (details?.isCompleted && hasEnded && x) {
-          setStatus('completed');
-        }
-      }
-    }
-  };
-
-  useEffect(() => {
-    if (project) {
-      getDetailedVestingInfoHandler();
-    }
+    fetchAndSetDetails();
   }, [project]);
 
   if (loading)
@@ -204,11 +89,7 @@ const ProjectDetailsPage = () => {
                 alt={project.name}
                 className="w-full h-full object-cover"
               />
-              <ProjectStatus
-                project={project}
-                status={status}
-                setStatus={setStatus}
-              />
+              <ProjectStatus status={projectStatus} />
               <div className="absolute top-4 right-4">
                 <Badge
                   style={{
@@ -328,7 +209,7 @@ const ProjectDetailsPage = () => {
                     })}
                   </p>
                 )}
-                {vestingDetails && vestingDetails.id && status === 'release' ? (
+                {vestingDetails && vestingDetails.id && projectStatus === 'release' ? (
                   <div className="text-white text-sm space-y-2">
                     <p>
                       <span className="font-semibold">Amount Claimed:</span>{' '}
@@ -360,7 +241,7 @@ const ProjectDetailsPage = () => {
             </motion.div>
 
             {/* Conditional status display */}
-            {status === 'live' && (
+            {projectStatus === 'live' && (
               <div className="w-full p-3 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-700 shadow-lg">
                 <div className="text-center space-y-2">
                   <div className="text-teal-400 text-xs font-semibold tracking-wider flex items-center justify-center">
@@ -389,7 +270,7 @@ const ProjectDetailsPage = () => {
                 </div>
               </div>
             )}
-            {status === 'release' && (
+            {projectStatus === 'release' && (
               <div className="w-full p-3 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-700 shadow-lg">
                 <div className="text-center space-y-2">
                   <div className="text-[#ff9100] text-xs font-semibold tracking-wider flex items-center justify-center">
@@ -420,7 +301,7 @@ const ProjectDetailsPage = () => {
               </div>
             )}
 
-            {status === 'completed' && (
+            {projectStatus === 'completed' && (
               <div className="w-full p-3 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-700 shadow-lg">
                 <div className="text-center space-y-2">
                   <div className="text-[#90a4ae] text-xs font-semibold tracking-wider flex items-center justify-center">
@@ -439,7 +320,7 @@ const ProjectDetailsPage = () => {
 
             {/* Actions */}
             <div className="flex flex-col md:flex-row gap-4 mt-6">
-              {status === 'live' && (
+              {projectStatus === 'live' && (
                 <Button
                   className="bg-[#00ff9d] hover:bg-[#00e68d] text-slate-900"
                   onClick={() => navigate(`/fund/${project.id}`)}
