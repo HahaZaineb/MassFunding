@@ -47,8 +47,8 @@ export default function RequestFunding() {
     description: '',
     amountNeeded: '',
     walletAddress: '',
-    lockPeriod: '30',
-    releaseInterval: '30',
+    lockPeriod: '30 days',
+    releaseInterval: '30 days',
     releasePercentage: 10,
     category: 'Web3',
     image: '',
@@ -310,8 +310,8 @@ export default function RequestFunding() {
                           <SelectValue placeholder="Select lock period" />
                         </SelectTrigger>
                         <SelectContent className="bg-[#1a2340] border-[#00ff9d]/20 text-white">
-                          <SelectItem value="2 minutes">2 minutes</SelectItem>
-                          <SelectItem value="1 minute">1 minute</SelectItem>
+                          <SelectItem value="5 minutes">5 minutes</SelectItem>
+                          <SelectItem value="10 minutes">10 minutes</SelectItem>
                           <SelectItem value="30 days">30 days</SelectItem>
                           <SelectItem value="60 days">60 days</SelectItem>
                           <SelectItem value="90 days">90 days</SelectItem>
@@ -335,7 +335,7 @@ export default function RequestFunding() {
                         </SelectTrigger>
                         <SelectContent className="bg-[#1a2340] border-[#00ff9d]/20 text-white">
                           <SelectItem value="2 minutes">2 minutes</SelectItem>
-                          <SelectItem value="1 minute">1 minute</SelectItem>
+                          <SelectItem value="5 minutes">5 minutes</SelectItem>
                           <SelectItem value="7 days">Weekly (7 days)</SelectItem>
                           <SelectItem value="30 days">Monthly (30 days)</SelectItem>
                           <SelectItem value="90 days">

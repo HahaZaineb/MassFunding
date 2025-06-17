@@ -140,6 +140,7 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
   const getDetailedVestingInfoHandler = async () => {
   
     const details = await getVestingSchedule(Number(project.vestingScheduleId));
+    console.log(project.name, project.amountRaised, details, "details...")
     setVestingDetails(details);
 
     if (details) {
@@ -147,9 +148,9 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
       const lockPeriodInMs = Number(project.lockPeriod) * 15 * 1000;
       const intervalInMs = project.releaseInterval * 15 * 1000;
 
-      const totalReleases =
+      const totalReleases = project.amountRaised > 0 ? 
         details.totalAmount /
-        ((details.totalAmount / 100) * project.releasePercentage);
+        ((details.totalAmount / 100) * project.releasePercentage) : 0;
       const firstReleaseDate = new Date(
         createdAt.getTime() + 120 * 1000 + lockPeriodInMs,
       );
@@ -162,8 +163,9 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
 
       const now = new Date();
       const x = project.amountRaised > 0 ? details?.amountClaimed > 0 : true;
-
+       
       const hasEnded = now >= lastReleaseDate;
+      console.log(project.name, details?.isCompleted, hasEnded, x, "fffff")
       if (details?.isCompleted && hasEnded && x) {
         setProjectStatus('completed');
       }

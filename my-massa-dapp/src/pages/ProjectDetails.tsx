@@ -151,9 +151,9 @@ const ProjectDetailsPage = () => {
         const lockPeriodInMs = Number(project.lockPeriod) * MASSA_PERIOD_DURATION_MS;
         const intervalInMs = project.releaseInterval * MASSA_PERIOD_DURATION_MS;
 
-        const totalReleases =
-          details.totalAmount /
-          ((details.totalAmount / 100) * project.releasePercentage);
+      const totalReleases = project.amountRaised > 0 ? 
+        details.totalAmount /
+        ((details.totalAmount / 100) * project.releasePercentage) : 0;
         const firstReleaseDate = new Date(
           createdAt.getTime() + lockPeriodInMs,
         );
