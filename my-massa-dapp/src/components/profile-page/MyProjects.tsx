@@ -1,33 +1,38 @@
+'use client';
+
 import { motion } from 'framer-motion';
+import { useMemo } from 'react';
 import { useAccountStore } from '@massalabs/react-ui-kit';
+import { useAppSelector } from '@/store/hooks';
+
 import Stats from './Stats';
 import NoProjectFound from './NoProjectFound';
 import MyProjectCard from './MyProjectCard';
+
 import { Card, CardContent, Divider, styled } from '@mui/material';
 import SectionHeader from '../SectionHeader';
 import WorkOutlineIcon from '@mui/icons-material/WorkOutline';
-import { useAppSelector } from '@/store/hooks';
+
+const StyledCard = styled(Card)(() => ({
+  backgroundColor: '#11182f',
+  color: '#e0e0e0',
+  border: '1px solid #1f2a48',
+  borderRadius: 12,
+}));
 
 export default function MyProjects() {
   const { connectedAccount } = useAccountStore();
   const { list } = useAppSelector((state) => state.projects);
 
-  const myProjects = connectedAccount
-    ? list.filter((p) => {
-        const creatorAddress = (p.creator?.toString() || '').toLowerCase();
-        const connectedAddress = connectedAccount.address
-          .toString()
-          .toLowerCase();
-        const match = creatorAddress === connectedAddress;
-        return match;
-      })
-    : [];
-  const StyledCard = styled(Card)(() => ({
-    backgroundColor: '#11182f',
-    color: '#e0e0e0',
-    border: '1px solid #1f2a48',
-    borderRadius: 12,
-  }));
+  const myProjects = useMemo(() => {
+    if (!connectedAccount) return [];
+    const connectedAddress = connectedAccount.address.toString().toLowerCase();
+
+    return list.filter(
+      (p) => (p.creator?.toLowerCase() || '') === connectedAddress
+    );
+  }, [connectedAccount, list]);
+
   return (
     <StyledCard sx={{ my: 4 }} className="bg-gradient-to-br">
       <CardContent>
@@ -37,20 +42,22 @@ export default function MyProjects() {
           color="#4caf50"
         />
         <Divider sx={{ my: 2, borderColor: '#1f2a48' }} />
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
           <Stats />
+
           {myProjects.length > 0 ? (
             <div className="space-y-8">
               {myProjects.map((project, index) => (
                 <motion.div
-                  key={project.id.toString()}
+                  key={project.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
+                  transition={{ delay: 0.1 * index }}
                 >
                   <MyProjectCard project={project} />
                 </motion.div>

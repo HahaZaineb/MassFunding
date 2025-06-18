@@ -30,13 +30,10 @@ import {
   shortenAddress,
 } from '@/utils/functions';
 import ProjectStatus from './ProjectStatus';
-import { getVestingSchedule } from '@/services/vestingScheduleService';
 import { VestingScheduleData } from '@/types/vestingSchedule';
-import { updateProjectStatus } from '@/store/slices/projectSlice';
-import { useAppDispatch } from '@/store/hooks';
 import { formatMas } from '@massalabs/massa-web3';
 import ProjectUpdatesModal from './ProjectUpdatesModal';
-import { getCurrentMassaPeriod } from '@/services/massaNetworkService';
+import { calculateProjectDetails } from '@/utils/project';
 
 interface ProjectCardProps {
   project: ProjectData & { image?: string };
@@ -44,7 +41,6 @@ interface ProjectCardProps {
 }
 
 const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
-  const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const percentFunded = (project.amountRaised / project.goalAmount) * 100;
   const [openProjectUpdates, setOpenProjectUpdates] = useState(false);
@@ -60,121 +56,32 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
   const [createdDate, setCreatedDate] = useState<Date | null>(null);
 
   useEffect(() => {
-    if (!project?.creationDate) return;
-
-    const createdAt = new Date(project.creationDate);
-    setCreatedDate(createdAt);
-
-    const MASSA_PERIOD_DURATION_MS = 16 * 1000; // 16 seconds per period
-    const lockPeriodInMs = Number(project.lockPeriod) * MASSA_PERIOD_DURATION_MS;
-    const lockEnd = new Date(createdAt.getTime() + lockPeriodInMs);
-    setLockDate(lockEnd);
-
-
-    if (
-      vestingDetails?.id &&
-      vestingDetails?.amountClaimed !== undefined &&
-      project.releasePercentage > 0
-    ) {
-      const totalAmountPerRelease =
-        (vestingDetails.totalAmount * project.releasePercentage) / 100;
-      const claimedReleases = Math.floor(
-        vestingDetails.amountClaimed / totalAmountPerRelease,
-      );
-    
-
-      const nextReleaseTimestamp =
-        lockEnd.getTime() +
-        (claimedReleases + 1) * project.releaseInterval * MASSA_PERIOD_DURATION_MS;
-
-  
-      setNextReleaseDate(new Date(nextReleaseTimestamp));
-    } else {
-     
-      setNextReleaseDate(lockEnd);
-    }
-   
-  }, [project, vestingDetails]);
-
-  useEffect(() => {
-    dispatch(updateProjectStatus({ id: project.id, status: projectStatus }));
-  }, [project, projectStatus]);
-
-  useEffect(() => {
-    if (projectStatus !== 'live') return;
-
-    const createdAtPeriod = project.creationPeriod; // This is already in periods
-    const lockPeriodDuration = Number(project.lockPeriod); // This is already in periods
-    const lockEndPeriod = createdAtPeriod + lockPeriodDuration; // Calculate lock end in periods
-
-   
-
-    const updateCountdown = async () => {
-      const currentMassaPeriod = await getCurrentMassaPeriod();
-     
-      const remainingPeriods = lockEndPeriod - currentMassaPeriod;
-
-    
-
-      if (remainingPeriods <= 0) {
-        setTimeLeft('Lock period ended');
-        return;
-      }
-
-      const totalSeconds = remainingPeriods * 16; // Convert periods to seconds
-
-      const days = Math.floor(totalSeconds / (60 * 60 * 24));
-      const hours = Math.floor((totalSeconds / (60 * 60)) % 24);
-      const minutes = Math.floor((totalSeconds / 60) % 60);
-      const seconds = Math.floor(totalSeconds % 60);
-
-      setTimeLeft(`${days}d ${hours}h ${minutes}m ${seconds}s`);
+    return () => {
+      setProjectStatus('');
+      setNextReleaseDate(null)
+      setTimeLeft('')
+      setIsExpanded(false)
+      setCreatedDate(null)
+      setLockDate(null)
+      setVestingDetails(null)
+      setOpenProjectUpdates(false)
     };
+  }, []);
 
-    updateCountdown();
-    const interval = setInterval(updateCountdown, 1000); // Update every second
-
-    return () => clearInterval(interval);
-  }, [project, projectStatus]);
-
-  const getDetailedVestingInfoHandler = async () => {
-  
-    const details = await getVestingSchedule(Number(project.vestingScheduleId));
-    console.log(project.name, project.amountRaised, details, "details...")
-    setVestingDetails(details);
-
-    if (details) {
-      const createdAt = new Date(project.creationDate || '');
-      const lockPeriodInMs = Number(project.lockPeriod) * 15 * 1000;
-      const intervalInMs = project.releaseInterval * 15 * 1000;
-
-      const totalReleases = project.amountRaised > 0 ? 
-        details.totalAmount /
-        ((details.totalAmount / 100) * project.releasePercentage) : 0;
-      const firstReleaseDate = new Date(
-        createdAt.getTime() + 120 * 1000 + lockPeriodInMs,
-      );
-      const lastReleaseDate =
-        totalReleases > 0
-          ? new Date(
-              firstReleaseDate.getTime() + (totalReleases - 1) * intervalInMs,
-            )
-          : firstReleaseDate;
-
-      const now = new Date();
-      const x = project.amountRaised > 0 ? details?.amountClaimed > 0 : true;
-       
-      const hasEnded = now >= lastReleaseDate;
-      console.log(project.name, details?.isCompleted, hasEnded, x, "fffff")
-      if (details?.isCompleted && hasEnded && x) {
-        setProjectStatus('completed');
-      }
-    }
+useEffect(() => {
+  const fetchAndSetDetails = async () => {
+    const details = await calculateProjectDetails(project);
+    setCreatedDate(details.createdDate);
+    setLockDate(details.lockDate);
+    setNextReleaseDate(details.nextReleaseDate);
+    setProjectStatus(details.projectStatus);
+    setVestingDetails(details.vestingDetails);
+    setTimeLeft(details.timeLeft)
+    setProjectStatus(details.projectStatus)
   };
 
-  useEffect(() => {
-    getDetailedVestingInfoHandler();
-  }, [project]);
+  fetchAndSetDetails();
+}, [project]);
 
   return (
     <Card
@@ -188,11 +95,9 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
           alt={project.name}
           className="w-full h-full object-cover"
         />
-          <ProjectStatus
-            project={project}
-            status={projectStatus}
-            setStatus={setProjectStatus}
-          />
+        <ProjectStatus
+          status={projectStatus}
+        />
         <div className="absolute top-3 right-4">
           <Badge
             className={`text-white border-0`}
