@@ -88,8 +88,10 @@ const ProjectUpdates: React.FC<ProjectUpdatesProps> = ({ projectId }) => {
       ) : error ? (
         <div className="text-red-500 text-center py-6 font-medium">{error}</div>
       ) : updates.length === 0 ? (
-        <div className="text-center py-10">
-          <p className="text-slate-400 text-sm">No updates posted yet.</p>
+        <div className="text-center py-12 px-6 bg-slate-800 rounded-lg border border-slate-700">
+          <p className="text-slate-400 text-sm italic">
+            📢 No updates posted yet. Stay tuned for upcoming news!
+          </p>
         </div>
       ) : (
         <div className="space-y-5">

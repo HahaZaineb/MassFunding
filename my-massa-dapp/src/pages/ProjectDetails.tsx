@@ -19,7 +19,6 @@ import { Tooltip } from '@mui/material';
 import { VestingScheduleData } from '@/types/vestingSchedule';
 import { formatMas } from '@massalabs/massa-web3';
 import { motion } from 'framer-motion';
-import { VotingPoll } from '@/components/VotingPoll';
 import VotingSection from '@/components/projects/VotingSection';
 import { calculateProjectDetails } from '@/utils/project';
 
@@ -57,6 +56,7 @@ const ProjectDetailsPage = () => {
     const fetchAndSetDetails = async () => {
       if (project) {
         const details = await calculateProjectDetails(project);
+        console.log(details.vestingDetails, project.name, 'zzzzzzzz');
         setCreatedDate(details.createdDate);
         setLockDate(details.lockDate);
         setNextReleaseDate(details.nextReleaseDate);
@@ -169,56 +169,74 @@ const ProjectDetailsPage = () => {
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3, ease: 'easeInOut' }}
-              className="overflow-hidden space-y-4"
+              className="overflow-hidden"
             >
-              {/* More Details about the project */}
-              <div className="bg-slate-700/50 p-4 rounded-lg space-y-2">
-                <p className="text-white text-sm">
-                  <span className="font-semibold">Lock Period:</span>{' '}
-                  {formatPeriodsToHumanReadable(Number(project.lockPeriod))}
-                </p>
-                <p className="text-white text-sm">
-                  <span className="font-semibold">Release Interval:</span>{' '}
-                  {formatPeriodsToHumanReadable(
-                    Number(project.releaseInterval),
-                  )}
-                </p>
-                {createdDate && (
-                  <p className="text-white text-sm">
-                    <span className="font-semibold">Created At:</span>{' '}
-                    {createdDate.toLocaleString(undefined, {
-                      weekday: 'short',
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      hour12: true,
-                    })}
+              <div className="bg-slate-800/40 p-4 rounded-xl backdrop-blur-lg border border-slate-600 shadow-inner space-y-4">
+                {/* Basic Info */}
+                <div className="space-y-1 text-sm text-slate-200">
+                  <p>
+                    <span className="font-medium text-cyan-400">
+                      🔒 Lock Period:
+                    </span>{' '}
+                    {formatPeriodsToHumanReadable(Number(project.lockPeriod))}
                   </p>
-                )}
-                {lockDate && (
-                  <p className="text-white text-sm">
-                    <span className="font-semibold">Lock At:</span>{' '}
-                    {lockDate.toLocaleString(undefined, {
-                      weekday: 'short',
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      hour12: true,
-                    })}
+                  <p>
+                    <span className="font-medium text-cyan-400">
+                      ⏳ Release Interval:
+                    </span>{' '}
+                    {formatPeriodsToHumanReadable(
+                      Number(project.releaseInterval),
+                    )}
                   </p>
-                )}
-                {vestingDetails && vestingDetails.id && projectStatus === 'release' ? (
-                  <div className="text-white text-sm space-y-2">
+
+                  {createdDate && (
                     <p>
-                      <span className="font-semibold">Amount Claimed:</span>{' '}
+                      <span className="font-medium text-cyan-400">
+                        📅 Created At:
+                      </span>{' '}
+                      {createdDate.toLocaleString(undefined, {
+                        weekday: 'short',
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true,
+                      })}
+                    </p>
+                  )}
+
+                  {lockDate && (
+                    <p>
+                      <span className="font-medium text-cyan-400">
+                        🔐 Lock At:
+                      </span>{' '}
+                      {lockDate.toLocaleString(undefined, {
+                        weekday: 'short',
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true,
+                      })}
+                    </p>
+                  )}
+                </div>
+
+                {/* Vesting Info */}
+                {vestingDetails?.id && projectStatus === 'release' && (
+                  <div className="pt-2 border-t border-slate-600 space-y-2 text-sm text-slate-200">
+                    <p>
+                      <span className="font-medium text-orange-400">
+                        💰 Amount Claimed:
+                      </span>{' '}
                       {formatMas(BigInt(vestingDetails.amountClaimed))} MAS
                     </p>
                     <p>
-                      <span className="font-semibold">Next Release:</span>{' '}
+                      <span className="font-medium text-orange-400">
+                        📤 Next Release:
+                      </span>{' '}
                       {nextReleaseDate
                         ? nextReleaseDate.toLocaleString(undefined, {
                             weekday: 'short',
@@ -232,12 +250,12 @@ const ProjectDetailsPage = () => {
                         : 'N/A'}
                     </p>
                     <p>
-                      <span className="font-semibold">Total Amount:</span>{' '}
+                      <span className="font-medium text-orange-400">
+                        💼 Total Amount:
+                      </span>{' '}
                       {formatMas(BigInt(vestingDetails.totalAmount))} MAS
                     </p>
                   </div>
-                ) : (
-                  <></>
                 )}
               </div>
             </motion.div>
@@ -319,7 +337,7 @@ const ProjectDetailsPage = () => {
                 </div>
               </div>
             )}
-            {<VotingSection vestingId={vestingDetails?.id}/>}
+            {<VotingSection vestingId={vestingDetails?.id} />}
 
             {/* Actions */}
             <div className="flex flex-col md:flex-row gap-4 mt-6">
@@ -336,12 +354,12 @@ const ProjectDetailsPage = () => {
 
             <ProjectUpdates projectId={project.id} />
 
-            <div className="mt-8">
-              <VotingPoll 
-                vestingId={project.vestingScheduleId} 
+            {/* <div className="mt-8">
+              <VotingPoll
+                vestingId={project.vestingScheduleId}
                 projectId={project.id}
               />
-            </div>
+            </div> */}
           </div>
         </div>
       )}
