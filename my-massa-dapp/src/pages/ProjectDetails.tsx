@@ -25,6 +25,7 @@ import { formatMas } from '@massalabs/massa-web3';
 import { motion } from 'framer-motion';
 import { getCurrentMassaPeriod } from '@/services/massaNetworkService';
 import { VotingPoll } from '@/components/VotingPoll';
+import VotingSection from '@/components/projects/VotingSection';
 
 const ProjectDetailsPage = () => {
   const navigate = useNavigate();
@@ -437,6 +438,7 @@ const ProjectDetailsPage = () => {
                 </div>
               </div>
             )}
+            {<VotingSection vestingId={vestingDetails?.id}/>}
 
             {/* Actions */}
             <div className="flex flex-col md:flex-row gap-4 mt-6">
