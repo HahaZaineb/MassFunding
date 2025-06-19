@@ -1,7 +1,6 @@
 export interface VotingSession {
   isActive: boolean;
   startPeriod: number;
-  endPeriod: number;
   totalVotingPower: number;
   stopVotes: number;
 }
