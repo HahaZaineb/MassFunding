@@ -38,18 +38,19 @@ const VotingSection: React.FC<VotingSectionProps> = ({ vestingId }) => {
   const [session, setSession] = useState<VotingSession | null>(null);
   const [votes, setVotes] = useState<Vote[]>([]);
   const [isActive, setIsActive] = useState(false);
+  const [hasVoted, setHasVoted] = useState(false);
 
   useEffect(() => {
     if (!vestingId) return;
 
     const loadVoting = async () => {
       const sessionData = await getVotingSession(vestingId);
-      console.log(sessionData, "sessionData")
+      console.log(sessionData, 'sessionData');
       setSession(sessionData);
       if (sessionData) {
-        console.log("zzzzz")
-        const x  = await isVotingSessionActive(sessionData);
-        console.log(x, "isVotingSessionActive")
+        console.log('zzzzz');
+        const x = await isVotingSessionActive(sessionData);
+        console.log(x, 'isVotingSessionActive');
         setIsActive(await isVotingSessionActive(sessionData));
         const allVotes = await getVotes(vestingId);
         setVotes(allVotes);
@@ -67,6 +68,12 @@ const VotingSection: React.FC<VotingSectionProps> = ({ vestingId }) => {
       setSession(sessionData);
       const updatedVotes = await getVotes(vestingId);
       setVotes(updatedVotes);
+      if (connectedAccount) {
+        const userVote = updatedVotes.find(
+          (v) => v.voter === connectedAccount.address,
+        );
+        setHasVoted(!!userVote);
+      }
     } catch (err) {
       showToast('Error submitting vote', 'error');
     }
@@ -101,24 +108,35 @@ const VotingSection: React.FC<VotingSectionProps> = ({ vestingId }) => {
                   🗳️ Fund Release Voting
                 </Typography>
                 <Typography variant="body2" sx={{ color: '#94a3b8', mt: 0.5 }}>
-                  <b>{getProjectCreationDate(session.startPeriod).toLocaleString(undefined, {
-                      weekday: 'short',
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      hour12: true,
-                    })}</b> →{' '}
-                  <b>{getProjectCreationDate(session.endPeriod).toLocaleString(undefined, {
-                      weekday: 'short',
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      hour12: true,
-                    })}</b>
+                  <b>
+                    {getProjectCreationDate(session.startPeriod).toLocaleString(
+                      undefined,
+                      {
+                        weekday: 'short',
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true,
+                      },
+                    )}
+                  </b>{' '}
+                  →{' '}
+                  <b>
+                    {getProjectCreationDate(session.endPeriod).toLocaleString(
+                      undefined,
+                      {
+                        weekday: 'short',
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true,
+                      },
+                    )}
+                  </b>
                 </Typography>
               </Box>
 
@@ -227,22 +245,6 @@ const VotingSection: React.FC<VotingSectionProps> = ({ vestingId }) => {
           {/* Voting Buttons */}
           {isActive && (
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-              {/* <Button
-                fullWidth
-                onClick={() => handleVote(true)}
-                variant="contained"
-                color="success"
-                startIcon={<ThumbsUp size={18} />}
-                sx={{
-                  borderRadius: 3,
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  py: 1.5,
-                  boxShadow: '0 0 0 1px #15803d',
-                }}
-              >
-                Vote to Continue
-              </Button> */}
               <Button
                 fullWidth
                 onClick={() => handleVote()}
@@ -256,8 +258,9 @@ const VotingSection: React.FC<VotingSectionProps> = ({ vestingId }) => {
                   py: 1.5,
                   boxShadow: '0 0 0 1px #b91c1c',
                 }}
+                disabled={hasVoted}
               >
-                Vote to Stop
+                {!hasVoted ? 'Vote to Stop' : 'You have already voted'}
               </Button>
             </Stack>
           )}
@@ -314,7 +317,7 @@ const VotingSection: React.FC<VotingSectionProps> = ({ vestingId }) => {
             ) : (
               <Stack spacing={1}>
                 {votes.map((v) => {
-                  const isSupport = false
+                  const isSupport = false;
                   return (
                     <Paper
                       key={v.voter}

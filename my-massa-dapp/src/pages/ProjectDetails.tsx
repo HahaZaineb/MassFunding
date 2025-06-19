@@ -24,6 +24,8 @@ import { getProjectDetails } from '@/services/projectService';
 import { ProjectDetails } from '@/types/project';
 import { getProjectCreationDate } from '@/utils/project';
 import { BadgeCheck } from 'lucide-react';
+import { getProjectSupporters } from '@/services/votingService';
+import { Supporter } from '@/types/voting';
 
 const ProjectDetailsPage = () => {
   const navigate = useNavigate();
@@ -43,6 +45,7 @@ const ProjectDetailsPage = () => {
   const [lockDate, setLockDate] = useState<Date | null>(null);
   const [createdDate, setCreatedDate] = useState<Date | null>(null);
   const [timeLeft, setTimeLeft] = useState('');
+  const [supporters, setSupporters] = useState<Supporter[] | null>(null)
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -59,9 +62,11 @@ const ProjectDetailsPage = () => {
   useEffect(() => {
     const fetchAndSetDetails = async () => {
       if (project) {
+                const projectSupporters = await getProjectSupporters(project.id);
+                setSupporters(projectSupporters)
+
         let status: 'live' | 'release' | 'completed' | '' = '';
         const res = await getProjectDetails(Number(project.id));
-        console.log(res, project.name, 'res ffffff');
         setCreatedDate(getProjectCreationDate(res.createdPeriod));
         if (res.isLocked) {
           status = 'live';

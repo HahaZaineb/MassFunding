@@ -88,8 +88,8 @@ export default function RoadmapPage() {
               </tr>
               <tr>
                 <td className="py-2">Voting System</td>
-                <td className="py-2 text-yellow-400">In Progress</td>
-                <td className="py-2">Q3 2025</td>
+                <td className="py-2 text-yellow-400">Done</td>
+                <td className="py-2">Q2 2025</td>
               </tr>
               <tr>
                 <td className="py-2">Token & NFT Integration</td>

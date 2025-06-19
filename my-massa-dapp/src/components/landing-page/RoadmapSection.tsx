@@ -42,8 +42,8 @@ const roadmapPhases = [
       'On-chain recording of all voting outcomes',
       'Transparency dashboard for community insights'
     ],
-    status: 'In Progress',
-    target: 'Q3 2025',
+    status: 'Done',
+    target: 'Q2 2025',
   },
   {
     icon: <FaGift className="text-[#00ff9d]" size={20} />,
