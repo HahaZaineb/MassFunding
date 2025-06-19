@@ -84,7 +84,7 @@ export const VotingPoll: React.FC<VotingPollProps> = ({ vestingId, projectId }) 
       <div className="mb-4">
         <div className="flex justify-between text-sm text-gray-600 mb-2">
           <span>Start: {formatPeriodToDate(Number(session.startPeriod))}</span>
-          <span>End: {formatPeriodToDate(Number(session.endPeriod))}</span>
+          
         </div>
         
         <div className="w-full bg-gray-200 rounded-full h-4 mb-2">

@@ -12,7 +12,6 @@ class VotingSessionData {
   constructor(
     public isActive: boolean = false,      // Whether the voting session is currently active
     public startPeriod: bigint = 0n,       // The period when voting started
-    public endPeriod: bigint = 0n,         // The period when voting ends
     public totalVotingPower: bigint = 0n,  // Total voting power of all eligible voters
     public stopVotes: bigint = 0n          // Total voting power for stopping the release
   ) {}
@@ -21,7 +20,6 @@ class VotingSessionData {
     const args = new Args()
       .addBool(this.isActive)
       .addU64(this.startPeriod)
-      .addU64(this.endPeriod)
       .addU64(this.totalVotingPower)
       .addU64(this.stopVotes);
     return args.serialize();
@@ -31,7 +29,6 @@ class VotingSessionData {
     const args = new Args(data, offset);
     this.isActive = args.nextBool();
     this.startPeriod = args.nextU64();
-    this.endPeriod = args.nextU64();
     this.totalVotingPower = args.nextU64();
     this.stopVotes = args.nextU64();
     return { instance: this, offset: args.getOffset() };
@@ -82,12 +79,10 @@ export async function getVotingSession(vestingId: string | null | undefined): Pr
       return null;
     }
 
-    // Only stopVotes are tracked now
     const argsReader = new Args(response.value);
     return {
       isActive: argsReader.nextBool(),
       startPeriod: Number(argsReader.nextU64()),
-      endPeriod: Number(argsReader.nextU64()),
       totalVotingPower: Number(argsReader.nextU64()),
       stopVotes: Number(argsReader.nextU64())
     };
@@ -242,8 +237,8 @@ export function calculateVotingProgress(session: VotingSession): VotingProgress 
  * @returns true if the session is active, false otherwise
  */
 export async function isVotingSessionActive(session: VotingSession): Promise<boolean> {
-  const currentPeriod = await getCurrentMassaPeriod();
-  return session.isActive && currentPeriod <= session.endPeriod;
+  // Only check isActive, as contract no longer uses endPeriod
+  return session.isActive;
 }
 
 /**

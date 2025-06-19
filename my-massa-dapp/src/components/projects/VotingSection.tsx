@@ -109,15 +109,6 @@ const VotingSection: React.FC<VotingSectionProps> = ({ vestingId }) => {
                       hour: '2-digit',
                       minute: '2-digit',
                       hour12: true,
-                    })}</b> →{' '}
-                  <b>{getProjectCreationDate(session.endPeriod).toLocaleString(undefined, {
-                      weekday: 'short',
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      hour12: true,
                     })}</b>
                 </Typography>
               </Box>
