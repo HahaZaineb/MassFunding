@@ -1,39 +1,38 @@
 import { CONTRACT_ADDRESS } from '@/configs/massa';
 import { readSmartContractPublic, callSmartContract } from '@/utils/smartContract';
 import { Args, bytesToSerializableObjectArray, DeserializedResult } from '@massalabs/massa-web3';
-import { getCurrentMassaPeriod } from './massaNetworkService';
 import { Vote, VotingProgress, VotingSession, Supporter } from '@/types/voting';
 
 /**
  * Data class for serializing/deserializing voting session data from the smart contract.
  * Represents the current state of a voting session for a vesting schedule release.
  */
-class VotingSessionData {
-  constructor(
-    public isActive: boolean = false,      // Whether the voting session is currently active
-    public startPeriod: bigint = 0n,       // The period when voting started
-    public totalVotingPower: bigint = 0n,  // Total voting power of all eligible voters
-    public stopVotes: bigint = 0n          // Total voting power for stopping the release
-  ) {}
+// class VotingSessionData {
+//   constructor(
+//     public isActive: boolean = false,      // Whether the voting session is currently active
+//     public startPeriod: bigint = 0n,       // The period when voting started
+//     public totalVotingPower: bigint = 0n,  // Total voting power of all eligible voters
+//     public stopVotes: bigint = 0n          // Total voting power for stopping the release
+//   ) {}
 
-  serialize(): Uint8Array {
-    const args = new Args()
-      .addBool(this.isActive)
-      .addU64(this.startPeriod)
-      .addU64(this.totalVotingPower)
-      .addU64(this.stopVotes);
-    return args.serialize();
-  }
+//   serialize(): Uint8Array {
+//     const args = new Args()
+//       .addBool(this.isActive)
+//       .addU64(this.startPeriod)
+//       .addU64(this.totalVotingPower)
+//       .addU64(this.stopVotes);
+//     return args.serialize();
+//   }
 
-  deserialize(data: Uint8Array, offset:number): DeserializedResult<VotingSessionData> {
-    const args = new Args(data, offset);
-    this.isActive = args.nextBool();
-    this.startPeriod = args.nextU64();
-    this.totalVotingPower = args.nextU64();
-    this.stopVotes = args.nextU64();
-    return { instance: this, offset: args.getOffset() };
-  }
-}
+//   deserialize(data: Uint8Array, offset:number): DeserializedResult<VotingSessionData> {
+//     const args = new Args(data, offset);
+//     this.isActive = args.nextBool();
+//     this.startPeriod = args.nextU64();
+//     this.totalVotingPower = args.nextU64();
+//     this.stopVotes = args.nextU64();
+//     return { instance: this, offset: args.getOffset() };
+//   }
+// }
 
 /**
  * Data class for serializing/deserializing individual vote data from the smart contract.

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
+import { FolderSearch, Search } from 'lucide-react';
 import { CATEGORIES } from '@/constants';
 import ProjectCard from '@/components/projects/ProjectCard';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
@@ -142,15 +142,20 @@ export default function Projects() {
           {!loading && (
             <div className="max-w-7xl mx-auto">
               {list.length === 0 ? (
-                <div className="text-center py-16">
-                  <div className="text-slate-400 text-xl mb-2">
-                    No projects found
+                <div className="text-center py-20 px-4 animate-fade-in">
+                  <div className="flex justify-center mb-4">
+                    <FolderSearch className="w-10 h-10 text-[#00ff9d]" />
                   </div>
-                  <div className="text-slate-500">
+
+                  <h3 className="text-white text-2xl font-semibold mb-2">
+                    No Projects Found
+                  </h3>
+
+                  <p className="text-slate-400 text-sm">
                     {searchQuery
-                      ? 'Try adjusting your search terms'
-                      : 'No projects in this category yet'}
-                  </div>
+                      ? 'Try adjusting your search terms to find what you’re looking for.'
+                      : 'There are currently no projects in this category. Check back soon!'}
+                  </p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
