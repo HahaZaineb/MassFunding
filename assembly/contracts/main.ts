@@ -1445,3 +1445,123 @@ export function getSupporterDonationAmount(binArgs: StaticArray<u8>): StaticArra
   
   return new Args().add(amount).serialize();
 }
+
+// New class to hold detailed project information
+class ProjectDetails implements Serializable {
+  constructor(
+    public createdPeriod: u64 = 0,
+    public lockEndPeriod: u64 = 0,
+    public isLocked: bool = false,
+    public isFundingComplete: bool = false,
+    public isVestingCompleted: bool = false,
+    public hasStartedReleasing: bool = false,
+    public totalReleases: u64 = 0,
+    public claimedReleases: u64 = 0,
+    public nextReleasePeriod: u64 = 0,
+    public firstReleasePeriod: u64 = 0,
+    public lastReleasePeriod: u64 = 0,
+    public currentPeriod: u64 = 0
+  ) {}
+
+  serialize(): StaticArray<u8> {
+    return new Args()
+      .add(this.createdPeriod)
+      .add(this.lockEndPeriod)
+      .add(this.isLocked)
+      .add(this.isFundingComplete)
+      .add(this.isVestingCompleted)
+      .add(this.hasStartedReleasing)
+      .add(this.totalReleases)
+      .add(this.claimedReleases)
+      .add(this.nextReleasePeriod)
+      .add(this.firstReleasePeriod)
+      .add(this.lastReleasePeriod)
+      .add(this.currentPeriod)
+      .serialize();
+  }
+
+  deserialize(data: StaticArray<u8>, offset: u64 = 0): Result<i32> {
+    const args = new Args(data, i32(offset));
+    this.createdPeriod = args.nextU64().expect('Failed to deserialize createdPeriod');
+    this.lockEndPeriod = args.nextU64().expect('Failed to deserialize lockEndPeriod');
+    this.isLocked = args.nextBool().expect('Failed to deserialize isLocked');
+    this.isFundingComplete = args.nextBool().expect('Failed to deserialize isFundingComplete');
+    this.isVestingCompleted = args.nextBool().expect('Failed to deserialize isVestingCompleted');
+    this.hasStartedReleasing = args.nextBool().expect('Failed to deserialize hasStartedReleasing');
+    this.totalReleases = args.nextU64().expect('Failed to deserialize totalReleases');
+    this.claimedReleases = args.nextU64().expect('Failed to deserialize claimedReleases');
+    this.nextReleasePeriod = args.nextU64().expect('Failed to deserialize nextReleasePeriod');
+    this.firstReleasePeriod = args.nextU64().expect('Failed to deserialize firstReleasePeriod');
+    this.lastReleasePeriod = args.nextU64().expect('Failed to deserialize lastReleasePeriod');
+    this.currentPeriod = args.nextU64().expect('Failed to deserialize currentPeriod');
+    return new Result(args.offset);
+  }
+}
+
+// Function to get detailed project information
+export function getProjectDetails(binArgs: StaticArray<u8>): StaticArray<u8> {
+  const args = new Args(binArgs);
+  const projectId = args.nextU64().expect('Missing project ID');
+
+  const projectKey = new Args().add(PROJECTS_KEY).add(projectId).serialize();
+  assert(Storage.has(projectKey), `Project with ID ${projectId} not found`);
+
+  let project = new Project();
+  project.deserialize(Storage.get(projectKey));
+
+  const currentPeriod = Context.currentPeriod();
+  const lockEndPeriod = project.creationPeriod + project.lockPeriod;
+  const isLocked = currentPeriod <= lockEndPeriod;
+  const isFundingComplete = project.amountRaised >= project.fundingGoal;
+
+  // Get vesting schedule information
+  let isVestingCompleted: bool = false;
+  let hasStartedReleasing: bool = false;
+  let totalReleases: u64 = 0;
+  let claimedReleases: u64 = 0;
+  let nextReleasePeriod: u64 = 0;
+  let firstReleasePeriod: u64 = 0;
+  let lastReleasePeriod: u64 = 0;
+
+  if (project.vestingScheduleId > 0) {
+    const scheduleKey = getVestingScheduleKey(project.vestingScheduleId);
+    if (Storage.has(scheduleKey)) {
+      let schedule = new vestingSchedule();
+      schedule.deserialize(Storage.get(scheduleKey));
+
+      isVestingCompleted = schedule.isCompleted;
+      hasStartedReleasing = schedule.amountClaimed > 0;
+      
+      // Calculate total releases needed
+      if (schedule.releasePercentage > 0) {
+        totalReleases = (100 + schedule.releasePercentage - 1) / schedule.releasePercentage; // Ceiling division
+      }
+      
+      // Calculate claimed releases
+      if (schedule.amountClaimed > 0 && schedule.totalAmount > 0 && schedule.releasePercentage > 0) {
+        claimedReleases = (schedule.amountClaimed * 100) / (schedule.totalAmount * schedule.releasePercentage);
+      }
+
+      nextReleasePeriod = schedule.nextReleasePeriod;
+      firstReleasePeriod = project.creationPeriod + project.lockPeriod;
+      lastReleasePeriod = firstReleasePeriod + (totalReleases - 1) * schedule.releaseInterval;
+    }
+  }
+
+  const details = new ProjectDetails(
+    project.creationPeriod,
+    lockEndPeriod,
+    isLocked,
+    isFundingComplete,
+    isVestingCompleted,
+    hasStartedReleasing,
+    totalReleases,
+    claimedReleases,
+    nextReleasePeriod,
+    firstReleasePeriod,
+    lastReleasePeriod,
+    currentPeriod
+  );
+
+  return details.serialize();
+}

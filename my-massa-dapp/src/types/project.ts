@@ -26,3 +26,18 @@ export interface ProjectData {
   totalAmountRaisedAtLockEnd: number;
   status?: 'live' | 'release' | 'completed' | ''
 }
+
+export interface ProjectDetails {
+  createdPeriod: number;
+  lockEndPeriod: number;
+  isLocked: boolean;
+  isFundingComplete: boolean;
+  isVestingCompleted: boolean;
+  hasStartedReleasing: boolean;
+  totalReleases: number;
+  claimedReleases: number;
+  nextReleasePeriod: number;
+  firstReleasePeriod: number;
+  lastReleasePeriod: number;
+  currentPeriod: number;
+}

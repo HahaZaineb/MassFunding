@@ -1,7 +1,7 @@
 import { CONTRACT_ADDRESS } from '@/configs/massa';
 import { Project } from '@/models/Project';
 import { VestingSchedule } from '@/models/VestingSchedule';
-import { ProjectData } from '@/types/project';
+import { ProjectData, ProjectDetails } from '@/types/project';
 import { parseDurationToPeriods } from '@/utils/functions';
 import { convertProjectToProjectData } from '@/utils/project';
 import {
@@ -234,3 +234,33 @@ export const checkIfLocked = (project: ProjectData): boolean => {
     return true;
   }
 };
+
+/**
+ * Fetches detailed project status and vesting info from the smart contract for a given projectId.
+ */
+export async function getProjectDetails(projectId: number): Promise<ProjectDetails> {
+  const args = new Args().addU64(BigInt(projectId));
+  const response = await readSmartContractPublic(
+    CONTRACT_ADDRESS,
+    'getProjectDetails',
+    args,
+  );
+  if (!response.value || response.value.length === 0) {
+    throw new Error('No project details returned from contract');
+  }
+  const argsReader = new Args(response.value);
+  return {
+    createdPeriod: Number(argsReader.nextU64()),
+    lockEndPeriod: Number(argsReader.nextU64()),
+    isLocked: argsReader.nextBool(),
+    isFundingComplete: argsReader.nextBool(),
+    isVestingCompleted: argsReader.nextBool(),
+    hasStartedReleasing: argsReader.nextBool(),
+    totalReleases: Number(argsReader.nextU64()),
+    claimedReleases: Number(argsReader.nextU64()),
+    nextReleasePeriod: Number(argsReader.nextU64()),
+    firstReleasePeriod: Number(argsReader.nextU64()),
+    lastReleasePeriod: Number(argsReader.nextU64()),
+    currentPeriod: Number(argsReader.nextU64()),
+  };
+}
