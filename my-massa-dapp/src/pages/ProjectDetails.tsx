@@ -278,9 +278,10 @@ const ProjectDetailsPage = () => {
               >
                 <div className="space-y-8 text-center text-white">
                   {/* Section Title */}
-                  <h2 className="text-2xl font-bold tracking-wide bg-gradient-to-r from-cyan-400 to-blue-400 text-transparent bg-clip-text">
+                  <Typography variant="h5" fontWeight={700}>
+                    {' '}
                     🚀 Support This Project
-                  </h2>
+                  </Typography>
 
                   {/* Locked Info */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm text-slate-300">
