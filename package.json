@@ -8,7 +8,6 @@
         "build": "massa-as-compile",
         "clean": "rimraf build",
         "deploy": "npm run build && tsx src/deploy.ts",
-        
         "hello": "tsx src/hello.ts",
         "events": "tsx src/events.ts",
         "prettier": "prettier '**/src/**/*.ts' --check && as-prettier --check assembly",
@@ -48,5 +47,8 @@
     "prettier": "@massalabs/prettier-config-as",
     "engines": {
         "node": ">=16"
+    },
+    "dependencies": {
+        "as-bignum": "^0.3.1"
     }
 }

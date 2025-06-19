@@ -26,6 +26,7 @@ registerCall,
 TASK_COUNT_KEY,
 processTask
 } from '../internals';
+import { u128 } from 'as-bignum/assembly';
 
 
 export const PERIODS_PER_DAY: u64 = 5400;
@@ -575,14 +576,20 @@ export function triggerInitialVesting(binArgs: StaticArray<u8>): void {
   // Record supporter percentages at lock end
   const donors = loadProjectDonors(projectId);
   const percentages = new Map<string, u64>();
+  generateEvent(`DEBUG: amountToVest at lock end: ${amountToVest}`);
   for (let i: u64 = 0; i < (donors.length as u64); i++) {
     const donorAddr = donors[i as i32];
     const donorAmount = loadProjectDonorAmount(projectId, new Address(donorAddr));
+    generateEvent(`DEBUG: donor ${donorAddr} donorAmount: ${donorAmount}`);
     // Store as percentage out of 1e12 for precision (fixed point math)
     let pct: u64 = 0;
     if (amountToVest > 0) {
-      pct = (donorAmount * 1_000_000_000_000) / amountToVest;
+      let donorAmount128 = u128.fromU64(donorAmount);
+      let amountToVest128 = u128.fromU64(amountToVest);
+      let pct128 = u128.div(u128.mul(donorAmount128, u128.fromU64(1_000_000_000_000)), amountToVest128);
+      pct = pct128.toU64();
     }
+    generateEvent(`DEBUG: donor ${donorAddr} pct at lock end: ${pct}`);
     percentages.set(donorAddr, pct);
   }
   storeProjectSupporterPercentages(projectId, percentages);
@@ -771,6 +778,7 @@ export function releaseVestedTokens(binArgs: StaticArray<u8>): void {
     if (stopVotesPercentage > 50) {
       // Stop vesting, refund remaining
       let remainingAmount = schedule.totalAmount - schedule.amountClaimed;
+      generateEvent(`DEBUG: remainingAmount for refund: ${remainingAmount}`);
       if (remainingAmount > 0) {
         // Use recorded percentages for refund
         const percentages = loadProjectSupporterPercentages(projectId);
@@ -778,8 +786,14 @@ export function releaseVestedTokens(binArgs: StaticArray<u8>): void {
         for (let i: u64 = 0; i < (donors.length as u64); i++) {
           const donorAddr = donors[i as i32];
           const pct = percentages.has(donorAddr) ? percentages.get(donorAddr) : 0;
-          // Refund = remainingAmount * pct / 1e12
-          const refundAmount = (remainingAmount * pct) / 1_000_000_000_000;
+          generateEvent(`DEBUG: donor ${donorAddr} pct: ${pct}`);
+          // Refund = remainingAmount * pct / 1e12, use u128 math
+          let refundAmount: u64 = 0;
+          let remainingAmount128 = u128.fromU64(remainingAmount);
+          let pct128 = u128.fromU64(pct);
+          let refund128 = u128.div(u128.mul(remainingAmount128, pct128), u128.fromU64(1_000_000_000_000));
+          refundAmount = refund128.toU64();
+          generateEvent(`DEBUG: refundAmount for ${donorAddr}: ${refundAmount}`);
           if (refundAmount > 0) {
             Coins.transferCoins(new Address(donorAddr), refundAmount);
             generateEvent(`Refunded ${refundAmount} MAS to ${donorAddr} for vesting schedule ${vestingId}`);
