@@ -14,7 +14,6 @@ class VotingSessionData {
     public startPeriod: bigint = 0n,       // The period when voting started
     public endPeriod: bigint = 0n,         // The period when voting ends
     public totalVotingPower: bigint = 0n,  // Total voting power of all eligible voters
-    public continueVotes: bigint = 0n,     // Total voting power for continuing the release
     public stopVotes: bigint = 0n          // Total voting power for stopping the release
   ) {}
 
@@ -24,7 +23,6 @@ class VotingSessionData {
       .addU64(this.startPeriod)
       .addU64(this.endPeriod)
       .addU64(this.totalVotingPower)
-      .addU64(this.continueVotes)
       .addU64(this.stopVotes);
     return args.serialize();
   }
@@ -35,7 +33,6 @@ class VotingSessionData {
     this.startPeriod = args.nextU64();
     this.endPeriod = args.nextU64();
     this.totalVotingPower = args.nextU64();
-    this.continueVotes = args.nextU64();
     this.stopVotes = args.nextU64();
     return { instance: this, offset: args.getOffset() };
   }
