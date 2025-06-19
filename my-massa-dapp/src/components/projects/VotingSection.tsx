@@ -7,7 +7,6 @@ import {
   voteOnRelease,
   calculateVotingProgress,
   isVotingSessionActive,
-  formatPeriodToDate,
 } from '@/services/votingService';
 import { useAccountStore } from '@massalabs/react-ui-kit';
 import {
@@ -22,10 +21,11 @@ import {
   Paper,
   Divider,
 } from '@mui/material';
-import { ThumbsUp, ThumbsDown } from 'lucide-react';
+import { ThumbsDown } from 'lucide-react';
 import { Vote, VotingSession } from '@/types/voting';
 import { useToast } from '@/contexts/ToastProvider';
 import { formatMas } from '@massalabs/massa-web3';
+import { getProjectCreationDate } from '@/utils/project';
 
 interface VotingSectionProps {
   vestingId: any;
@@ -47,6 +47,9 @@ const VotingSection: React.FC<VotingSectionProps> = ({ vestingId }) => {
       console.log(sessionData, "sessionData")
       setSession(sessionData);
       if (sessionData) {
+        console.log("zzzzz")
+        const x  = await isVotingSessionActive(sessionData);
+        console.log(x, "isVotingSessionActive")
         setIsActive(await isVotingSessionActive(sessionData));
         const allVotes = await getVotes(vestingId);
         setVotes(allVotes);
@@ -56,9 +59,9 @@ const VotingSection: React.FC<VotingSectionProps> = ({ vestingId }) => {
     loadVoting();
   }, [vestingId]);
 
-  const handleVote = async (support: boolean) => {
+  const handleVote = async () => {
     try {
-      await voteOnRelease(connectedAccount, vestingId, support);
+      await voteOnRelease(connectedAccount, vestingId);
       showToast('Vote submitted!', 'success');
       const sessionData = await getVotingSession(vestingId);
       setSession(sessionData);
@@ -98,8 +101,24 @@ const VotingSection: React.FC<VotingSectionProps> = ({ vestingId }) => {
                   🗳️ Fund Release Voting
                 </Typography>
                 <Typography variant="body2" sx={{ color: '#94a3b8', mt: 0.5 }}>
-                  <b>{formatPeriodToDate(session.startPeriod)}</b> →{' '}
-                  <b>{formatPeriodToDate(session.endPeriod)}</b>
+                  <b>{getProjectCreationDate(session.startPeriod).toLocaleString(undefined, {
+                      weekday: 'short',
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: true,
+                    })}</b> →{' '}
+                  <b>{getProjectCreationDate(session.endPeriod).toLocaleString(undefined, {
+                      weekday: 'short',
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: true,
+                    })}</b>
                 </Typography>
               </Box>
 
@@ -208,7 +227,7 @@ const VotingSection: React.FC<VotingSectionProps> = ({ vestingId }) => {
           {/* Voting Buttons */}
           {isActive && (
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-              <Button
+              {/* <Button
                 fullWidth
                 onClick={() => handleVote(true)}
                 variant="contained"
@@ -223,10 +242,10 @@ const VotingSection: React.FC<VotingSectionProps> = ({ vestingId }) => {
                 }}
               >
                 Vote to Continue
-              </Button>
+              </Button> */}
               <Button
                 fullWidth
-                onClick={() => handleVote(false)}
+                onClick={() => handleVote()}
                 variant="contained"
                 color="error"
                 startIcon={<ThumbsDown size={18} />}
@@ -295,7 +314,7 @@ const VotingSection: React.FC<VotingSectionProps> = ({ vestingId }) => {
             ) : (
               <Stack spacing={1}>
                 {votes.map((v) => {
-                  const isSupport = v.vote;
+                  const isSupport = false
                   return (
                     <Paper
                       key={v.voter}
