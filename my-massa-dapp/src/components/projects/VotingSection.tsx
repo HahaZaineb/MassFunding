@@ -45,12 +45,8 @@ const VotingSection: React.FC<VotingSectionProps> = ({ vestingId }) => {
 
     const loadVoting = async () => {
       const sessionData = await getVotingSession(vestingId);
-      console.log(sessionData, 'sessionData');
       setSession(sessionData);
       if (sessionData) {
-        console.log('zzzzz');
-        const x = await isVotingSessionActive(sessionData);
-        console.log(x, 'isVotingSessionActive');
         setIsActive(await isVotingSessionActive(sessionData));
         const allVotes = await getVotes(vestingId);
         setVotes(allVotes);
@@ -81,12 +77,10 @@ const VotingSection: React.FC<VotingSectionProps> = ({ vestingId }) => {
 
   useEffect(() => {
     if (connectedAccount) {
-        const userVote = votes.find(
-          (v) => v.voter === connectedAccount.address,
-        );
-        setHasVoted(!!userVote);
-      }
-  }, [connectedAccount, votes])
+      const userVote = votes.find((v) => v.voter === connectedAccount.address);
+      setHasVoted(!!userVote);
+    }
+  }, [connectedAccount, votes]);
 
   if (!session) return null;
 
@@ -116,7 +110,6 @@ const VotingSection: React.FC<VotingSectionProps> = ({ vestingId }) => {
                 <Typography variant="h5" fontWeight={700}>
                   🗳️ Fund Release Voting
                 </Typography>
-                
               </Box>
 
               {!isActive && (
@@ -224,26 +217,26 @@ const VotingSection: React.FC<VotingSectionProps> = ({ vestingId }) => {
           {isActive && (
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
               {hasVoted && (
-<Badge
-  style={{
-    background: 'linear-gradient(to right, #334155, #475569)',
-    color: '#00ff9d',
-    height: 32,
-    padding: '0 12px',
-    borderRadius: '999px',
-    alignItems: 'center',
-    fontWeight: 500,
-    fontSize: 13,
-    letterSpacing: 0.5,
-    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
-    width: "100%",
-    display: 'flex',
-    justifyContent: 'center'
-  }}
->
-  <CheckCircle size={16} className="mr-2" />
-  You Have Already Voted
-</Badge>
+                <Badge
+                  style={{
+                    background: 'linear-gradient(to right, #334155, #475569)',
+                    color: '#00ff9d',
+                    height: 32,
+                    padding: '0 12px',
+                    borderRadius: '999px',
+                    alignItems: 'center',
+                    fontWeight: 500,
+                    fontSize: 13,
+                    letterSpacing: 0.5,
+                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
+                    width: '100%',
+                    display: 'flex',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <CheckCircle size={16} className="mr-2" />
+                  You Have Already Voted
+                </Badge>
               )}
               {!hasVoted && (
                 <Button
