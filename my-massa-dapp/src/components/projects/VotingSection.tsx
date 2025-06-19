@@ -108,15 +108,20 @@ const VotingSection: React.FC<VotingSectionProps> = ({ vestingId }) => {
                   🗳️ Fund Release Voting
                 </Typography>
                 <Typography variant="body2" sx={{ color: '#94a3b8', mt: 0.5 }}>
-                  <b>{getProjectCreationDate(session.startPeriod).toLocaleString(undefined, {
-                      weekday: 'short',
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      hour12: true,
-                    })}</b>
+                  <b>
+                    {getProjectCreationDate(session.startPeriod).toLocaleString(
+                      undefined,
+                      {
+                        weekday: 'short',
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true,
+                      },
+                    )}
+                  </b>
                 </Typography>
               </Box>
 
