@@ -237,6 +237,17 @@ export const checkIfLocked = (project: ProjectData): boolean => {
 
 /**
  * Fetches detailed project status and vesting info from the smart contract for a given projectId.
+ *
+ * All period fields (createdPeriod, lockEndPeriod, nextReleasePeriod, firstReleasePeriod, lastReleasePeriod, currentPeriod)
+ * are returned as Massa blockchain periods (number of 16-second blocks since genesis).
+ *
+ * To display these as timestamps or dates in the UI, use the utility function `getProjectCreationDate(period: number): Date`
+ * from '@/utils/project', which converts a period to a JavaScript Date object.
+ *
+ * 
+ *
+ * @param projectId The project ID to fetch details for.
+ * @returns ProjectDetails object with all relevant status and vesting info.
  */
 export async function getProjectDetails(projectId: number): Promise<ProjectDetails> {
   const args = new Args().addU64(BigInt(projectId));
@@ -250,17 +261,21 @@ export async function getProjectDetails(projectId: number): Promise<ProjectDetai
   }
   const argsReader = new Args(response.value);
   return {
-    createdPeriod: Number(argsReader.nextU64()),
-    lockEndPeriod: Number(argsReader.nextU64()),
-    isLocked: argsReader.nextBool(),
-    isFundingComplete: argsReader.nextBool(),
-    isVestingCompleted: argsReader.nextBool(),
-    hasStartedReleasing: argsReader.nextBool(),
-    totalReleases: Number(argsReader.nextU64()),
-    claimedReleases: Number(argsReader.nextU64()),
-    nextReleasePeriod: Number(argsReader.nextU64()),
-    firstReleasePeriod: Number(argsReader.nextU64()),
-    lastReleasePeriod: Number(argsReader.nextU64()),
-    currentPeriod: Number(argsReader.nextU64()),
+    createdPeriod: Number(argsReader.nextU64()),         // Massa period (convert to timestamp for UI)
+    lockEndPeriod: Number(argsReader.nextU64()),         // Massa period (convert to timestamp for UI)
+    isLocked: argsReader.nextBool(),                     // True if project is still in lock period
+    isFundingComplete: argsReader.nextBool(),            // True if project reached its funding goal
+    isVestingCompleted: argsReader.nextBool(),           // True if all funds have been released
+    hasStartedReleasing: argsReader.nextBool(),          // True if any release has occurred
+    totalReleases: Number(argsReader.nextU64()),         // Total number of vesting releases
+    claimedReleases: Number(argsReader.nextU64()),       // Number of releases already completed
+    nextReleasePeriod: Number(argsReader.nextU64()),     // Massa period (convert to timestamp for UI)
+    firstReleasePeriod: Number(argsReader.nextU64()),    // Massa period (convert to timestamp for UI)
+    lastReleasePeriod: Number(argsReader.nextU64()),     // Massa period (convert to timestamp for UI)
+    currentPeriod: Number(argsReader.nextU64()),         // Current Massa period (convert to timestamp for UI)
+    releasePercentage: Number(argsReader.nextU64()),     // Percentage of total released each interval (out of 100)
+    releaseInterval: Number(argsReader.nextU64()),       // Release interval in periods
+    claimedAmount: Number(argsReader.nextU64()),         // Amount already claimed (nanoMAS)
+    totalAmount: Number(argsReader.nextU64()),           // Total amount to be released (nanoMAS)
   };
 }

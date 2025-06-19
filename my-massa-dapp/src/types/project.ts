@@ -40,4 +40,8 @@ export interface ProjectDetails {
   firstReleasePeriod: number;
   lastReleasePeriod: number;
   currentPeriod: number;
+  releasePercentage: number;
+  releaseInterval: number;
+  claimedAmount: number;
+  totalAmount: number;
 }

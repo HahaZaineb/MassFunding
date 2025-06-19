@@ -1460,7 +1460,11 @@ class ProjectDetails implements Serializable {
     public nextReleasePeriod: u64 = 0,
     public firstReleasePeriod: u64 = 0,
     public lastReleasePeriod: u64 = 0,
-    public currentPeriod: u64 = 0
+    public currentPeriod: u64 = 0,
+    public releasePercentage: u64 = 0,
+    public releaseInterval: u64 = 0,
+    public claimedAmount: u64 = 0,
+    public totalAmount: u64 = 0
   ) {}
 
   serialize(): StaticArray<u8> {
@@ -1477,6 +1481,10 @@ class ProjectDetails implements Serializable {
       .add(this.firstReleasePeriod)
       .add(this.lastReleasePeriod)
       .add(this.currentPeriod)
+      .add(this.releasePercentage)
+      .add(this.releaseInterval)
+      .add(this.claimedAmount)
+      .add(this.totalAmount)
       .serialize();
   }
 
@@ -1494,6 +1502,10 @@ class ProjectDetails implements Serializable {
     this.firstReleasePeriod = args.nextU64().expect('Failed to deserialize firstReleasePeriod');
     this.lastReleasePeriod = args.nextU64().expect('Failed to deserialize lastReleasePeriod');
     this.currentPeriod = args.nextU64().expect('Failed to deserialize currentPeriod');
+    this.releasePercentage = args.nextU64().expect('Failed to deserialize releasePercentage');
+    this.releaseInterval = args.nextU64().expect('Failed to deserialize releaseInterval');
+    this.claimedAmount = args.nextU64().expect('Failed to deserialize claimedAmount');
+    this.totalAmount = args.nextU64().expect('Failed to deserialize totalAmount');
     return new Result(args.offset);
   }
 }
@@ -1522,30 +1534,33 @@ export function getProjectDetails(binArgs: StaticArray<u8>): StaticArray<u8> {
   let nextReleasePeriod: u64 = 0;
   let firstReleasePeriod: u64 = 0;
   let lastReleasePeriod: u64 = 0;
+  let releasePercentage: u64 = project.releasePercentage;
+  let releaseInterval: u64 = project.releaseInterval;
+  let claimedAmount: u64 = 0;
+  let totalAmount: u64 = 0;
 
-  if (project.vestingScheduleId > 0) {
-    const scheduleKey = getVestingScheduleKey(project.vestingScheduleId);
-    if (Storage.has(scheduleKey)) {
-      let schedule = new vestingSchedule();
-      schedule.deserialize(Storage.get(scheduleKey));
+  const scheduleKey = getVestingScheduleKey(project.vestingScheduleId);
+  if (Storage.has(scheduleKey)) {
+    let schedule = new vestingSchedule();
+    schedule.deserialize(Storage.get(scheduleKey));
 
-      isVestingCompleted = schedule.isCompleted;
-      hasStartedReleasing = schedule.amountClaimed > 0;
-      
-      // Calculate total releases needed
-      if (schedule.releasePercentage > 0) {
-        totalReleases = (100 + schedule.releasePercentage - 1) / schedule.releasePercentage; // Ceiling division
-      }
-      
-      // Calculate claimed releases
-      if (schedule.amountClaimed > 0 && schedule.totalAmount > 0 && schedule.releasePercentage > 0) {
-        claimedReleases = (schedule.amountClaimed * 100) / (schedule.totalAmount * schedule.releasePercentage);
-      }
-
-      nextReleasePeriod = schedule.nextReleasePeriod;
-      firstReleasePeriod = project.creationPeriod + project.lockPeriod;
-      lastReleasePeriod = firstReleasePeriod + (totalReleases - 1) * schedule.releaseInterval;
+    isVestingCompleted = schedule.isCompleted;
+    hasStartedReleasing = schedule.amountClaimed > 0;
+    releasePercentage = schedule.releasePercentage;
+    releaseInterval = schedule.releaseInterval;
+    claimedAmount = schedule.amountClaimed;
+    totalAmount = schedule.totalAmount;
+    // Calculate total releases needed
+    if (schedule.releasePercentage > 0) {
+      totalReleases = (100 + schedule.releasePercentage - 1) / schedule.releasePercentage; // Ceiling division
     }
+    // Calculate claimed releases
+    if (schedule.amountClaimed > 0 && schedule.totalAmount > 0 && schedule.releasePercentage > 0) {
+      claimedReleases = (schedule.amountClaimed * 100) / (schedule.totalAmount * schedule.releasePercentage);
+    }
+    nextReleasePeriod = schedule.nextReleasePeriod;
+    firstReleasePeriod = project.creationPeriod + project.lockPeriod;
+    lastReleasePeriod = firstReleasePeriod + (totalReleases - 1) * schedule.releaseInterval;
   }
 
   const details = new ProjectDetails(
@@ -1560,7 +1575,11 @@ export function getProjectDetails(binArgs: StaticArray<u8>): StaticArray<u8> {
     nextReleasePeriod,
     firstReleasePeriod,
     lastReleasePeriod,
-    currentPeriod
+    currentPeriod,
+    releasePercentage,
+    releaseInterval,
+    claimedAmount,
+    totalAmount
   );
 
   return details.serialize();
