@@ -329,14 +329,30 @@ const creator = Context.caller();
 const beneficiary = new Address(beneficiaryAddress);
 const creationPeriod = Context.currentPeriod();
 
-const vestingId = createVestingScheduleInternal(
-  projectId,
+// Create a vesting schedule with totalAmount = 0, to be updated after lock period
+const vestingId = getNextVestingId();
+incrementNextVestingId();
+const startPeriod = creationPeriod + lockPeriodInPeriods;
+const schedule = new vestingSchedule(
+  vestingId,
   beneficiary,
-  0, // Initial amount is 0
+  0, // totalAmount will be set after lock period
+  0, // amountClaimed
   lockPeriodInPeriods,
   releaseIntervalInPeriods,
-  releasePercentage
+  releasePercentage,
+  startPeriod,
+  false // isCompleted
 );
+Storage.set(getVestingScheduleKey(vestingId), schedule.serialize());
+// Update user-specific vesting schedules mapping
+let userVestingSchedules = loadUserVestingSchedules(beneficiary);
+userVestingSchedules.push(vestingId);
+storeUserVestingSchedules(beneficiary, userVestingSchedules);
+// Update project-specific vesting schedules mapping
+let projectVestingSchedules = loadProjectVestingSchedules(projectId);
+projectVestingSchedules.push(vestingId);
+storeProjectVestingSchedules(projectId, projectVestingSchedules);
 
 const newProject = new Project(
   projectId,
@@ -352,7 +368,7 @@ const newProject = new Project(
   releasePercentage,
   image,
   creationPeriod,
-  vestingId,
+  vestingId, // Use the permanent vesting schedule ID
   false, // Initialize initialVestingTriggered to false
   0 // Initialize totalAmountRaisedAtLockEnd to 0
 );
@@ -552,35 +568,48 @@ export function triggerInitialVesting(binArgs: StaticArray<u8>): void {
   }
 
   // Get the amount raised at the end of the lock period
-  // Set totalAmountRaisedAtLockEnd to the actual amount raised
   project.totalAmountRaisedAtLockEnd = project.amountRaised; 
   const amountToVest = project.totalAmountRaisedAtLockEnd;
 
-  // If no funds were raised, no vesting schedule is needed
-  if (amountToVest === 0) {
-      generateEvent(`No funds raised for project ${projectId} during lock period. Initial vesting skipped.`);
-      project.initialVestingTriggered = true; // Mark as triggered to prevent future triggers
-      Storage.set(projectKey, project.serialize());
-      return;
+  // Update the existing vesting schedule (do not create a new one)
+  const vestingId = project.vestingScheduleId;
+  const scheduleKey = getVestingScheduleKey(vestingId);
+  assert(Storage.has(scheduleKey), `Vesting schedule with ID ${vestingId} not found for project ${projectId}`);
+  let schedule = new vestingSchedule();
+  schedule.deserialize(Storage.get(scheduleKey));
+  schedule.totalAmount = amountToVest;
+  schedule.nextReleasePeriod = currentPeriod + 1; // Schedule first release for next period
+  // If no funds were raised, mark as completed
+  if (amountToVest == 0) {
+    schedule.isCompleted = true;
+  }
+  Storage.set(scheduleKey, schedule.serialize());
+
+  // Schedule the first release call for this vesting schedule
+  if (amountToVest > 0) {
+    const releaseArgs = new Args().add(vestingId).serialize();
+    const releaseSlot = findCheapestSlot(
+      schedule.nextReleasePeriod,
+      schedule.nextReleasePeriod + 10, // Search window
+      500_000_000, // Gas
+      0 // No coins sent
+    );
+    deferredCallRegister(
+      Context.callee().toString(),
+      'releaseVestedTokens',
+      releaseSlot,
+      500_000_000,
+      releaseArgs,
+      0
+    );
+    generateEvent(`First release for vesting schedule ${vestingId} scheduled for period ${releaseSlot.period}`);
   }
 
-  // Create the vesting schedule
-  const vestingId = createVestingScheduleInternal(
-    projectId,
-    project.beneficiary,
-    amountToVest,
-    project.lockPeriod, // Pass 0 for lockPeriod here, as the initial lock period has elapsed
-    project.releaseInterval,
-    project.releasePercentage
-  );
-
-  // Update the project with the new vesting schedule ID and initialVestingTriggered flag
-  project.vestingScheduleId = vestingId;
+  // Mark initial vesting as triggered
   project.initialVestingTriggered = true;
   Storage.set(projectKey, project.serialize());
 
   generateEvent(`Initial vesting triggered for project ${projectId}. Schedule ID: ${vestingId}. Amount: ${amountToVest}`);
-
 }
 
 // --- Vesting Functions (Internal) ---
@@ -1166,7 +1195,6 @@ class VotingSession implements Serializable {
     public startPeriod: u64 = 0,
     public endPeriod: u64 = 0,
     public totalVotingPower: u64 = 0,
-    public continueVotes: u64 = 0,
     public stopVotes: u64 = 0
   ) {}
 
@@ -1176,7 +1204,6 @@ class VotingSession implements Serializable {
       .add(this.startPeriod)
       .add(this.endPeriod)
       .add(this.totalVotingPower)
-      .add(this.continueVotes)
       .add(this.stopVotes)
       .serialize();
   }
@@ -1187,7 +1214,6 @@ class VotingSession implements Serializable {
     this.startPeriod = args.nextU64().expect('Failed to deserialize startPeriod');
     this.endPeriod = args.nextU64().expect('Failed to deserialize endPeriod');
     this.totalVotingPower = args.nextU64().expect('Failed to deserialize totalVotingPower');
-    this.continueVotes = args.nextU64().expect('Failed to deserialize continueVotes');
     this.stopVotes = args.nextU64().expect('Failed to deserialize stopVotes');
     return new Result(args.offset);
   }
@@ -1197,15 +1223,13 @@ class VotingSession implements Serializable {
 class Vote implements Serializable {
   constructor(
     public voter: Address = new Address(''),
-    public votingPower: u64 = 0,
-    public vote: bool = false // true for continue, false for stop
+    public votingPower: u64 = 0
   ) {}
 
   serialize(): StaticArray<u8> {
     return new Args()
       .add(this.voter as Serializable)
       .add(this.votingPower)
-      .add(this.vote)
       .serialize();
   }
 
@@ -1213,7 +1237,6 @@ class Vote implements Serializable {
     const args = new Args(data, i32(offset));
     this.voter = args.nextSerializable<Address>().expect('Failed to deserialize voter');
     this.votingPower = args.nextU64().expect('Failed to deserialize votingPower');
-    this.vote = args.nextBool().expect('Failed to deserialize vote');
     return new Result(args.offset);
   }
 }
@@ -1253,7 +1276,6 @@ function startVotingSession(vestingId: u64, projectId: u64): void {
     currentPeriod, // startPeriod
     currentPeriod + 10, // endPeriod (10 periods from now)
     totalVotingPower,
-    0, // continueVotes
     0  // stopVotes
   );
   
@@ -1265,7 +1287,6 @@ function startVotingSession(vestingId: u64, projectId: u64): void {
 export function voteOnRelease(binArgs: StaticArray<u8>): void {
   const args = new Args(binArgs);
   const vestingId = args.nextU64().expect('Missing vesting ID');
-  const vote = args.nextBool().expect('Missing vote');
   
   const scheduleKey = getVestingScheduleKey(vestingId);
   assert(Storage.has(scheduleKey), `Vesting schedule ${vestingId} not found`);
@@ -1326,20 +1347,16 @@ export function voteOnRelease(binArgs: StaticArray<u8>): void {
     }
   }
   
-  // Add new vote
-  const newVote = new Vote(caller, donorAmount, vote);
+  // Add new stop vote
+  const newVote = new Vote(caller, donorAmount);
   votes.push(newVote);
   Storage.set(votesKey, serializableObjectsArrayToBytes(votes));
   
   // Update voting session
-  if (vote) {
-    votingSession.continueVotes += donorAmount;
-  } else {
-    votingSession.stopVotes += donorAmount;
-  }
+  votingSession.stopVotes += donorAmount;
   Storage.set(votingSessionKey, votingSession.serialize());
   
-  generateEvent(`Vote recorded for vesting schedule ${vestingId}: ${vote ? 'continue' : 'stop'} with power ${donorAmount}`);
+  generateEvent(`Stop vote recorded for vesting schedule ${vestingId} with power ${donorAmount}`);
 }
 
 // Function to process voting results
@@ -1561,6 +1578,12 @@ export function getProjectDetails(binArgs: StaticArray<u8>): StaticArray<u8> {
     nextReleasePeriod = schedule.nextReleasePeriod;
     firstReleasePeriod = project.creationPeriod + project.lockPeriod;
     lastReleasePeriod = firstReleasePeriod + (totalReleases - 1) * schedule.releaseInterval;
+  } else if (
+    currentPeriod > lockEndPeriod &&
+    project.initialVestingTriggered
+  ) {
+    // Lock period is over, initial vesting was triggered, but no vesting schedule exists (no funds raised)
+    isVestingCompleted = true;
   }
 
   const details = new ProjectDetails(

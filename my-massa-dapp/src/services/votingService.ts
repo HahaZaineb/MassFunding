@@ -48,15 +48,13 @@ class VotingSessionData {
 class VoteData {
   constructor(
     public voter: string = '',             // Address of the voter
-    public votingPower: bigint = 0n,       // Amount of tokens donated (voting power)
-    public vote: boolean = false           // true = continue release, false = stop release
+    public votingPower: bigint = 0n        // Amount of tokens donated (voting power)
   ) {}
 
   serialize(): Uint8Array {
     return new Args()
       .addString(this.voter)
       .addU64(this.votingPower)
-      .addBool(this.vote)
       .serialize();
   }
 
@@ -64,7 +62,6 @@ class VoteData {
     const args = new Args(data, offset);
     this.voter = args.nextString();
     this.votingPower = args.nextU64();
-    this.vote = args.nextBool();
     return { instance: this, offset: args.getOffset() };
   }
 }
@@ -88,14 +85,14 @@ export async function getVotingSession(vestingId: string | null | undefined): Pr
       return null;
     }
 
-    const [session] = bytesToSerializableObjectArray(response.value, VotingSessionData);
+    // Only stopVotes are tracked now
+    const argsReader = new Args(response.value);
     return {
-      isActive: session.isActive,
-      startPeriod: Number(session.startPeriod),
-      endPeriod: Number(session.endPeriod),
-      totalVotingPower: Number(session.totalVotingPower),
-      continueVotes: Number(session.continueVotes),
-      stopVotes: Number(session.stopVotes)
+      isActive: argsReader.nextBool(),
+      startPeriod: Number(argsReader.nextU64()),
+      endPeriod: Number(argsReader.nextU64()),
+      totalVotingPower: Number(argsReader.nextU64()),
+      stopVotes: Number(argsReader.nextU64())
     };
   } catch (error) {
     console.error('Error fetching voting session:', error);
@@ -125,8 +122,7 @@ export async function getVotes(vestingId: string | null | undefined): Promise<Vo
     const votes = bytesToSerializableObjectArray(response.value, VoteData);
     return votes.map(vote => ({
       voter: vote.voter,
-      votingPower: Number(vote.votingPower),
-      vote: vote.vote
+      votingPower: Number(vote.votingPower)
     }));
   } catch (error) {
     console.error('Error fetching votes:', error);
@@ -135,17 +131,15 @@ export async function getVotes(vestingId: string | null | undefined): Promise<Vo
 }
 
 /**
- * Submits a vote for or against releasing the next batch of tokens.
+ * Submits a stop vote for the next batch of tokens.
  * @param connectedAccount - The connected wallet account
  * @param vestingId - The ID of the vesting schedule
- * @param vote - true to continue release, false to stop release
  * @returns Transaction hash
  */
-export async function voteOnRelease(connectedAccount: any, vestingId: string | null | undefined, vote: boolean): Promise<string> {
+export async function voteOnRelease(connectedAccount: any, vestingId: string | null | undefined): Promise<string> {
   if (!vestingId) throw new Error('Invalid vesting ID');
   const args = new Args()
-    .addU64(BigInt(vestingId))
-    .addBool(vote);
+    .addU64(BigInt(vestingId)); // No vote param, always stop
 
   return await callSmartContract(
     connectedAccount,
@@ -226,8 +220,8 @@ export async function getSupporterDonationAmount(projectId: string, supporterAdd
  * @returns Object containing voting statistics and percentages
  */
 export function calculateVotingProgress(session: VotingSession): VotingProgress {
-  const total = session.continueVotes + session.stopVotes;
-  if (total === 0) {
+  const total = session.stopVotes;
+  if (session.totalVotingPower === 0) {
     return {
       continuePercentage: 0,
       stopPercentage: 0,
@@ -235,10 +229,10 @@ export function calculateVotingProgress(session: VotingSession): VotingProgress 
       totalVotingPower: session.totalVotingPower
     };
   }
-
+  const stopPercentage = (session.stopVotes * 100) / session.totalVotingPower;
   return {
-    continuePercentage: (session.continueVotes * 100) / total,
-    stopPercentage: (session.stopVotes * 100) / total,
+    continuePercentage: 100 - stopPercentage,
+    stopPercentage,
     totalVotes: total,
     totalVotingPower: session.totalVotingPower
   };

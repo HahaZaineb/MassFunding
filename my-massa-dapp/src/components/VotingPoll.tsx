@@ -43,7 +43,7 @@ export const VotingPoll: React.FC<VotingPollProps> = ({ vestingId, projectId }) 
     return () => clearInterval(interval);
   }, [vestingId, connectedAccount]);
 
-  const handleVote = async (vote: boolean) => {
+  const handleVote = async () => {
     if (!connectedAccount) {
       setError('Please connect your wallet to vote');
       return;
@@ -53,7 +53,7 @@ export const VotingPoll: React.FC<VotingPollProps> = ({ vestingId, projectId }) 
     setError(null);
 
     try {
-      await voteOnRelease(connectedAccount, vestingId, vote);
+      await voteOnRelease(connectedAccount, vestingId);
       setHasVoted(true);
       // Refresh voting data
       const [sessionData, votesData] = await Promise.all([
@@ -109,14 +109,7 @@ export const VotingPoll: React.FC<VotingPollProps> = ({ vestingId, projectId }) 
       {isActive && !hasVoted && connectedAccount && (
         <div className="flex gap-4 justify-center">
           <button
-            onClick={() => handleVote(true)}
-            disabled={isLoading}
-            className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-lg transition-colors disabled:opacity-50"
-          >
-            {isLoading ? 'Voting...' : 'Continue Release'}
-          </button>
-          <button
-            onClick={() => handleVote(false)}
+            onClick={handleVote}
             disabled={isLoading}
             className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-lg transition-colors disabled:opacity-50"
           >
