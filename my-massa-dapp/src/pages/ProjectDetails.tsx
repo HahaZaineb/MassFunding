@@ -26,11 +26,14 @@ import { getProjectCreationDate } from '@/utils/project';
 import { BadgeCheck } from 'lucide-react';
 import { getProjectSupporters } from '@/services/votingService';
 import { Supporter } from '@/types/voting';
+import { useAccountStore } from '@massalabs/react-ui-kit/src/lib/ConnectMassaWallets';
 
 const ProjectDetailsPage = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { id } = useParams();
+  const { connectedAccount } = useAccountStore();
+
   const [projectStatus, setProjectStatus] = useState<
     'live' | 'release' | 'completed' | ''
   >('live');
@@ -45,7 +48,8 @@ const ProjectDetailsPage = () => {
   const [lockDate, setLockDate] = useState<Date | null>(null);
   const [createdDate, setCreatedDate] = useState<Date | null>(null);
   const [timeLeft, setTimeLeft] = useState('');
-  const [supporters, setSupporters] = useState<Supporter[] | null>(null)
+  const [supporters, setSupporters] = useState<Supporter[] | null>(null);
+  const [isSupporter, setIsSupporter] = useState<boolean>(false);
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -62,8 +66,8 @@ const ProjectDetailsPage = () => {
   useEffect(() => {
     const fetchAndSetDetails = async () => {
       if (project) {
-                const projectSupporters = await getProjectSupporters(project.id);
-                setSupporters(projectSupporters)
+        const projectSupporters = await getProjectSupporters(project.id);
+        setSupporters(projectSupporters);
 
         let status: 'live' | 'release' | 'completed' | '' = '';
         const res = await getProjectDetails(Number(project.id));
@@ -93,6 +97,17 @@ const ProjectDetailsPage = () => {
 
     fetchAndSetDetails();
   }, [project]);
+
+  useEffect(() => {
+    if (connectedAccount && supporters && supporters?.length > 0) {
+      const match = supporters.some(
+        (supporter) => supporter.address === connectedAccount.address,
+      );
+      setIsSupporter(match);
+    } else {
+      setIsSupporter(false);
+    }
+  }, [supporters, connectedAccount]);
   useEffect(() => {
     const interval = setInterval(() => {
       if (lockDate) setTimeLeft(getTimeLeft(lockDate));
@@ -432,7 +447,7 @@ const ProjectDetailsPage = () => {
               </motion.div>
             )}
 
-            {projectStatus === 'release' && (
+            {projectStatus === 'release' && isSupporter && (
               <VotingSection vestingId={project?.vestingScheduleId} />
             )}
             <ProjectUpdates projectId={project.id} />

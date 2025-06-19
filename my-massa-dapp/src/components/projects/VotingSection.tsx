@@ -20,12 +20,12 @@ import {
   Chip,
   Paper,
   Divider,
+  Badge,
 } from '@mui/material';
-import { ThumbsDown } from 'lucide-react';
+import { CheckCircle, ThumbsDown } from 'lucide-react';
 import { Vote, VotingSession } from '@/types/voting';
 import { useToast } from '@/contexts/ToastProvider';
 import { formatMas } from '@massalabs/massa-web3';
-import { getProjectCreationDate } from '@/utils/project';
 
 interface VotingSectionProps {
   vestingId: any;
@@ -79,6 +79,15 @@ const VotingSection: React.FC<VotingSectionProps> = ({ vestingId }) => {
     }
   };
 
+  useEffect(() => {
+    if (connectedAccount) {
+        const userVote = votes.find(
+          (v) => v.voter === connectedAccount.address,
+        );
+        setHasVoted(!!userVote);
+      }
+  }, [connectedAccount, votes])
+
   if (!session) return null;
 
   const progress = calculateVotingProgress(session);
@@ -107,22 +116,7 @@ const VotingSection: React.FC<VotingSectionProps> = ({ vestingId }) => {
                 <Typography variant="h5" fontWeight={700}>
                   🗳️ Fund Release Voting
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#94a3b8', mt: 0.5 }}>
-                  <b>
-                    {getProjectCreationDate(session.startPeriod).toLocaleString(
-                      undefined,
-                      {
-                        weekday: 'short',
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        hour12: true,
-                      },
-                    )}
-                  </b>
-                </Typography>
+                
               </Box>
 
               {!isActive && (
@@ -226,27 +220,49 @@ const VotingSection: React.FC<VotingSectionProps> = ({ vestingId }) => {
               />
             </Box>
           </Stack>
-
           {/* Voting Buttons */}
           {isActive && (
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-              <Button
-                fullWidth
-                onClick={() => handleVote()}
-                variant="contained"
-                color="error"
-                startIcon={<ThumbsDown size={18} />}
-                sx={{
-                  borderRadius: 3,
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  py: 1.5,
-                  boxShadow: '0 0 0 1px #b91c1c',
-                }}
-                disabled={hasVoted}
-              >
-                {!hasVoted ? 'Vote to Stop' : 'You have already voted'}
-              </Button>
+              {hasVoted && (
+<Badge
+  style={{
+    background: 'linear-gradient(to right, #334155, #475569)',
+    color: '#00ff9d',
+    height: 32,
+    padding: '0 12px',
+    borderRadius: '999px',
+    alignItems: 'center',
+    fontWeight: 500,
+    fontSize: 13,
+    letterSpacing: 0.5,
+    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
+    width: "100%",
+    display: 'flex',
+    justifyContent: 'center'
+  }}
+>
+  <CheckCircle size={16} className="mr-2" />
+  You Have Already Voted
+</Badge>
+              )}
+              {!hasVoted && (
+                <Button
+                  fullWidth
+                  onClick={() => handleVote()}
+                  variant="contained"
+                  color="error"
+                  startIcon={<ThumbsDown size={18} />}
+                  sx={{
+                    borderRadius: 3,
+                    fontWeight: 600,
+                    textTransform: 'none',
+                    py: 1.5,
+                    boxShadow: '0 0 0 1px #b91c1c',
+                  }}
+                >
+                  Vote to Stop
+                </Button>
+              )}
             </Stack>
           )}
 
