@@ -74,21 +74,18 @@ const ProjectUpdates: React.FC<ProjectUpdatesProps> = ({ projectId }) => {
       transition={{ duration: 0.4, ease: 'easeInOut' }}
       className="relative w-full bg-slate-800/80 border border-[#00ff9d33] p-4 rounded-2xl shadow-lg"
     >
-      <Typography
-        variant="h5"
-        sx={{ color: '#00ff9d', mb: 3, fontWeight: 700 }}
-      >
-        Project Updates
+      <Typography variant="h5" fontWeight={700}>
+        📢 Project Updates
       </Typography>
 
       {loading ? (
-        <div className="flex justify-center items-center py-10">
+        <div className="flex justify-center items-center py-10 ">
           <Loader2 className="h-8 w-8 animate-spin text-[#00ff9d]" />
         </div>
       ) : error ? (
         <div className="text-red-500 text-center py-6 font-medium">{error}</div>
       ) : updates.length === 0 ? (
-        <div className="text-center py-12 px-6 bg-slate-800 rounded-lg border border-slate-700">
+        <div className="text-center py-12 px-6 bg-slate-800 rounded-lg border border-slate-700 mt-6">
           <p className="text-slate-400 text-sm italic">
             📢 No updates posted yet. Stay tuned for upcoming news!
           </p>

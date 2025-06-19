@@ -2,7 +2,8 @@
 
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Plus, TrendingUp } from 'lucide-react';
+import { HandHeart, TrendingUp } from 'lucide-react';
+
 import { useNavigate } from 'react-router-dom';
 
 export default function NoDonationFound() {
@@ -25,7 +26,7 @@ export default function NoDonationFound() {
           onClick={() => navigate('/projects')}
           className="bg-gradient-to-r from-[#00ff9d] to-[#00cc7d] hover:from-[#00cc7d] hover:to-[#00ff9d] text-black font-bold"
         >
-          <Plus className="h-4 w-4 mr-2" />
+          <HandHeart className="h-4 w-4 mr-2" />
           Support a Project
         </Button>
       </div>

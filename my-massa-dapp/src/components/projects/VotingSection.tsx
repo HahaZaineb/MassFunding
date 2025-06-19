@@ -44,6 +44,7 @@ const VotingSection: React.FC<VotingSectionProps> = ({ vestingId }) => {
 
     const loadVoting = async () => {
       const sessionData = await getVotingSession(vestingId);
+      console.log(sessionData, "sessionData")
       setSession(sessionData);
       if (sessionData) {
         setIsActive(await isVotingSessionActive(sessionData));

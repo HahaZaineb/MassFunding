@@ -90,3 +90,19 @@ export const isValidImageUrl = (url: string): Promise<boolean> => {
     img.onerror = () => resolve(false);
   });
 };
+
+export function getTimeLeft(targetDate: Date): string {
+  const now = new Date().getTime();
+  const target = targetDate.getTime();
+  const diff = target - now;
+
+  if (diff <= 0) return '00d 00h 00m 00s';
+
+  const seconds = Math.floor(diff / 1000);
+  const days = Math.floor(seconds / (60 * 60 * 24));
+  const hours = Math.floor((seconds / (60 * 60)) % 24);
+  const minutes = Math.floor((seconds / 60) % 60);
+  const secs = seconds % 60;
+
+  return `${days}d ${hours}h ${minutes}m ${secs}s`;
+}

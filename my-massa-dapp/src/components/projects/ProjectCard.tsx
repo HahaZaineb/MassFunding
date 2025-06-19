@@ -20,20 +20,21 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ProjectData } from '@/types/project';
+import { ProjectData, ProjectDetails } from '@/types/project';
 import ProgressBar from '../ProgressBar';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   formatPeriodsToHumanReadable,
   getCategoryColor,
+  getTimeLeft,
   shortenAddress,
 } from '@/utils/functions';
 import ProjectStatus from './ProjectStatus';
-import { VestingScheduleData } from '@/types/vestingSchedule';
 import { formatMas } from '@massalabs/massa-web3';
 import ProjectUpdatesModal from './ProjectUpdatesModal';
-import { calculateProjectDetails } from '@/utils/project';
+import { getProjectCreationDate } from '@/utils/project';
+import { getProjectDetails } from '@/services/projectService';
 
 interface ProjectCardProps {
   project: ProjectData & { image?: string };
@@ -46,8 +47,9 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
   const [openProjectUpdates, setOpenProjectUpdates] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [timeLeft, setTimeLeft] = useState('');
-  const [vestingDetails, setVestingDetails] =
-    useState<VestingScheduleData | null>(null);
+  const [vestingDetails, setVestingDetails] = useState<ProjectDetails | null>(
+    null,
+  );
   const [projectStatus, setProjectStatus] = useState<
     'live' | 'release' | 'completed' | '' | ''
   >('');
@@ -58,30 +60,55 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
   useEffect(() => {
     return () => {
       setProjectStatus('');
-      setNextReleaseDate(null)
-      setTimeLeft('')
-      setIsExpanded(false)
-      setCreatedDate(null)
-      setLockDate(null)
-      setVestingDetails(null)
-      setOpenProjectUpdates(false)
+      setNextReleaseDate(null);
+      setTimeLeft('');
+      setIsExpanded(false);
+      setCreatedDate(null);
+      setLockDate(null);
+      setVestingDetails(null);
+      setOpenProjectUpdates(false);
     };
   }, []);
 
-useEffect(() => {
-  const fetchAndSetDetails = async () => {
-    const details = await calculateProjectDetails(project);
-    setCreatedDate(details.createdDate);
-    setLockDate(details.lockDate);
-    setNextReleaseDate(details.nextReleaseDate);
-    setProjectStatus(details.projectStatus);
-    setVestingDetails(details.vestingDetails);
-    setTimeLeft(details.timeLeft)
-    setProjectStatus(details.projectStatus)
-  };
+  useEffect(() => {
+    const fetchAndSetDetails = async () => {
+      if (project) {
+        let status: 'live' | 'release' | 'completed' | '' = '';
+        const res = await getProjectDetails(Number(project.id));
+        console.log(res, project.name, 'res ffffff');
+        setCreatedDate(getProjectCreationDate(res.createdPeriod));
+        if (res.isLocked) {
+          status = 'live';
+        } else if (
+          (!res.isLocked && res.totalAmount === 0) ||
+          res.isVestingCompleted
+        ) {
+          status = 'completed';
+        } else if (!res.isLocked) {
+          status = 'release';
+        } else {
+          status = 'live';
+        }
+        setProjectStatus(status);
+        setNextReleaseDate(getProjectCreationDate(res.nextReleasePeriod));
+        const lockDate = getProjectCreationDate(res.lockEndPeriod);
+        setLockDate(lockDate);
 
-  fetchAndSetDetails();
-}, [project]);
+        const timeLeftDate = getTimeLeft(lockDate);
+        setTimeLeft(timeLeftDate);
+        setVestingDetails(res);
+      }
+    };
+
+    fetchAndSetDetails();
+  }, [project]);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (lockDate) setTimeLeft(getTimeLeft(lockDate));
+    }, 1000);
+
+    return () => clearInterval(interval); // Cleanup on unmount
+  }, [lockDate]);
 
   return (
     <Card
@@ -95,9 +122,7 @@ useEffect(() => {
           alt={project.name}
           className="w-full h-full object-cover"
         />
-        <ProjectStatus
-          status={projectStatus}
-        />
+        <ProjectStatus status={projectStatus} />
         <div className="absolute top-3 right-4">
           <Badge
             className={`text-white border-0`}
@@ -223,13 +248,11 @@ useEffect(() => {
                     })}
                   </p>
                 )}
-                {vestingDetails &&
-                vestingDetails.id &&
-                projectStatus === 'release' ? (
+                {vestingDetails && projectStatus === 'release' ? (
                   <div className="text-white text-sm space-y-2">
                     <p>
                       <span className="font-semibold">Amount Claimed:</span>{' '}
-                      {formatMas(BigInt(vestingDetails.amountClaimed))} MAS
+                      {formatMas(BigInt(vestingDetails.claimedAmount))} MAS
                     </p>
                     <p>
                       <span className="font-semibold">Next Release:</span>{' '}
@@ -340,8 +363,8 @@ useEffect(() => {
                 TOTAL FUNDS DISTRIBUTED
               </div>
               <div className="relative bg-gray-800 text-[#90a4ae] font-mono font-bold text-sm px-4 py-2 rounded-lg border border-[#90a4ae]/30 hover:border-[#90a4ae]/50 transition-all duration-200 inline-block">
-                {vestingDetails?.id != null
-                  ? formatMas(BigInt(vestingDetails.amountClaimed))
+                {vestingDetails?.claimedAmount != null
+                  ? formatMas(BigInt(vestingDetails.claimedAmount))
                   : 'N/A'}{' '}
                 MAS
               </div>

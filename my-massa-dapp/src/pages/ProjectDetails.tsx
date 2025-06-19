@@ -9,18 +9,21 @@ import ProjectUpdates from '@/components/projects/ProjectUpdates';
 import {
   formatPeriodsToHumanReadable,
   getCategoryColor,
+  getTimeLeft,
   shortenAddress,
 } from '@/utils/functions';
 import ProgressBar from '@/components/ProgressBar';
 import ProjectStatus from '@/components/projects/ProjectStatus';
 import Loader from '@/components/Loader';
 import StatCard from '@/components/StatCard';
-import { Tooltip } from '@mui/material';
-import { VestingScheduleData } from '@/types/vestingSchedule';
+import { Tooltip, Typography } from '@mui/material';
 import { formatMas } from '@massalabs/massa-web3';
 import { motion } from 'framer-motion';
 import VotingSection from '@/components/projects/VotingSection';
-import { calculateProjectDetails } from '@/utils/project';
+import { getProjectDetails } from '@/services/projectService';
+import { ProjectDetails } from '@/types/project';
+import { getProjectCreationDate } from '@/utils/project';
+import { BadgeCheck } from 'lucide-react';
 
 const ProjectDetailsPage = () => {
   const navigate = useNavigate();
@@ -33,8 +36,9 @@ const ProjectDetailsPage = () => {
     (state) => state.projects,
   );
   const [copied, setCopied] = useState(false);
-  const [vestingDetails, setVestingDetails] =
-    useState<VestingScheduleData | null>(null);
+  const [vestingDetails, setVestingDetails] = useState<ProjectDetails | null>(
+    null,
+  );
   const [nextReleaseDate, setNextReleaseDate] = useState<Date | null>(null);
   const [lockDate, setLockDate] = useState<Date | null>(null);
   const [createdDate, setCreatedDate] = useState<Date | null>(null);
@@ -55,18 +59,42 @@ const ProjectDetailsPage = () => {
   useEffect(() => {
     const fetchAndSetDetails = async () => {
       if (project) {
-        const details = await calculateProjectDetails(project);
-        console.log(details.vestingDetails, project.name, 'zzzzzzzz');
-        setCreatedDate(details.createdDate);
-        setLockDate(details.lockDate);
-        setNextReleaseDate(details.nextReleaseDate);
-        setProjectStatus(details.projectStatus);
-        setVestingDetails(details.vestingDetails);
-        setTimeLeft(details.timeLeft);
+        let status: 'live' | 'release' | 'completed' | '' = '';
+        const res = await getProjectDetails(Number(project.id));
+        console.log(res, project.name, 'res ffffff');
+        setCreatedDate(getProjectCreationDate(res.createdPeriod));
+        if (res.isLocked) {
+          status = 'live';
+        } else if (
+          (!res.isLocked && res.totalAmount === 0) ||
+          res.isVestingCompleted
+        ) {
+          status = 'completed';
+        } else if (!res.isLocked) {
+          status = 'release';
+        } else {
+          status = 'live';
+        }
+        setProjectStatus(status);
+        setNextReleaseDate(getProjectCreationDate(res.nextReleasePeriod));
+        const lockDate = getProjectCreationDate(res.lockEndPeriod);
+        setLockDate(lockDate);
+
+        const timeLeftDate = getTimeLeft(lockDate);
+        setTimeLeft(timeLeftDate);
+        setVestingDetails(res);
       }
     };
+
     fetchAndSetDetails();
   }, [project]);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (lockDate) setTimeLeft(getTimeLeft(lockDate));
+    }, 1000);
+
+    return () => clearInterval(interval); // Cleanup on unmount
+  }, [lockDate]);
 
   if (loading)
     return (
@@ -107,24 +135,47 @@ const ProjectDetailsPage = () => {
             {/* Title and Description */}
             <div>
               <h1 className="text-3xl font-bold">{project.name}</h1>
-              <p className="text-slate-400 mt-2 flex items-center gap-1">
-                Owned by{' '}
-                <span className="text-teal-300">
-                  {shortenAddress(project.beneficiary)}
+
+              {/* Owned by and copy icon */}
+              <p className="text-slate-400 mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span className="flex items-center gap-1">
+                  Owned by{' '}
+                  <span className="text-teal-300">
+                    {shortenAddress(project.beneficiary)}
+                  </span>
+                  <Tooltip title={copied ? 'Copied!' : 'Copy address'}>
+                    <button
+                      onClick={() => handleCopy(project.beneficiary)}
+                      className="text-teal-300 hover:text-teal-400 transition"
+                    >
+                      {copied ? (
+                        <Check size={16} className="text-green-400" />
+                      ) : (
+                        <Copy size={16} className="text-teal-300" />
+                      )}
+                    </button>
+                  </Tooltip>
                 </span>
-                <Tooltip title={copied ? 'Copied!' : 'Copy address'}>
-                  <button
-                    onClick={() => handleCopy(project.beneficiary)}
-                    className="text-teal-300 hover:text-teal-400 transition"
-                  >
-                    {copied ? (
-                      <Check size={16} className="text-green-400" />
-                    ) : (
-                      <Copy size={16} className="text-teal-300" />
-                    )}{' '}
-                  </button>
-                </Tooltip>
+
+                {createdDate && (
+                  <span className="flex items-center gap-1">
+                    📅 Created on{' '}
+                    <span className="text-slate-300 font-medium">
+                      {createdDate.toLocaleDateString(undefined, {
+                        weekday: 'short',
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true,
+                      })}
+                    </span>
+                  </span>
+                )}
               </p>
+
+              {/* Description */}
               <p className="text-slate-300 mt-4 text-lg">
                 {project.description}
               </p>
@@ -164,202 +215,221 @@ const ProjectDetailsPage = () => {
                 value={`${project.releasePercentage}%`}
               />
             </div>
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3, ease: 'easeInOut' }}
-              className="overflow-hidden"
-            >
-              <div className="bg-slate-800/40 p-4 rounded-xl backdrop-blur-lg border border-slate-600 shadow-inner space-y-4">
-                {/* Basic Info */}
-                <div className="space-y-1 text-sm text-slate-200">
-                  <p>
-                    <span className="font-medium text-cyan-400">
-                      🔒 Lock Period:
-                    </span>{' '}
-                    {formatPeriodsToHumanReadable(Number(project.lockPeriod))}
-                  </p>
-                  <p>
-                    <span className="font-medium text-cyan-400">
-                      ⏳ Release Interval:
-                    </span>{' '}
-                    {formatPeriodsToHumanReadable(
-                      Number(project.releaseInterval),
-                    )}
-                  </p>
-
-                  {createdDate && (
-                    <p>
-                      <span className="font-medium text-cyan-400">
-                        📅 Created At:
-                      </span>{' '}
-                      {createdDate.toLocaleString(undefined, {
-                        weekday: 'short',
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        hour12: true,
-                      })}
-                    </p>
-                  )}
-
-                  {lockDate && (
-                    <p>
-                      <span className="font-medium text-cyan-400">
-                        🔐 Lock At:
-                      </span>{' '}
-                      {lockDate.toLocaleString(undefined, {
-                        weekday: 'short',
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        hour12: true,
-                      })}
-                    </p>
-                  )}
-                </div>
-
-                {/* Vesting Info */}
-                {vestingDetails?.id && projectStatus === 'release' && (
-                  <div className="pt-2 border-t border-slate-600 space-y-2 text-sm text-slate-200">
-                    <p>
-                      <span className="font-medium text-orange-400">
-                        💰 Amount Claimed:
-                      </span>{' '}
-                      {formatMas(BigInt(vestingDetails.amountClaimed))} MAS
-                    </p>
-                    <p>
-                      <span className="font-medium text-orange-400">
-                        📤 Next Release:
-                      </span>{' '}
-                      {nextReleaseDate
-                        ? nextReleaseDate.toLocaleString(undefined, {
-                            weekday: 'short',
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            hour12: true,
-                          })
-                        : 'N/A'}
-                    </p>
-                    <p>
-                      <span className="font-medium text-orange-400">
-                        💼 Total Amount:
-                      </span>{' '}
-                      {formatMas(BigInt(vestingDetails.totalAmount))} MAS
-                    </p>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-
-            {/* Conditional status display */}
-            {projectStatus === 'live' && (
-              <div className="w-full p-3 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-700 shadow-lg">
-                <div className="text-center space-y-2">
-                  <div className="text-teal-400 text-xs font-semibold tracking-wider flex items-center justify-center">
-                    <Clock
-                      className="w-3 h-3 mr-2"
-                      stroke="#2dd4bf"
-                      fill="none"
-                      strokeWidth={2}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    FUNDING CLOSES IN
-                  </div>
-                  <div className="flex justify-center space-x-2">
-                    {timeLeft.split(':').map((unit, index) => (
-                      <div key={index} className="flex flex-col items-center">
-                        <div className="relative group">
-                          <div className="absolute inset-0 bg-teal-500/20 blur-[3px] rounded-lg transition-all duration-300 group-hover:blur-[4px]"></div>
-                          <div className="relative bg-gray-800 text-teal-300 font-mono font-bold text-sm px-3 py-2 rounded-lg border border-teal-500/30 hover:border-teal-400/50 transition-all duration-200">
-                            {unit.padStart(2, '0')}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* Vesting Info Section */}
             {projectStatus === 'release' && (
-              <div className="w-full p-3 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-700 shadow-lg">
-                <div className="text-center space-y-2">
-                  <div className="text-[#ff9100] text-xs font-semibold tracking-wider flex items-center justify-center">
-                    <Clock
-                      className="w-3 h-3 mr-2"
-                      stroke="#ff9100"
-                      fill="none"
-                      strokeWidth={2}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3, ease: 'easeInOut' }}
+                className="overflow-hidden bg-slate-800/40 rounded-xl border border-slate-600 shadow-inner backdrop-blur-lg p-6"
+              >
+                <div>
+                  <Typography variant="h5" fontWeight={700}>
+                    ⏳ Vesting Schedule
+                  </Typography>
+                  <div className="grid gap-4 md:grid-cols-3 sm:grid-cols-2 grid-cols-1 mt-6">
+                    <MiniCard
+                      icon="💰"
+                      label="Amount Claimed"
+                      value={`${
+                        vestingDetails?.claimedAmount
+                          ? formatMas(BigInt(vestingDetails?.claimedAmount))
+                          : 0
+                      } MAS`}
                     />
-                    NEXT RELEASE DATE
+                    <MiniCard
+                      icon="📤"
+                      label="Next Release"
+                      value={
+                        nextReleaseDate
+                          ? nextReleaseDate.toLocaleString(undefined, {
+                              weekday: 'short',
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              hour12: true,
+                            })
+                          : 'N/A'
+                      }
+                    />
+                    <MiniCard
+                      icon="💼"
+                      label="Total Amount"
+                      value={`${
+                        vestingDetails?.totalAmount
+                          ? formatMas(BigInt(vestingDetails.totalAmount))
+                          : 0
+                      } MAS`}
+                    />
                   </div>
-                  <div className="relative bg-gray-800 text-[#ff9100] font-mono font-bold text-sm px-4 py-2 rounded-lg border border-[#ff9100]/30 hover:border-[#ff9100]/50 transition-all duration-200 inline-block">
-                    {nextReleaseDate
-                      ? nextReleaseDate.toLocaleString(undefined, {
+                </div>
+              </motion.div>
+            )}
+            {projectStatus === 'live' && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3, ease: 'easeInOut' }}
+                className="overflow-hidden bg-gradient-to-br from-slate-800/60 to-slate-900/60 rounded-2xl border border-cyan-500/20 shadow-2xl backdrop-blur-xl p-8"
+              >
+                <div className="space-y-8 text-center text-white">
+                  {/* Section Title */}
+                  <h2 className="text-2xl font-bold tracking-wide bg-gradient-to-r from-cyan-400 to-blue-400 text-transparent bg-clip-text">
+                    🚀 Support This Project
+                  </h2>
+
+                  {/* Locked Info */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm text-slate-300">
+                    <div className="flex flex-col items-center">
+                      <span className="text-cyan-400 text-xs font-semibold tracking-wide uppercase">
+                        🔒 Locked At
+                      </span>
+                      <span className="mt-2 font-mono text-sm">
+                        {lockDate?.toLocaleString(undefined, {
                           weekday: 'short',
                           year: 'numeric',
                           month: 'short',
                           day: 'numeric',
                           hour: '2-digit',
                           minute: '2-digit',
-                          hour12: true,
-                        })
-                      : 'N/A'}
+                        }) ?? 'N/A'}
+                      </span>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <span className="text-cyan-400 text-xs font-semibold tracking-wide uppercase">
+                        📅 Lock Period
+                      </span>
+                      <span className="mt-2 font-mono text-sm">
+                        {formatPeriodsToHumanReadable(
+                          Number(project.lockPeriod),
+                        )}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Countdown Section */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-center text-cyan-300 text-xs font-semibold tracking-widest uppercase">
+                      <Clock className="w-5 h-5 mr-2" strokeWidth={2} />
+                      Funding closes in
+                    </div>
+
+                    <div className="flex justify-center gap-4">
+                      {timeLeft.split(' ').map((unit, index) => {
+                        const [_, num, label] =
+                          unit.match(/(\d+)([a-z])/i) || [];
+                        const readable =
+                          label === 'd'
+                            ? 'Days'
+                            : label === 'h'
+                            ? 'Hrs'
+                            : label === 'm'
+                            ? 'Min'
+                            : label === 's'
+                            ? 'Sec'
+                            : '';
+
+                        return (
+                          <div
+                            key={index}
+                            className="flex flex-col items-center"
+                          >
+                            <div className="relative group">
+                              <div className="absolute inset-0 bg-cyan-500/20 blur-sm rounded-lg group-hover:blur-md transition-all duration-300"></div>
+                              <div className="relative bg-black/40 text-cyan-300 font-mono font-bold text-lg px-4 py-3 rounded-xl border border-cyan-500/30 shadow-md hover:border-cyan-400/50 transition-all duration-200">
+                                {num?.padStart(2, '0') ?? '00'}
+                              </div>
+                            </div>
+                            <span className="text-[11px] text-cyan-400 mt-1 font-medium">
+                              {readable}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Fund Button */}
+                  <div className="pt-4">
+                    <Button
+                      className="bg-[#00ff9d] hover:bg-[#00e68d] text-slate-900"
+                      onClick={() => navigate(`/fund/${project.id}`)}
+                    >
+                      <Coins className="w-4 h-4 mr-2" />
+                      Fund This Project
+                    </Button>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             )}
 
             {projectStatus === 'completed' && (
-              <div className="w-full p-3 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-700 shadow-lg">
-                <div className="text-center space-y-2">
-                  <div className="text-[#90a4ae] text-xs font-semibold tracking-wider flex items-center justify-center">
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    TOTAL FUNDS DISTRIBUTED
-                  </div>
-                  <div className="relative bg-gray-800 text-[#90a4ae] font-mono font-bold text-sm px-4 py-2 rounded-lg border border-[#90a4ae]/30 hover:border-[#90a4ae]/50 transition-all duration-200 inline-block">
-                    {vestingDetails?.id != null
-                      ? formatMas(BigInt(vestingDetails.amountClaimed))
-                      : 'N/A'}{' '}
-                    MAS
-                  </div>
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3, ease: 'easeInOut' }}
+                className="overflow-hidden bg-gradient-to-br from-slate-800/60 to-slate-900/60 rounded-2xl border border-green-500/20 shadow-2xl backdrop-blur-xl p-8"
+              >
+                <div className="space-y-8 text-center text-white">
+                  {/* Section Title */}
+                  <h2 className="flex items-center justify-center gap-2 text-2xl font-bold tracking-wide bg-gradient-to-r from-green-400 to-lime-400 text-transparent bg-clip-text">
+                    <BadgeCheck
+                      className="w-6 h-6 text-green-400"
+                      strokeWidth={2}
+                    />
+                    Project Completed
+                  </h2>
+
+                  {/* Completion Message */}
+                  {project.amountRaised > 0 ? (
+                    <>
+                      <div className="flex items-center justify-center text-green-300 text-sm font-semibold tracking-wide uppercase">
+                        <CheckCircle className="w-5 h-5 mr-2" strokeWidth={2} />
+                        All funds successfully distributed
+                      </div>
+
+                      {/* Total Claimed */}
+                      <div className="flex flex-col items-center space-y-2">
+                        <span className="text-xs text-green-400 uppercase tracking-widest">
+                          Total Claimed
+                        </span>
+                        <div className="relative group">
+                          <div className="absolute inset-0 bg-green-500/20 blur-[3px] rounded-xl transition-all duration-300 group-hover:blur-md"></div>
+                          <div className="relative bg-black/40 text-green-300 font-mono text-lg font-bold px-6 py-3 rounded-xl border border-green-500/30 hover:border-green-400/50 transition-all duration-200">
+                            {vestingDetails?.claimedAmount != null
+                              ? `${formatMas(
+                                  BigInt(vestingDetails.claimedAmount),
+                                )} MAS`
+                              : 'N/A'}
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-center text-yellow-300 text-sm font-semibold tracking-wide uppercase">
+                        <CheckCircle className="w-5 h-5 mr-2" strokeWidth={2} />
+                        Project closed with no raised funds
+                      </div>
+                      <p className="text-sm text-slate-300">
+                        The funding period ended but no supporters contributed
+                        to this project.
+                      </p>
+                    </>
+                  )}
                 </div>
-              </div>
+              </motion.div>
             )}
-            {<VotingSection vestingId={vestingDetails?.id} />}
 
-            {/* Actions */}
-            <div className="flex flex-col md:flex-row gap-4 mt-6">
-              {projectStatus === 'live' && (
-                <Button
-                  className="bg-[#00ff9d] hover:bg-[#00e68d] text-slate-900"
-                  onClick={() => navigate(`/fund/${project.id}`)}
-                >
-                  <Coins className="w-4 h-4 mr-2" />
-                  Fund This Project
-                </Button>
-              )}
-            </div>
-
+            {projectStatus === 'release' && (
+              <VotingSection vestingId={project?.vestingScheduleId} />
+            )}
             <ProjectUpdates projectId={project.id} />
-
-            {/* <div className="mt-8">
-              <VotingPoll
-                vestingId={project.vestingScheduleId}
-                projectId={project.id}
-              />
-            </div> */}
           </div>
         </div>
       )}
@@ -368,3 +438,22 @@ const ProjectDetailsPage = () => {
 };
 
 export default ProjectDetailsPage;
+
+interface MiniCardProps {
+  icon: string;
+  label: string;
+  value: string;
+}
+const MiniCard: React.FC<MiniCardProps> = ({ icon, label, value }) => (
+  <div className="p-4 rounded-xl border border-slate-600 bg-gradient-to-br from-slate-700/30 to-slate-800/50 backdrop-blur-md transition hover:shadow-lg hover:border-orange-400 group">
+    <div className="flex items-center gap-2 mb-3 text-orange-400">
+      <div className="text-xl group-hover:scale-110 transition-transform">
+        {icon}
+      </div>
+      <span className="text-sm font-medium uppercase tracking-wide text-orange-300">
+        {label}
+      </span>
+    </div>
+    <p className="text-base text-slate-100 font-semibold truncate">{value}</p>
+  </div>
+);
