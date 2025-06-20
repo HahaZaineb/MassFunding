@@ -3,7 +3,11 @@
 import { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { FilePlus2, HandHeart, DollarSign } from 'lucide-react';
-import { Card as MuiCard, CardContent as MuiCardContent, Divider } from '@mui/material';
+import {
+  Card as MuiCard,
+  CardContent as MuiCardContent,
+  Divider,
+} from '@mui/material';
 import { styled } from '@mui/system';
 
 import { useAccountStore } from '@massalabs/react-ui-kit';
@@ -35,7 +39,8 @@ export default function UserActivity() {
 
   const totalProjectsCreated = useMemo(() => {
     if (!userAddress) return 0;
-    return projectList.filter(p => p.creator?.toLowerCase() === userAddress).length;
+    return projectList.filter((p) => p.creator?.toLowerCase() === userAddress)
+      .length;
   }, [projectList, userAddress]);
 
   useEffect(() => {
@@ -48,7 +53,9 @@ export default function UserActivity() {
 
       try {
         setLoading(true);
-        const donations = await getUserDonations(connectedAccount?.address.toString() || '');
+        const donations = await getUserDonations(
+          connectedAccount?.address.toString() || '',
+        );
         const totalAmount = donations.reduce((sum, d) => sum + d.amount, 0);
         setTotalDonations(donations.length);
         setTotalAmountDonated(totalAmount);
@@ -85,7 +92,11 @@ export default function UserActivity() {
   return (
     <StyledCard sx={{ flex: 1 }}>
       <MuiCardContent>
-        <SectionHeader icon={TimelineIcon} title="User Activity" color="#ff9800" />
+        <SectionHeader
+          icon={TimelineIcon}
+          title="User Activity"
+          color="#ff9800"
+        />
         <Divider sx={{ my: 2, borderColor: '#1f2a48' }} />
 
         <motion.div
@@ -100,7 +111,9 @@ export default function UserActivity() {
                 className="bg-gradient-to-br from-[#1a2340] to-[#0f1629] border border-[#00ff9d]/20"
               >
                 <CardContent className="p-6 text-center">
-                  <div className="flex items-center justify-center mb-2">{icon}</div>
+                  <div className="flex items-center justify-center mb-2">
+                    {icon}
+                  </div>
                   <div className="text-2xl font-bold text-white">{value}</div>
                   <div className="text-sm text-slate-400">{label}</div>
                 </CardContent>

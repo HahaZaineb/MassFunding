@@ -76,7 +76,7 @@ export default function RoadmapPage() {
               </tr>
             </thead>
             <tbody>
-                              <tr>
+              <tr>
                 <td className="py-2">Foundation</td>
                 <td className="py-2 text-green-400">Done</td>
                 <td className="py-2">Q2 2025</td>

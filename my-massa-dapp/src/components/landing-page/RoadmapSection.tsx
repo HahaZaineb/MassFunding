@@ -40,7 +40,7 @@ const roadmapPhases = [
       'Backers vote to approve each fund release',
       'Automatic pause if voting fails',
       'On-chain recording of all voting outcomes',
-      'Transparency dashboard for community insights'
+      'Transparency dashboard for community insights',
     ],
     status: 'Done',
     target: 'Q2 2025',
@@ -91,11 +91,15 @@ export default function RoadmapSection() {
 
                 <div className="flex flex-wrap items-center justify-between border-t border-white/10 pt-4">
                   <span
-                    className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[phase.status]}`}
+                    className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      statusColors[phase.status]
+                    }`}
                   >
                     {phase.status}
                   </span>
-                  <span className="text-sm text-slate-400">🎯 {phase.target}</span>
+                  <span className="text-sm text-slate-400">
+                    🎯 {phase.target}
+                  </span>
                 </div>
               </div>
             );
