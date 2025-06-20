@@ -48,7 +48,7 @@ export default function UserActivity() {
 
       try {
         setLoading(true);
-        const donations = await getUserDonations(userAddress);
+        const donations = await getUserDonations(connectedAccount?.address.toString() || '');
         const totalAmount = donations.reduce((sum, d) => sum + d.amount, 0);
         setTotalDonations(donations.length);
         setTotalAmountDonated(totalAmount);

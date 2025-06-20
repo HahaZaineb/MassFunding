@@ -74,7 +74,6 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
       if (project) {
         let status: 'live' | 'release' | 'completed' | '' = '';
         const res = await getProjectDetails(Number(project.id));
-        console.log(res, project.name, 'res ffffff');
         setCreatedDate(getProjectCreationDate(res.createdPeriod));
         if (res.isLocked) {
           status = 'live';
