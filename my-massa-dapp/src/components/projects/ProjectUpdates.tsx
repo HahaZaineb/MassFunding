@@ -91,7 +91,7 @@ const ProjectUpdates: React.FC<ProjectUpdatesProps> = ({ projectId }) => {
           </p>
         </div>
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-5 mt-6">
           {updates.map((update) => (
             <div
               key={update.id}

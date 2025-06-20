@@ -123,10 +123,6 @@ const ProjectDetailsPage = () => {
       </div>
     );
 
-  const percentFunded = project
-    ? (Number(project.amountRaised) / Number(project.goalAmount)) * 100
-    : 0;
-
   return (
     <>
       {project && (
@@ -208,10 +204,22 @@ const ProjectDetailsPage = () => {
                   {project.amountRaised} / {project.goalAmount} MAS
                 </span>
                 <span className="font-bold text-emerald-400">
-                  {percentFunded.toFixed(2)}%
+                  {Math.max(
+                    (Number(project.amountRaised) /
+                      Number(project.goalAmount)) *
+                      100,
+                    100,
+                  ).toFixed(2)}
+                  %
                 </span>
               </div>
-              <ProgressBar value={percentFunded} />
+              <ProgressBar
+                value={Math.min(
+                  (Number(project.amountRaised) / Number(project.goalAmount)) *
+                    100,
+                  100,
+                )}
+              />
             </div>
 
             {/* Project Stats */}
@@ -447,8 +455,11 @@ const ProjectDetailsPage = () => {
               </motion.div>
             )}
 
-            {projectStatus === 'release' && isSupporter && (
-              <VotingSection vestingId={project?.vestingScheduleId} />
+            {(projectStatus === 'release' || projectStatus === 'completed') && (
+              <VotingSection
+                vestingId={project?.vestingScheduleId}
+                canVote={isSupporter}
+              />
             )}
             <ProjectUpdates projectId={project.id} />
           </div>

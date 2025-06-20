@@ -43,7 +43,6 @@ interface ProjectCardProps {
 
 const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
   const navigate = useNavigate();
-  const percentFunded = (project.amountRaised / project.goalAmount) * 100;
   const [openProjectUpdates, setOpenProjectUpdates] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [timeLeft, setTimeLeft] = useState('');
@@ -166,10 +165,20 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
               {project.goalAmount.toLocaleString()} MAS
             </span>
             <span className="font-bold text-emerald-400">
-              {percentFunded.toFixed(2)}%
+              {Math.max(
+                (Number(project.amountRaised) / Number(project.goalAmount)) *
+                  100,
+                100,
+              ).toFixed(2)}
+              %
             </span>
           </div>
-          <ProgressBar value={percentFunded} />
+          <ProgressBar
+            value={Math.min(
+              (Number(project.amountRaised) / Number(project.goalAmount)) * 100,
+              100,
+            )}
+          />
         </div>
 
         {/* Stats Grid */}

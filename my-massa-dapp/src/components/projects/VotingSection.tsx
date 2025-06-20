@@ -29,9 +29,13 @@ import { formatMas } from '@massalabs/massa-web3';
 
 interface VotingSectionProps {
   vestingId: any;
+  canVote: boolean;
 }
 
-const VotingSection: React.FC<VotingSectionProps> = ({ vestingId }) => {
+const VotingSection: React.FC<VotingSectionProps> = ({
+  vestingId,
+  canVote,
+}) => {
   const { showToast } = useToast();
 
   const { connectedAccount } = useAccountStore();
@@ -216,11 +220,51 @@ const VotingSection: React.FC<VotingSectionProps> = ({ vestingId }) => {
           {/* Voting Buttons */}
           {isActive && (
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-              {hasVoted && (
+              {canVote ? (
+                hasVoted ? (
+                  <Badge
+                    style={{
+                      background: 'linear-gradient(to right, #334155, #475569)',
+                      color: '#00ff9d',
+                      height: 32,
+                      padding: '0 12px',
+                      borderRadius: '999px',
+                      alignItems: 'center',
+                      fontWeight: 500,
+                      fontSize: 13,
+                      letterSpacing: 0.5,
+                      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
+                      width: '100%',
+                      display: 'flex',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <CheckCircle size={16} className="mr-2" />
+                    You Have Already Voted
+                  </Badge>
+                ) : (
+                  <Button
+                    fullWidth
+                    onClick={() => handleVote()}
+                    variant="contained"
+                    color="error"
+                    startIcon={<ThumbsDown size={18} />}
+                    sx={{
+                      borderRadius: 3,
+                      fontWeight: 600,
+                      textTransform: 'none',
+                      py: 1.5,
+                      boxShadow: '0 0 0 1px #b91c1c',
+                    }}
+                  >
+                    Vote to Stop
+                  </Button>
+                )
+              ) : (
                 <Badge
                   style={{
-                    background: 'linear-gradient(to right, #334155, #475569)',
-                    color: '#00ff9d',
+                    background: 'linear-gradient(to right, #1e293b, #334155)',
+                    color: '#f87171',
                     height: 32,
                     padding: '0 12px',
                     borderRadius: '999px',
@@ -234,27 +278,8 @@ const VotingSection: React.FC<VotingSectionProps> = ({ vestingId }) => {
                     justifyContent: 'center',
                   }}
                 >
-                  <CheckCircle size={16} className="mr-2" />
-                  You Have Already Voted
+                  🔒 Locked — Support to Vote
                 </Badge>
-              )}
-              {!hasVoted && (
-                <Button
-                  fullWidth
-                  onClick={() => handleVote()}
-                  variant="contained"
-                  color="error"
-                  startIcon={<ThumbsDown size={18} />}
-                  sx={{
-                    borderRadius: 3,
-                    fontWeight: 600,
-                    textTransform: 'none',
-                    py: 1.5,
-                    boxShadow: '0 0 0 1px #b91c1c',
-                  }}
-                >
-                  Vote to Stop
-                </Button>
               )}
             </Stack>
           )}

@@ -108,7 +108,7 @@ const MyProjectCard: React.FC<MyProjectCardProps> = ({ project }) => {
             </div>
             <div className="text-center">
               <div className="text-lg font-bold text-white">
-                {Math.min(
+                {Math.max(
                   (Number(project.amountRaised) / Number(project.goalAmount)) *
                     100,
                   100,

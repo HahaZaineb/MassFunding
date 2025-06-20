@@ -56,13 +56,13 @@ export function FundPage() {
       return;
     }
 
-    if (Number(amount) > Number(selected?.goalAmount)) {
-      setError(
-        'Please enter a valid donation amount less than ' +
-          selected?.goalAmount,
-      );
-      return;
-    }
+    // if (Number(amount) > Number(selected?.goalAmount)) {
+    //   setError(
+    //     'Please enter a valid donation amount less than ' +
+    //       selected?.goalAmount,
+    //   );
+    //   return;
+    // }
     setIsSubmitting(true);
     try {
       const projectIdNum = Number(selected?.id);
@@ -155,7 +155,7 @@ export function FundPage() {
                 />
                 <div className="text-center text-sm text-slate-400 mt-1">
                   {selected?.goalAmount && selected?.goalAmount > 0
-                    ? Math.min(
+                    ? Math.max(
                         Math.round(
                           (selected.amountRaised / selected.goalAmount) * 100,
                         ),
