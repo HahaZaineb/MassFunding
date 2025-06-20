@@ -22,7 +22,7 @@ import {
   Divider,
   Badge,
 } from '@mui/material';
-import { CheckCircle, ThumbsDown } from 'lucide-react';
+import { CheckCircle, Loader2, ThumbsDown } from 'lucide-react';
 import { Vote, VotingSession } from '@/types/voting';
 import { useToast } from '@/contexts/ToastProvider';
 import { formatMas } from '@massalabs/massa-web3';
@@ -43,6 +43,7 @@ const VotingSection: React.FC<VotingSectionProps> = ({
   const [votes, setVotes] = useState<Vote[]>([]);
   const [isActive, setIsActive] = useState(false);
   const [hasVoted, setHasVoted] = useState(false);
+  const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
     if (!vestingId) return;
@@ -62,7 +63,9 @@ const VotingSection: React.FC<VotingSectionProps> = ({
 
   const handleVote = async () => {
     try {
+      setLoading(true);
       await voteOnRelease(connectedAccount, vestingId);
+      setLoading(false);
       showToast('Vote submitted!', 'success');
       const sessionData = await getVotingSession(vestingId);
       setSession(sessionData);
@@ -75,6 +78,8 @@ const VotingSection: React.FC<VotingSectionProps> = ({
         setHasVoted(!!userVote);
       }
     } catch (err) {
+      setLoading(false);
+
       showToast('Error submitting vote', 'error');
     }
   };
@@ -245,19 +250,31 @@ const VotingSection: React.FC<VotingSectionProps> = ({
                 ) : (
                   <Button
                     fullWidth
-                    onClick={() => handleVote()}
+                    onClick={handleVote}
                     variant="contained"
                     color="error"
-                    startIcon={<ThumbsDown size={18} />}
+                    disabled={loading}
+                    startIcon={
+                      loading ? (
+                        <Loader2 className="animate-spin" size={18} />
+                      ) : (
+                        <ThumbsDown size={18} />
+                      )
+                    }
                     sx={{
                       borderRadius: 3,
                       fontWeight: 600,
                       textTransform: 'none',
                       py: 1.5,
                       boxShadow: '0 0 0 1px #b91c1c',
+                      '&.Mui-disabled': {
+                        backgroundColor: '#dc2626', // keep same as error color
+                        color: 'white', // text stays white when disabled
+                        opacity: 0.7, // optional dimming
+                      },
                     }}
                   >
-                    Vote to Stop
+                    {loading ? 'Processing...' : 'Vote to Stop'}
                   </Button>
                 )
               ) : (
