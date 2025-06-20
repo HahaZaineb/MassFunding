@@ -155,12 +155,11 @@ export function FundPage() {
                 />
                 <div className="text-center text-sm text-slate-400 mt-1">
                   {selected?.goalAmount && selected?.goalAmount > 0
-                    ? Math.max(
-                        Math.round(
-                          (selected.amountRaised / selected.goalAmount) * 100,
-                        ),
-                        100,
-                      )
+                    ? (
+                        (Number(selected.amountRaised) /
+                          Number(selected.goalAmount)) *
+                        100
+                      ).toFixed(2)
                     : 0}
                   % funded
                 </div>

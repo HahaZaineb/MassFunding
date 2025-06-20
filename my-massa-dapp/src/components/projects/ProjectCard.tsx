@@ -164,10 +164,9 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
               {project.goalAmount.toLocaleString()} MAS
             </span>
             <span className="font-bold text-emerald-400">
-              {Math.max(
+              {(
                 (Number(project.amountRaised) / Number(project.goalAmount)) *
-                  100,
-                100,
+                100
               ).toFixed(2)}
               %
             </span>
