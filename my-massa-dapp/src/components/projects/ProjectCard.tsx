@@ -35,6 +35,8 @@ import { formatMas } from '@massalabs/massa-web3';
 import ProjectUpdatesModal from './ProjectUpdatesModal';
 import { getProjectCreationDate } from '@/utils/project';
 import { getProjectDetails } from '@/services/projectService';
+import TwitterShareButton from '../TwitterShareButton';
+import { PUBLIC_BASE_URL } from '@/configs';
 
 interface ProjectCardProps {
   project: ProjectData & { image?: string };
@@ -135,9 +137,21 @@ const ProjectCard = ({ project, showDetails = true }: ProjectCardProps) => {
       </div>
 
       <CardHeader className="pb-4">
-        <CardTitle className="text-white text-xl leading-tight line-clamp-1">
-          {project.name}
-        </CardTitle>
+        <div className="flex flex-row justify-between items-center">
+          <CardTitle className="text-white text-xl leading-tight line-clamp-1">
+            {project.name}
+          </CardTitle>
+          <TwitterShareButton
+            title={project.name}
+            description={project.description}
+            url={PUBLIC_BASE_URL + '/#/projects/' + project.id}
+            hashtags={[
+              'MassFunding',
+              'Massa',
+              project.category.replace(/\s+/g, ''),
+            ]}
+          />
+        </div>
         <p className="text-slate-300 text-xs mb-2 line-clamp-2">
           Owned By{' '}
           <span className="text-teal-300">

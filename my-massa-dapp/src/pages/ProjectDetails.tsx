@@ -27,6 +27,8 @@ import { BadgeCheck } from 'lucide-react';
 import { getProjectSupporters } from '@/services/votingService';
 import { Supporter } from '@/types/voting';
 import { useAccountStore } from '@massalabs/react-ui-kit/src/lib/ConnectMassaWallets';
+import ProjectMeta from '@/components/projects/ProjectMeta';
+import { PUBLIC_BASE_URL } from '@/configs';
 
 const ProjectDetailsPage = () => {
   const navigate = useNavigate();
@@ -125,6 +127,14 @@ const ProjectDetailsPage = () => {
 
   return (
     <>
+      {project && (
+        <ProjectMeta
+          title={project.name}
+          description={project.description}
+          imageUrl={project.image || '/placeholder.svg'}
+          url={PUBLIC_BASE_URL + `/#/projects/${project.id}`}
+        />
+      )}
       {project && (
         <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 w-full min-h-screen">
           <div className=" max-w-5xl mx-auto px-4 py-8 space-y-6 text-white">
